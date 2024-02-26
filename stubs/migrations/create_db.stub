@@ -1,0 +1,50 @@
+import { BaseSchema } from '@adonisjs/lucid/schema'
+
+export default class extends BaseSchema {
+  protected tableRolesName = 'roles'
+  protected tableModelRolesName = 'model_roles'
+
+  async up() {
+    this.schema.createTable(this.tableRolesName, (table) => {
+      table.increments('id')
+
+      table.string('slug').index()
+      table.string('title')
+      table.string('entity_type')
+      table.bigint('entity_id').unsigned()
+      table.integer('scope').unsigned()
+
+      /**
+       * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+       */
+      table.timestamp('created_at', { useTz: true })
+      table.timestamp('updated_at', { useTz: true })
+
+      table.unique(['slug', 'scope'])
+      table.index(['entity_type', 'entity_id'])
+    })
+
+    this.schema.createTable(this.tableModelRolesName, (table) => {
+      table.increments('id')
+
+      table.string('entity_type')
+      table.bigint('entity_id').unsigned()
+      table.bigInteger('role_id').unsigned()
+
+      /**
+       * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+       */
+      table.timestamp('created_at', { useTz: true })
+      table.timestamp('updated_at', { useTz: true })
+
+      table.index(['entity_type', 'entity_id'])
+
+      table.foreign('role_id').references('roles.id').onDelete('CASCADE')
+    })
+  }
+
+  async down() {
+    this.schema.dropTable(this.tableRolesName)
+    this.schema.dropTable(this.tableModelRolesName)
+  }
+}
