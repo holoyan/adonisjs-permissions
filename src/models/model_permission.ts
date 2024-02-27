@@ -1,7 +1,11 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, scope } from '@adonisjs/lucid/orm'
+import config from '@adonisjs/core/services/config'
 
 export default class ModelPermission extends BaseModel {
+  static get table() {
+    return config.get('permissions.permissionsConfig.tables.modelPermissions') as string
+  }
   @column({ isPrimary: true })
   declare id: number
 

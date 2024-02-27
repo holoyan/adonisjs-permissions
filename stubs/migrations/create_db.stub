@@ -5,13 +5,12 @@
 }}}
 
 import { BaseSchema } from '@adonisjs/lucid/schema'
+import config from "@adonisjs/core/services/config";
 
 export default class extends BaseSchema {
-  protected tableRolesName = 'roles'
-  protected tableModelRolesName = 'model_roles'
 
   async up() {
-    this.schema.createTable(this.tableRolesName, (table) => {
+    this.schema.createTable(config.get('permissions.permissionsConfig.tables.roles'), (table) => {
       table.increments('id')
 
       table.string('slug').index()
@@ -30,11 +29,11 @@ export default class extends BaseSchema {
       table.index(['entity_type', 'entity_id'])
     })
 
-    this.schema.createTable(this.tableModelRolesName, (table) => {
+    this.schema.createTable(config.get('permissions.permissionsConfig.tables.modelRoles'), (table) => {
       table.increments('id')
 
-      table.string('entity_type')
-      table.bigint('entity_id').unsigned()
+      table.string('model_type')
+      table.bigint('model_id').unsigned()
       table.bigInteger('role_id').unsigned()
 
       /**
@@ -43,14 +42,55 @@ export default class extends BaseSchema {
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
 
-      table.index(['entity_type', 'entity_id'])
+      table.index(['model_type', 'model_id'])
 
       table.foreign('role_id').references('roles.id').onDelete('CASCADE')
     })
+
+    this.schema.createTable(config.get('permissions.permissionsConfig.tables.permissions'), (table) => {
+      table.increments('id')
+
+      table.string('slug').index()
+      table.string('title')
+      table.string('entity_type')
+      table.bigint('entity_id').unsigned()
+      table.integer('scope').unsigned()
+      table.boolean('allowed')
+
+      /**
+       * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+       */
+      table.timestamp('created_at', { useTz: true })
+      table.timestamp('updated_at', { useTz: true })
+
+      table.unique(['slug', 'scope'])
+      table.index(['entity_type', 'entity_id'])
+    })
+
+    this.schema.createTable(config.get('permissions.permissionsConfig.tables.modelPermissions'), (table) => {
+      table.increments('id')
+
+      table.string('model_type')
+      table.bigint('model_id').unsigned()
+      table.bigInteger('permission_id').unsigned()
+
+      /**
+       * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+       */
+      table.timestamp('created_at', { useTz: true })
+      table.timestamp('updated_at', { useTz: true })
+
+      table.index(['model_type', 'model_id'])
+
+      table.foreign('permission_id').references('permissions.id').onDelete('CASCADE')
+    })
+
   }
 
   async down() {
-    this.schema.dropTable(this.tableRolesName)
-    this.schema.dropTable(this.tableModelRolesName)
+    this.schema.dropTable(config.get('permissions.permissionsConfig.tables.modelRoles'))
+    this.schema.dropTable(config.get('permissions.permissionsConfig.tables.roles'))
+    this.schema.dropTable(config.get('permissions.permissionsConfig.tables.modelPermissions'))
+    this.schema.dropTable(config.get('permissions.permissionsConfig.tables.permissions'))
   }
 }

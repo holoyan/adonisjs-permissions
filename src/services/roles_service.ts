@@ -5,15 +5,15 @@ import { HasRoles } from '../types.js'
 export default class RolesService {
   private modelRolesQuery(modelType: string, modelId: number | null) {
     const query = Role.query()
-      .join('model_roles', 'model_roles.role_id', '=', 'roles.id')
-      .where('model_roles.model_type', modelType)
+      .join(ModelRole.table, ModelRole.table + '.role_id', '=', Role.table + '.id')
+      .where(ModelRole.table + '.model_type', modelType)
     return modelId === null
-      ? query.whereNull('model_roles.model_id')
-      : query.where('model_roles.model_id', modelId)
+      ? query.whereNull(ModelRole.table + '.model_id')
+      : query.where(ModelRole.table + '.model_id', modelId)
   }
 
   async all(modelType: string, modelId: number | null): Promise<Role[] | null> {
-    const roles = await this.modelRolesQuery(modelType, modelId).select('roles.*')
+    const roles = await this.modelRolesQuery(modelType, modelId).select(Role.table + '.*')
 
     if (roles.length === 0) {
       return null
@@ -35,11 +35,11 @@ export default class RolesService {
 
     let { slugs, ids } = this.formatList(roles)
     if (slugs.length) {
-      rolesQuery.whereIn('roles.slug', slugs)
+      rolesQuery.whereIn(Role.table + '.slug', slugs)
     }
 
     if (ids.length) {
-      rolesQuery.whereIn('roles.id', ids)
+      rolesQuery.whereIn(Role.table + '.id', ids)
     }
 
     const r = await rolesQuery.count('* as total')
@@ -59,11 +59,11 @@ export default class RolesService {
 
     let { slugs, ids } = this.formatList(roles)
     if (slugs.length) {
-      rolesQuery.whereIn('roles.slug', slugs)
+      rolesQuery.whereIn(Role.table + '.slug', slugs)
     }
 
     if (ids.length) {
-      rolesQuery.whereIn('roles.id', ids)
+      rolesQuery.whereIn(Role.table + '.id', ids)
     }
 
     const r = await rolesQuery.count('* as total')

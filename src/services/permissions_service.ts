@@ -1,3 +1,5 @@
+import ModelPermission from '../models/model_permission.js'
+import ModelRole from '../models/model_role.js'
 import Permission from '../models/permission.js'
 
 export default class PermissionsService {
@@ -6,8 +8,8 @@ export default class PermissionsService {
    */
   async all(modelType: string, modelId: number) {
     const p = await this.permissionQuery(modelType, modelId)
-      .groupBy('permissions.id')
-      .select('permissions.*')
+      .groupBy(Permission.table + '.id')
+      .select(Permission.table + '.*')
 
     return p
   }
@@ -17,10 +19,10 @@ export default class PermissionsService {
    */
   async global(modelType: string, modelId: number) {
     const p = await this.permissionQuery(modelType, modelId)
-      .where('permissions.entity_type', '*')
-      .whereNull('permissions.entity_id')
-      .groupBy('permissions.id')
-      .select('permissions.*')
+      .where(Permission.table + '.entity_type', '*')
+      .whereNull(Permission.table + '.entity_id')
+      .groupBy(Permission.table + '.id')
+      .select(Permission.table + '.*')
 
     return p
   }
@@ -30,10 +32,10 @@ export default class PermissionsService {
    */
   async onResource(modelType: string, modelId: number) {
     const p = await this.permissionQuery(modelType, modelId)
-      .where('permissions.entity_type', '*')
-      .whereNotNull('permissions.entity_id')
-      .groupBy('permissions.id')
-      .select('permissions.*')
+      .where(Permission.table + '.entity_type', '*')
+      .whereNotNull(Permission.table + '.entity_id')
+      .groupBy(Permission.table + '.id')
+      .select(Permission.table + '.*')
 
     return p
   }
@@ -101,8 +103,8 @@ export default class PermissionsService {
 
   private permissionQuery(modelType: string, modelId: number) {
     const q = Permission.query()
-      .join('model_permissions as mp', 'mp.permission_id', '=', 'permissions.id')
-      .join('model_roles as mr', (joinQuery) => {
+      .join(ModelPermission.table + ' as mp', 'mp.permission_id', '=', Permission.table + '.id')
+      .join(ModelRole.table + ' as mr', (joinQuery) => {
         joinQuery.onVal('mr.model_type', modelType).onVal('mr.model_id', modelId)
       })
       .where((subQuery) => {
@@ -120,7 +122,7 @@ export default class PermissionsService {
   }
   private directPermissionQuery(modelType: string, modelId: number) {
     const q = Permission.query()
-      .join('model_permissions as mp', 'mp.permission_id', '=', 'permissions.id')
+      .join(ModelPermission.table + ' as mp', 'mp.permission_id', '=', Permission.table + '.id')
       .where('mp.model_type', modelType)
       .where('mp.model_id', modelId)
 

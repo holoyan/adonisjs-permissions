@@ -4,9 +4,9 @@
   })
 }}}
 
-import { Permissions } from '../types/permissions.js'
+import { Permissions } from '@holoyan/adonisjs-permissions/types'
 
-export const PermissionsConfig: Permissions = {
+export const permissionsConfig: Permissions = {
   tables: {
     roles: 'roles',
     modelRoles: 'model_roles',
