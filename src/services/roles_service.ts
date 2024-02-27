@@ -1,6 +1,6 @@
 import Role from '../models/role.js'
 import ModelRole from '../models/model_role.js'
-import { HasRoles } from '../../types/has_roles.js'
+import { HasRoles } from '../types.js'
 
 export default class RolesService {
   private modelRolesQuery(modelType: string, modelId: number | null) {

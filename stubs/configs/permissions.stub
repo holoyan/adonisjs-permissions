@@ -1,0 +1,16 @@
+{{{
+  exports({
+    to: app.configPath('permissions.ts')
+  })
+}}}
+
+import { Permissions } from '../types/permissions.js'
+
+export const PermissionsConfig: Permissions = {
+  tables: {
+    roles: 'roles',
+    modelRoles: 'model_roles',
+    permissions: 'permissions',
+    modelPermissions: 'model_permissions',
+  },
+}

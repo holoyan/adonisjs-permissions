@@ -4,3 +4,7 @@ export interface HasRoles {
 }
 
 export interface HasPermissions extends HasRoles {}
+
+export interface Permissions {
+  tables: Object
+}

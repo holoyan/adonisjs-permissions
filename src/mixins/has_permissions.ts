@@ -1,6 +1,6 @@
 import type { NormalizeConstructor } from '@adonisjs/core/types/helpers'
 import PermissionsService from '../services/permissions_service.js'
-import { HasPermissions as HasPermissionsContract } from '../../types/has_roles.js'
+import { HasPermissions as HasPermissionsContract } from '../types.js'
 import Permission from '../models/permission.js'
 
 const HasPermissions = <

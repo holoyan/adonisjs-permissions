@@ -1,7 +1,7 @@
 import Role from '../models/role.js'
 import type { NormalizeConstructor } from '@adonisjs/core/types/helpers'
 import RolesService from '../services/roles_service.js'
-import { HasRoles as HasRolesContract } from '../../types/has_roles.js'
+import { HasRoles as HasRolesContract } from '../types.js'
 
 const HasRoles = <
   Model extends NormalizeConstructor<import('@adonisjs/lucid/types/model').LucidModel>,
