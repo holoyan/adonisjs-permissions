@@ -38,7 +38,23 @@ export class HasRolePermissions {
 
   // roles related section END
 
+  // permissions related section BEGIN
+
   permissions() {
     return this.permissionsService.all(this.model.getMorphMapName(), this.model.getModelId())
   }
+
+  globalPermissions() {
+    return this.permissionsService.global(this.model.getMorphMapName(), this.model.getModelId())
+  }
+
+  onResourcePermissions() {
+    return this.permissionsService.onResource(this.model.getMorphMapName(), this.model.getModelId())
+  }
+
+  directPermissions() {
+    return this.permissionsService.direct(this.model.getMorphMapName(), this.model.getModelId())
+  }
+
+  // permissions related section BEGIN
 }
