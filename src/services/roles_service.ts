@@ -1,6 +1,6 @@
 import Role from '../models/role.js'
 import ModelRole from '../models/model_role.js'
-import { HasRoles } from '../types.js'
+import { AclModel } from '../types.js'
 
 export default class RolesService {
   private modelRolesQuery(modelType: string, modelId: number | null) {
@@ -72,7 +72,7 @@ export default class RolesService {
     return r[0].total > 0
   }
 
-  async assigne(role: string | Role, model: HasRoles) {
+  async assigne(role: string | Role, model: AclModel) {
     const r = await this.extractRoleModel(role)
 
     if (!r) {
@@ -88,7 +88,7 @@ export default class RolesService {
     return true
   }
 
-  async revoke(role: string | Role, model: HasRoles) {
+  async revoke(role: string | Role, model: AclModel) {
     const r = await this.extractRoleModel(role)
 
     if (!r) {

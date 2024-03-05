@@ -1,5 +1,5 @@
-import ModelPermission from '../models/model_permission.js'
-import ModelRole from '../models/model_role.js'
+// import ModelPermission from '../models/model_permission.js'
+// import ModelRole from '../models/model_role.js'
 import Permission from '../models/permission.js'
 
 export default class PermissionsService {
@@ -17,39 +17,39 @@ export default class PermissionsService {
   /**
    * return only global assigned permissions, through role or direct
    */
-  async global(modelType: string, modelId: number) {
-    const p = await this.permissionQuery(modelType, modelId)
-      .where(Permission.table + '.entity_type', '*')
-      .whereNull(Permission.table + '.entity_id')
-      .groupBy(Permission.table + '.id')
-      .select(Permission.table + '.*')
+  // async global(modelType: string, modelId: number) {
+  //   const p = await this.permissionQuery(modelType, modelId)
+  //     .where(Permission.table + '.entity_type', '*')
+  //     .whereNull(Permission.table + '.entity_id')
+  //     .groupBy(Permission.table + '.id')
+  //     .select(Permission.table + '.*')
 
-    return p
-  }
+  //   return p
+  // }
 
   /**
    * get all permissions which is assigned to concrete resource
    */
-  async onResource(modelType: string, modelId: number) {
-    const p = await this.permissionQuery(modelType, modelId)
-      .where(Permission.table + '.entity_type', '*')
-      .whereNotNull(Permission.table + '.entity_id')
-      .groupBy(Permission.table + '.id')
-      .select(Permission.table + '.*')
+  // async onResource(modelType: string, modelId: number) {
+  //   const p = await this.permissionQuery(modelType, modelId)
+  //     .where(Permission.table + '.entity_type', '*')
+  //     .whereNotNull(Permission.table + '.entity_id')
+  //     .groupBy(Permission.table + '.id')
+  //     .select(Permission.table + '.*')
 
-    return p
-  }
+  //   return p
+  // }
 
   /**
    * all direct permissions
    */
-  async direct(modelType: string, modelId: number) {
-    const p = await this.directPermissionQuery(modelType, modelId)
-      .groupBy('permissions.id')
-      .select('permissions.*')
+  // async direct(modelType: string, modelId: number) {
+  //   const p = await this.directPermissionQuery(modelType, modelId)
+  //     .groupBy('permissions.id')
+  //     .select('permissions.*')
 
-    return p
-  }
+  //   return p
+  // }
 
   /**
    * return direct and resource assigned permissions
@@ -103,8 +103,10 @@ export default class PermissionsService {
 
   private permissionQuery(modelType: string, modelId: number) {
     const q = Permission.query()
-      .join(ModelPermission.table + ' as mp', 'mp.permission_id', '=', Permission.table + '.id')
-      .join(ModelRole.table + ' as mr', (joinQuery) => {
+      // .join(ModelPermission.table + ' as mp', 'mp.permission_id', '=', Permission.table + '.id')
+      .join('model_permissions as mp', 'mp.permission_id', '=', 'permissions.id')
+      // ModelRole.table +
+      .join('model_roles as mr', (joinQuery) => {
         joinQuery.onVal('mr.model_type', modelType).onVal('mr.model_id', modelId)
       })
       .where((subQuery) => {
@@ -120,12 +122,12 @@ export default class PermissionsService {
 
     return q
   }
-  private directPermissionQuery(modelType: string, modelId: number) {
-    const q = Permission.query()
-      .join(ModelPermission.table + ' as mp', 'mp.permission_id', '=', Permission.table + '.id')
-      .where('mp.model_type', modelType)
-      .where('mp.model_id', modelId)
+  // private directPermissionQuery(modelType: string, modelId: number) {
+  //   const q = Permission.query()
+  //     .join(ModelPermission.table + ' as mp', 'mp.permission_id', '=', Permission.table + '.id')
+  //     .where('mp.model_type', modelType)
+  //     .where('mp.model_id', modelId)
 
-    return q
-  }
+  //   return q
+  // }
 }
