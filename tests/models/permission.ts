@@ -1,19 +1,10 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import config from '@adonisjs/core/services/config'
-import { AclModelInterface } from '../types.js'
 
-export default class Permission extends BaseModel implements AclModelInterface {
+export default class Permission extends BaseModel {
   static get table() {
     return config.get('permissions.permissionsConfig.tables.permissions') as string
-  }
-
-  getMorphMapName(): string {
-    return config.get('permissions.permissionsConfig.morphMaps.roles') as string
-  }
-
-  getModelId(): number {
-    return this.id
   }
 
   @column({ isPrimary: true })

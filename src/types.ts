@@ -11,3 +11,14 @@ export interface AclModelInterface {
 }
 
 export type AclModel = LucidModel & AclModelInterface
+
+export interface AclModelQuery {
+  modelType: string
+  modelId: number
+}
+
+export interface ModelPermissionsQuery extends AclModelQuery {
+  permissionSlugs: string[]
+  permissionIds: number[]
+  directPermissions: boolean
+}

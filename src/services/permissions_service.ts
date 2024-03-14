@@ -1,133 +1,297 @@
-// import ModelPermission from '../models/model_permission.js'
-// import ModelRole from '../models/model_role.js'
 import ModelPermission from '../models/model_permission.js'
 import ModelRole from '../models/model_role.js'
 import Permission from '../models/permission.js'
+import Role from '../models/role.js'
+import { ModelPermissionsQuery } from '../types.js'
+import BaseService from './base_service.js'
 
-export default class PermissionsService {
+export default class PermissionsService extends BaseService {
   /**
-   * return all permissions
+   * return all permissions, including fodbidden
    */
-  async all(modelType: string, modelId: number) {
-    const p = await this.permissionQuery(modelType, modelId)
+  all(modelType: string, modelId: number) {
+    const roleMorhpMap = new Role().getMorphMapName()
+
+    return this.modelPermissionQuery({
+      modelType,
+      modelId,
+      directPermissions: roleMorhpMap === modelType,
+    })
       .groupBy(Permission.table + '.id')
       .select(Permission.table + '.*')
-
-    return p
   }
 
   /**
    * return only global assigned permissions, through role or direct
    */
-  async global(modelType: string, modelId: number) {
-    const p = await this.permissionQuery(modelType, modelId)
-      .where(Permission.table + '.entity_type', '*')
+  global(modelType: string, modelId: number) {
+    const roleMorhpMap = new Role().getMorphMapName()
+
+    return this.modelPermissionQuery({
+      modelType,
+      modelId,
+      directPermissions: roleMorhpMap === modelType,
+    })
       .whereNull(Permission.table + '.entity_id')
       .groupBy(Permission.table + '.id')
       .select(Permission.table + '.*')
-
-    return p
   }
 
   /**
    * get all permissions which is assigned to concrete resource
    */
-  async onResource(modelType: string, modelId: number) {
-    const p = await this.permissionQuery(modelType, modelId)
-      .where(Permission.table + '.entity_type', '*')
+  onResource(modelType: string, modelId: number) {
+    const roleMorhpMap = new Role().getMorphMapName()
+
+    return this.modelPermissionQuery({
+      modelType,
+      modelId,
+      directPermissions: roleMorhpMap === modelType,
+    })
       .whereNotNull(Permission.table + '.entity_id')
       .groupBy(Permission.table + '.id')
       .select(Permission.table + '.*')
-
-    return p
   }
 
   /**
    * all direct permissions
    */
-  async direct(modelType: string, modelId: number) {
-    const p = await this.directPermissionQuery(modelType, modelId)
-      .groupBy('permissions.id')
-      .select('permissions.*')
+  direct(modelType: string, modelId: number) {
+    return this.modelPermissionQuery({
+      modelType,
+      modelId,
+      directPermissions: true,
+    })
+      .groupBy(Permission.table + '.id')
+      .select(Permission.table + '.*')
+  }
 
-    return p
+  directGlobal(modelType: string, modelId: number) {
+    return this.modelPermissionQuery({
+      modelType,
+      modelId,
+      directPermissions: true,
+    })
+      .whereNull(Permission.table + '.entity_id')
+      .groupBy(Permission.table + '.id')
+      .select(Permission.table + '.*')
   }
 
   /**
    * return direct and resource assigned permissions
    */
-  directResource() {}
+  directResource(modelType: string, modelId: number) {
+    return this.modelPermissionQuery({
+      modelType,
+      modelId,
+      directPermissions: true,
+    })
+      .whereNotNull(Permission.table + '.entity_id')
+      .groupBy(Permission.table + '.id')
+      .select(Permission.table + '.*')
+  }
 
   /**
    * check if it has permission
+   * to check forbidden or not use other method
    */
-  has() {}
+  async has(modelType: string, modelId: number, permisison: string | Permission) {
+    const r = await this.hasAny(modelType, modelId, [permisison])
+
+    return r
+  }
 
   /**
    * has all permissions
    */
-  hasAll() {}
+  async hasAll(modelType: string, modelId: number, permisison: (string | Permission)[]) {
+    const roleMorhpMap = new Role().getMorphMapName()
+    const { slugs, ids } = this.formatList(permisison)
+
+    const q = this.modelPermissionQuery({
+      modelType,
+      modelId,
+      directPermissions: roleMorhpMap === modelType,
+      permissionSlugs: slugs,
+      permissionIds: ids,
+    }).groupBy(Permission.table + '.id')
+    const r = await q.count('* as total')
+
+    // @ts-ignore
+    return r[0] ? r[0].$extras.total === permisison.length : false
+  }
 
   /**
    * has any of permissions
    */
-  hasAny() {}
+  async hasAny(modelType: string, modelId: number, permisison: (string | Permission)[]) {
+    const roleMorhpMap = new Role().getMorphMapName()
+    const { slugs, ids } = this.formatList(permisison)
+
+    const q = this.modelPermissionQuery({
+      modelType,
+      modelId,
+      directPermissions: roleMorhpMap === modelType,
+      permissionSlugs: slugs,
+      permissionIds: ids,
+    }).groupBy(Permission.table + '.id')
+    const r = await q.count('* as total')
+
+    // @ts-ignore
+    return r[0] ? r[0].$extras.total > 0 : false
+  }
+
+  /**
+   * check if permission is forbidden, if there is same permission with allowed=false then return true;
+   */
+  async forbidden(modelType: string, modelId: number, permisison: string | Permission) {
+    const roleMorhpMap = new Role().getMorphMapName()
+
+    const q = this.modelPermissionQueryWithForbiddenCheck({
+      modelType,
+      modelId,
+      directPermissions: roleMorhpMap === modelType,
+      permissionSlugs: typeof permisison === 'string' ? [permisison] : [permisison.slug],
+    }).groupBy(Permission.table + '.id')
+
+    const r = await q.count('* as total')
+
+    // @ts-ignore
+    return r[0] ? r[0].$extras.total > 0 : false
+  }
+
+  async allowed(modelType: string, modelId: number, permisison: string | Permission) {
+    const r = await this.forbidden(modelType, modelId, permisison)
+    return r
+  }
 
   /**
    * give permission to model
    */
-  give() {}
+  give(modelType: string, modelId: number, permissionId: number) {
+    return ModelPermission.create({
+      modelType,
+      modelId,
+      permissionId,
+    })
+  }
 
   /**
    * give permissions to model
    */
-  giveAll() {}
+  async giveAll(modelType: string, modelId: number, permissionId: number[]) {
+    let permissions = permissionId.map((item) => {
+      return {
+        modelType,
+        modelId,
+        permissionId: item,
+      }
+    })
+
+    return ModelPermission.createMany(permissions)
+  }
 
   /**
    * sync permissions, remove everything outside of the list
    */
-  sync() {}
+  async sync(modelType: string, modelId: number, permissionId: number[]) {
+    await ModelPermission.query().where('model_type', modelType).where('model_id', modelId).delete()
+
+    const many = await this.giveAll(modelType, modelId, permissionId)
+
+    return many
+  }
 
   /**
    * forbid permission on model
    */
-  forbid() {}
+  async forbid(modelType: string, modelId: number, permissionSlug: string) {
+    // if there is permission with that slug and allowed false retrive it, oterwise create new one and attach
+
+    let forbiddenPermission = await Permission.query()
+      .where('allowed', false)
+      .where(Permission.table + '.slug', permissionSlug)
+      .select('*')
+      .first()
+
+    if (!forbiddenPermission) {
+      forbiddenPermission = await Permission.create({
+        slug: permissionSlug,
+        title: permissionSlug,
+        allowed: false,
+      })
+    }
+
+    return this.give(modelType, modelId, forbiddenPermission.id)
+  }
 
   /**
    * to remove forbidden permission on model
    */
-  unforbid() {}
+  async unforbid(modelType: string, modelId: number, permissionSlug: string) {
+    let forbiddenPermission = await Permission.query()
+      .where('allowed', false)
+      .where(Permission.table + '.slug', permissionSlug)
+      .select('*')
+      .first()
 
-  /**
-   * check if permission is forbidden
-   */
-  forbidden() {}
+    if (!forbiddenPermission) {
+      return true
+    }
 
-  private permissionQuery(modelType: string, modelId: number) {
-    const q = Permission.query()
-      .join(ModelPermission.table + ' as mp', 'mp.permission_id', '=', Permission.table + '.id')
-      .join(ModelRole.table + ' as mr', (joinQuery) => {
-        joinQuery.onVal('mr.model_type', modelType).onVal('mr.model_id', modelId)
-      })
-      .where((subQuery) => {
-        subQuery
-          .where((query) => {
-            query.where('mp.model_type', modelType)
-            modelId === null ? query.whereNull('mp.model_id') : query.where('mp.model_id', modelId)
-          })
-          .orWhere((query) => {
-            query.whereRaw('mr.role_id=mp.model_id').where('mp.model_type', 'roles')
-          })
-      })
+    await ModelPermission.query()
+      .where('model_type', modelType)
+      .where('model_id', modelId)
+      .where('permission_id', forbiddenPermission.id)
+      .delete()
+
+    return true
+  }
+
+  private modelPermissionQueryWithForbiddenCheck(conditions: Partial<ModelPermissionsQuery>) {
+    const q = this.modelPermissionQuery(conditions)
+    q.whereNotExists((subQuery) => {
+      subQuery
+        .from(Permission.table + ' as p2')
+        .join(ModelPermission.table + ' as mp2', 'mp2.permission_id', '=', 'p2.id')
+        .where('p2.allowed', false)
+        .whereRaw('p2.slug=' + Permission.table + '.slug')
+    })
 
     return q
   }
 
-  private directPermissionQuery(modelType: string, modelId: number) {
-    const q = Permission.query()
-      .join(ModelPermission.table + ' as mp', 'mp.permission_id', '=', Permission.table + '.id')
-      .where('mp.model_type', modelType)
-      .where('mp.model_id', modelId)
+  private modelPermissionQuery(conditions: Partial<ModelPermissionsQuery>) {
+    const { modelId, modelType, permissionSlugs, directPermissions } = conditions
+
+    const q = Permission.query().join(
+      ModelPermission.table + ' as mp',
+      'mp.permission_id',
+      '=',
+      Permission.table + '.id'
+    )
+
+    if (modelId && modelType) {
+      if (directPermissions) {
+        q.where('mp.model_type', modelType).where('mp.model_id', modelId)
+      } else {
+        q.join(ModelRole.table + ' as mr', (joinQuery) => {
+          joinQuery.onVal('mr.model_type', modelType).onVal('mr.model_id', modelId)
+        }).where((subQuery) => {
+          subQuery
+            .where((query) => {
+              query.where('mp.model_type', modelType).where('mp.model_id', modelId)
+            })
+            .orWhere((query) => {
+              query.whereRaw('mr.role_id=mp.model_id').where('mp.model_type', 'roles')
+            })
+        })
+      }
+    }
+
+    if (permissionSlugs) {
+      q.whereIn(Permission.table + '.slug', permissionSlugs)
+    }
 
     return q
   }

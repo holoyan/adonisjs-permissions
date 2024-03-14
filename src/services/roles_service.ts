@@ -1,8 +1,9 @@
 import Role from '../models/role.js'
 import ModelRole from '../models/model_role.js'
 import { AclModel } from '../types.js'
+import BaseService from './base_service.js'
 
-export default class RolesService {
+export default class RolesService extends BaseService {
   private modelRolesQuery(modelType: string, modelId: number | null) {
     const query = Role.query()
       .join(ModelRole.table, ModelRole.table + '.role_id', '=', Role.table + '.id')
@@ -109,20 +110,5 @@ export default class RolesService {
       return await Role.query().where('slug', role).first()
     }
     return role
-  }
-
-  private formatList(roles: (string | Role)[]) {
-    let slugs: string[] = []
-    let ids: (number | string)[] = []
-
-    for (let role of roles) {
-      if (typeof role === 'string') {
-        slugs.push(role)
-      } else {
-        ids.push(role.id)
-      }
-    }
-
-    return { slugs, ids }
   }
 }
