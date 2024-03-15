@@ -1,9 +1,9 @@
-import ModelPermission from '../models/model_permission.js'
-import ModelRole from '../models/model_role.js'
-import Permission from '../models/permission.js'
-import Role from '../models/role.js'
-import { ModelPermissionsQuery } from '../types.js'
-import BaseService from './base_service.js'
+import ModelPermission from '../../models/model_permission.js'
+import ModelRole from '../../models/model_role.js'
+import Permission from '../../models/permission.js'
+import Role from '../../models/role.js'
+import { ModelPermissionsQuery } from '../../types.js'
+import BaseService from '../base_service.js'
 
 export default class PermissionsService extends BaseService {
   /**

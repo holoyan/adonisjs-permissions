@@ -1,7 +1,7 @@
-import Role from '../models/role.js'
-import ModelRole from '../models/model_role.js'
-import { AclModel } from '../types.js'
-import BaseService from './base_service.js'
+import Role from '../../models/role.js'
+import ModelRole from '../../models/model_role.js'
+import { AclModel } from '../../types.js'
+import BaseService from '../base_service.js'
 
 export default class RolesService extends BaseService {
   private modelRolesQuery(modelType: string, modelId: number | null) {

@@ -1,9 +1,9 @@
 import Role from '../models/role.js'
 import { AclModel } from '../types.js'
-import PermissionsService from './permissions_service.js'
-import RolesService from './roles_service.js'
+import PermissionsService from './permissions/permissions_service.js'
+import RolesService from './roles/roles_service.js'
 
-export class HasRolePermissions {
+export class ModelHasRolePermissions {
   constructor(
     private model: AclModel,
     private roleService: RolesService,

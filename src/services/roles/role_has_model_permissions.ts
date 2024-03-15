@@ -1,7 +1,7 @@
-import Permission from '../models/permission.js'
-import Role from '../models/role.js'
-import { AclModelQuery } from '../types.js'
-import PermissionsService from './permissions_service.js'
+import Permission from '../../models/permission.js'
+import Role from '../../models/role.js'
+import { AclModelQuery } from '../../types.js'
+import PermissionsService from '../permissions/permissions_service.js'
 
 export class RoleHasModelPermissions {
   private condition: AclModelQuery
