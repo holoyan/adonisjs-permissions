@@ -18,6 +18,8 @@ export class RoleHasModelPermissions {
 
   models() {}
 
+  // permissions related BEGIN
+
   permissions() {
     // for roles direct and all permissions are same
     return this.permissionService.direct(this.condition.modelType, this.condition.modelId)
@@ -29,6 +31,46 @@ export class RoleHasModelPermissions {
 
   onResourcePermissions() {
     return this.permissionService.directResource(this.condition.modelType, this.condition.modelId)
+  }
+
+  async containsPermission(permisison: string | Permission) {
+    const result = await this.permissionService.has(
+      this.condition.modelType,
+      this.condition.modelId,
+      permisison
+    )
+
+    return result
+  }
+
+  /**
+   *
+   * @param permisisons
+   * @returns
+   */
+  async containsAllPermissions(permisisons: (string | Permission)[]) {
+    const result = await this.permissionService.hasAll(
+      this.condition.modelType,
+      this.condition.modelId,
+      permisisons
+    )
+
+    return result
+  }
+
+  /**
+   *
+   * @param permisisons
+   * @returns
+   */
+  async containsAnyPermissions(permisisons: (string | Permission)[]) {
+    const result = await this.permissionService.hasAny(
+      this.condition.modelType,
+      this.condition.modelId,
+      permisisons
+    )
+
+    return result
   }
 
   async hasPermission(permisison: string | Permission) {
@@ -79,6 +121,15 @@ export class RoleHasModelPermissions {
     )
   }
 
+  /**
+   *
+   * @param permisison
+   * @returns
+   */
+  can(permisison: string | Permission) {
+    return this.allowed(permisison)
+  }
+
   forbidden(permisison: string | Permission) {
     return this.permissionService.forbidden(
       this.condition.modelType,
@@ -87,11 +138,18 @@ export class RoleHasModelPermissions {
     )
   }
 
-  async assigne(permisison: number | string) {
-    if (typeof permisison === 'string') {
-      const p = await this.permissionService.findBySlug(permisison)
-      permisison = p.id
-    }
-    return this.permissionService.give(this.condition.modelType, this.condition.modelId, permisison)
+  async assigne(permisison: string) {
+    const p = await this.permissionService.findBySlug(permisison)
+    return this.permissionService.give(this.condition.modelType, this.condition.modelId, p.id)
   }
+
+  revoke(permisison: string) {
+    return this.permissionService.unforbid(
+      this.condition.modelType,
+      this.condition.modelId,
+      permisison
+    )
+  }
+
+  // permissions related END
 }

@@ -1,3 +1,4 @@
+import Permission from '../models/permission.js'
 import Role from '../models/role.js'
 import { AclModel } from '../types.js'
 import PermissionsService from './permissions/permissions_service.js'
@@ -52,8 +53,78 @@ export class ModelHasRolePermissions {
     return this.permissionsService.onResource(this.model.getMorphMapName(), this.model.getModelId())
   }
 
-  directPermissions() {
-    return this.permissionsService.direct(this.model.getMorphMapName(), this.model.getModelId())
+  directGlobalPermissions() {
+    return this.permissionsService.directGlobal(
+      this.model.getMorphMapName(),
+      this.model.getModelId()
+    )
+  }
+
+  directResourcePermissions() {
+    return this.permissionsService.directResource(
+      this.model.getMorphMapName(),
+      this.model.getModelId()
+    )
+  }
+
+  async containsPermission(permisison: string | Permission) {
+    const result = await this.permissionsService.contains(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisison
+    )
+
+    return result
+  }
+
+  async containsAllPermission(permisisons: (string | Permission)[]) {
+    const result = await this.permissionsService.containsAll(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisisons
+    )
+
+    return result
+  }
+
+  async containsAnyPermission(permisisons: (string | Permission)[]) {
+    const result = await this.permissionsService.containsAny(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisisons
+    )
+
+    return result
+  }
+
+  async hasPermission(permisison: string | Permission) {
+    const result = await this.permissionsService.has(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisison
+    )
+
+    return result
+  }
+
+  async hasAllPermissions(permisisons: (string | Permission)[]) {
+    const result = await this.permissionsService.hasAll(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisisons
+    )
+
+    return result
+  }
+
+  async hasAnyPermission(permisisons: (string | Permission)[]) {
+    const result = await this.permissionsService.hasAny(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisisons
+    )
+
+    return result
   }
 
   // permissions related section BEGIN

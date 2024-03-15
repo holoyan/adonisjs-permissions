@@ -104,21 +104,20 @@ export default class PermissionsService extends BaseService {
   /**
    * has all permissions
    */
-  async hasAll(modelType: string, modelId: number, permisison: (string | Permission)[]) {
+  async hasAll(modelType: string, modelId: number, permisisons: (string | Permission)[]) {
     const roleMorhpMap = new Role().getMorphMapName()
-    const { slugs, ids } = this.formatList(permisison)
+    const { slugs, ids } = this.formatList(permisisons)
 
-    const q = this.modelPermissionQuery({
+    const q = this.modelPermissionQueryWithForbiddenCheck({
       modelType,
       modelId,
       directPermissions: roleMorhpMap === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
     }).groupBy(Permission.table + '.id')
-    const r = await q.count('* as total')
+    const r = await q.select(Permission.table + '.id')
 
-    // @ts-ignore
-    return r[0] ? r[0].$extras.total === permisison.length : false
+    return r.length >= permisisons.length
   }
 
   /**
@@ -128,6 +127,35 @@ export default class PermissionsService extends BaseService {
     const roleMorhpMap = new Role().getMorphMapName()
     const { slugs, ids } = this.formatList(permisison)
 
+    const q = this.modelPermissionQueryWithForbiddenCheck({
+      modelType,
+      modelId,
+      directPermissions: roleMorhpMap === modelType,
+      permissionSlugs: slugs,
+      permissionIds: ids,
+    }).groupBy(Permission.table + '.id')
+    const r = await q.select(Permission.table + '.id')
+
+    return r.length >= 0
+  }
+
+  /**
+   * check if it has permission
+   * to check forbidden or not use other method
+   */
+  async contains(modelType: string, modelId: number, permisison: string | Permission) {
+    const r = await this.containsAny(modelType, modelId, [permisison])
+
+    return r
+  }
+
+  /**
+   * has all permissions
+   */
+  async containsAll(modelType: string, modelId: number, permisison: (string | Permission)[]) {
+    const roleMorhpMap = new Role().getMorphMapName()
+    const { slugs, ids } = this.formatList(permisison)
+
     const q = this.modelPermissionQuery({
       modelType,
       modelId,
@@ -135,34 +163,40 @@ export default class PermissionsService extends BaseService {
       permissionSlugs: slugs,
       permissionIds: ids,
     }).groupBy(Permission.table + '.id')
-    const r = await q.count('* as total')
+    const r = await q.select(Permission.table + '.id')
+
+    return r.length >= permisison.length
+  }
+
+  /**
+   * has any of permissions
+   */
+  async containsAny(modelType: string, modelId: number, permisison: (string | Permission)[]) {
+    const roleMorhpMap = new Role().getMorphMapName()
+    const { slugs, ids } = this.formatList(permisison)
+
+    const q = this.modelPermissionQuery({
+      modelType,
+      modelId,
+      directPermissions: roleMorhpMap === modelType,
+      permissionSlugs: slugs,
+      permissionIds: ids,
+    }).groupBy(Permission.table + '.id')
+    const r = await q.select(Permission.table + '.id')
 
     // @ts-ignore
-    return r[0] ? r[0].$extras.total > 0 : false
+    return r.length > 0
   }
 
   /**
    * check if permission is forbidden, if there is same permission with allowed=false then return true;
    */
-  async forbidden(modelType: string, modelId: number, permisison: string | Permission) {
-    const roleMorhpMap = new Role().getMorphMapName()
-
-    const q = this.modelPermissionQueryWithForbiddenCheck({
-      modelType,
-      modelId,
-      directPermissions: roleMorhpMap === modelType,
-      permissionSlugs: typeof permisison === 'string' ? [permisison] : [permisison.slug],
-    }).groupBy(Permission.table + '.id')
-
-    const r = await q.count('* as total')
-
-    // @ts-ignore
-    return r[0] ? r[0].$extras.total > 0 : false
+  forbidden(modelType: string, modelId: number, permisison: string | Permission) {
+    return !this.has(modelType, modelId, permisison)
   }
 
-  async allowed(modelType: string, modelId: number, permisison: string | Permission) {
-    const r = await this.forbidden(modelType, modelId, permisison)
-    return r
+  allowed(modelType: string, modelId: number, permisison: string | Permission) {
+    return this.has(modelType, modelId, permisison)
   }
 
   /**
