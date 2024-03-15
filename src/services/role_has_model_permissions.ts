@@ -24,12 +24,11 @@ export class RoleHasModelPermissions {
   }
 
   globalPermissions() {
-    // for roles direct(all) permissions are all for that model
-    return this.permissionService.global(this.condition.modelType, this.condition.modelId)
+    return this.permissionService.directGlobal(this.condition.modelType, this.condition.modelId)
   }
 
   onResourcePermissions() {
-    return this.permissionService.onResource(this.condition.modelType, this.condition.modelId)
+    return this.permissionService.directResource(this.condition.modelType, this.condition.modelId)
   }
 
   async hasPermission(permisison: string | Permission) {
@@ -37,6 +36,36 @@ export class RoleHasModelPermissions {
       this.condition.modelType,
       this.condition.modelId,
       permisison
+    )
+
+    return result
+  }
+
+  /**
+   *
+   * @param permisisons
+   * @returns
+   */
+  async hasAllPermissions(permisisons: (string | Permission)[]) {
+    const result = await this.permissionService.hasAll(
+      this.condition.modelType,
+      this.condition.modelId,
+      permisisons
+    )
+
+    return result
+  }
+
+  /**
+   *
+   * @param permisisons
+   * @returns
+   */
+  async hasAnyPermissions(permisisons: (string | Permission)[]) {
+    const result = await this.permissionService.hasAny(
+      this.condition.modelType,
+      this.condition.modelId,
+      permisisons
     )
 
     return result
@@ -58,7 +87,11 @@ export class RoleHasModelPermissions {
     )
   }
 
-  query() {
-    return Role.query()
+  async assigne(permisison: number | string) {
+    if (typeof permisison === 'string') {
+      const p = await this.permissionService.findBySlug(permisison)
+      permisison = p.id
+    }
+    return this.permissionService.give(this.condition.modelType, this.condition.modelId, permisison)
   }
 }

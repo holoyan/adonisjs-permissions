@@ -248,6 +248,10 @@ export default class PermissionsService extends BaseService {
     return true
   }
 
+  findBySlug(slug: string, allowed: boolean = true) {
+    return Permission.query().where('slug', slug).where('allowed', allowed).firstOrFail()
+  }
+
   private modelPermissionQueryWithForbiddenCheck(conditions: Partial<ModelPermissionsQuery>) {
     const q = this.modelPermissionQuery(conditions)
     q.whereNotExists((subQuery) => {
