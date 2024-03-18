@@ -18,6 +18,7 @@ export default class extends BaseSchema {
       table.string('entity_type')
       table.bigint('entity_id').unsigned()
       table.integer('scope').unsigned()
+      table.boolean('allowed').defaultTo(true)
 
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL

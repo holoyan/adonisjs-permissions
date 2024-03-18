@@ -138,9 +138,21 @@ export class RoleHasModelPermissions {
     )
   }
 
-  async assigne(permisison: string) {
+  assigne(permisison: string) {
+    return this.give(permisison)
+  }
+
+  async give(permisison: string) {
     const p = await this.permissionService.findBySlug(permisison)
     return this.permissionService.give(this.condition.modelType, this.condition.modelId, p.id)
+  }
+
+  forbid(permisison: string) {
+    return this.permissionService.forbid(
+      this.condition.modelType,
+      this.condition.modelId,
+      permisison
+    )
   }
 
   revoke(permisison: string) {

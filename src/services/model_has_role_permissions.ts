@@ -77,7 +77,7 @@ export class ModelHasRolePermissions {
     return result
   }
 
-  async containsAllPermission(permisisons: (string | Permission)[]) {
+  async containsAllPermissions(permisisons: (string | Permission)[]) {
     const result = await this.permissionsService.containsAll(
       this.model.getMorphMapName(),
       this.model.getModelId(),
@@ -89,6 +89,36 @@ export class ModelHasRolePermissions {
 
   async containsAnyPermission(permisisons: (string | Permission)[]) {
     const result = await this.permissionsService.containsAny(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisisons
+    )
+
+    return result
+  }
+
+  async containsDirectPermission(permisison: string | Permission) {
+    const result = await this.permissionsService.containsDirect(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisison
+    )
+
+    return result
+  }
+
+  async containsAllPermissionsDirectly(permisisons: (string | Permission)[]) {
+    const result = await this.permissionsService.containsAllDirect(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisisons
+    )
+
+    return result
+  }
+
+  async containsAnyPermissionDirectly(permisisons: (string | Permission)[]) {
+    const result = await this.permissionsService.containsAnyDirect(
       this.model.getMorphMapName(),
       this.model.getModelId(),
       permisisons
@@ -126,6 +156,69 @@ export class ModelHasRolePermissions {
 
     return result
   }
+
+  async hasDirectPermission(permisison: string | Permission) {
+    const result = await this.permissionsService.hasDirect(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisison
+    )
+
+    return result
+  }
+
+  async hasAllPermissionsDirect(permisisons: (string | Permission)[]) {
+    const result = await this.permissionsService.hasAllDirect(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisisons
+    )
+
+    return result
+  }
+
+  async hasAnyPermissionDirect(permisisons: (string | Permission)[]) {
+    const result = await this.permissionsService.hasAnyDirect(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permisisons
+    )
+
+    return result
+  }
+
+  async assignePermission(permisison: string | Permission) {
+    let permissionId
+    if (typeof permisison === 'string') {
+      const p = await Permission.query().where('slug', permisison).where('allowed', true).first()
+
+      if (!p) {
+        throw new Error('Permission not found')
+      }
+      permissionId = p.id
+    } else {
+      permissionId = permisison.id
+    }
+
+    return this.permissionsService.give(
+      this.model.getMorphMapName(),
+      this.model.getModelId(),
+      permissionId
+    )
+  }
+
+  // detachPermission(permisison: string | Permission) {
+  //   // detach direct permission
+  //   // detach from role if exists
+
+  //   return this.permissionsService.reverseModelPermissionQuery({
+  //     modelType: this.model.getMorphMapName(),
+  //     modelId: this.model.getModelId(),
+  //     directPermissions: false,
+  //     permissionSlugs: typeof permisison === 'string' ? [permisison] : [permisison.slug],
+  //     permissionIds: [],
+  //   })
+  // }
 
   // permissions related section BEGIN
 }
