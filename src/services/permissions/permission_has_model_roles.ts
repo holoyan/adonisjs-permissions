@@ -1,16 +1,25 @@
 import ModelPermission from '../../models/model_permission.js'
 import Permission from '../../models/permission.js'
 import Role from '../../models/role.js'
+import { morphMap } from '../helper.js'
+import RolesService from '../roles/roles_service.js'
+import PermissionsService from './permissions_service.js'
 
 export default class PermissionHasModelRoles {
-  constructor(private permission: Permission) {}
+  constructor(
+    private permission: Permission,
+    private roleService: RolesService,
+    private permissionService: PermissionsService
+  ) {}
 
   roles() {
-    return this.rolePermissionQuery().where('mp.permission_id', this.permission.id)
+    return this.roleService.roleModelPermissionQuery().where('mp.permission_id', this.permission.id)
   }
 
   async belongsToRole(role: string | number) {
-    const q = this.rolePermissionQuery().where('mp.permission_id', this.permission.id)
+    const q = this.roleService
+      .roleModelPermissionQuery()
+      .where('mp.permission_id', this.permission.id)
     if (typeof role === 'string') {
       q.where(Role.table + '.slug', role)
     } else {
@@ -32,12 +41,8 @@ export default class PermissionHasModelRoles {
 
       role = r.id
     }
-
-    return ModelPermission.create({
-      modelType: new Role().getMorphMapName(),
-      modelId: role,
-      permissionId: this.permission.id,
-    })
+    const map = await morphMap()
+    return this.permissionService.give(map.getAlias(Role), role, this.permission.id)
   }
 
   async detachFromRole(role: string | number) {
@@ -51,15 +56,10 @@ export default class PermissionHasModelRoles {
       role = r.id
     }
 
+    const map = await morphMap()
     return ModelPermission.query()
-      .where('model_type', new Role().getMorphMapName())
+      .where('model_type', map.getAlias(Role))
       .where('model_id', role)
       .delete()
-  }
-
-  private rolePermissionQuery() {
-    return Role.query()
-      .leftJoin(ModelPermission.table + ' as mp', 'mp.model_id', '=', Role.table + '.id')
-      .where('mp.model_type', new Role().getMorphMapName())
   }
 }

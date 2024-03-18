@@ -17,6 +17,7 @@
   ],
   "exports": {
     ".": "./build/index.js",
+    "./role_permission_provider": "./build/providers/role_permission_provider.js",
     "./types": "./build/src/types.js"
   },
   "scripts": {

@@ -2,7 +2,9 @@ import { DateTime } from 'luxon'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import config from '@adonisjs/core/services/config'
 import { AclModelInterface } from '../types.js'
+import { MorphMap } from '../decorators.js'
 
+@MorphMap(config.get('permissions.permissionsConfig.morphMaps.roles') as string)
 export default class Role extends BaseModel implements AclModelInterface {
   static get table() {
     return config.get('permissions.permissionsConfig.tables.roles') as string

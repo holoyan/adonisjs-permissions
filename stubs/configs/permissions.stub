@@ -14,7 +14,7 @@ export const permissionsConfig: Permissions = {
     modelPermissions: 'model_permissions',
   },
   morphMaps: {
-    roles,
-    permissions,
+    roles: 'roles',
+    permissions: 'permissions',
   }
 }

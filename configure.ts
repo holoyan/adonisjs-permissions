@@ -29,4 +29,11 @@ export async function configure(_command: ConfigureCommand) {
   await codemods.makeUsingStub(stubsRoot, 'migrations/create_db.stub', {
     prefix: new Date().getTime(),
   })
+
+  /**
+   * Register provider
+   */
+  await codemods.updateRcFile((rcFile) => {
+    rcFile.addProvider('@holoyan/adonisjs-permissions/role_permission_provider')
+  })
 }

@@ -22,7 +22,7 @@ export class Acl {
 
   static permission(permisison: Permission | null) {
     if (permisison) {
-      return new PermissionHasModelRoles(permisison)
+      return new PermissionHasModelRoles(permisison, new RolesService(), new PermissionsService())
     } else {
       return Permission.query()
     }

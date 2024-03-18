@@ -22,3 +22,7 @@ export interface ModelPermissionsQuery extends AclModelQuery {
   permissionIds: number[]
   directPermissions: boolean
 }
+
+export interface MorphMapInterface {
+  [key: string]: any
+}

@@ -2,11 +2,12 @@ import Role from '../../models/role.js'
 import ModelRole from '../../models/model_role.js'
 import { AclModel } from '../../types.js'
 import BaseService from '../base_service.js'
+import ModelPermission from '../../models/model_permission.js'
 
 export default class RolesService extends BaseService {
   private modelRolesQuery(modelType: string, modelId: number) {
     return Role.query()
-      .join(ModelRole.table + ' as mr', ModelRole.table + '.role_id', '=', Role.table + '.id')
+      .join(ModelRole.table + ' as mr', 'mr.role_id', '=', Role.table + '.id')
       .where('mr.model_type', modelType)
       .where('mr.model_id', modelId)
   }
@@ -57,7 +58,7 @@ export default class RolesService extends BaseService {
     return r[0].total > 0
   }
 
-  async assigne(role: string | Role, model: AclModel) {
+  async assigne(role: string | Role, modelType: string, modelId: number) {
     const r = await this.extractRoleModel(role)
 
     if (!r) {
@@ -65,8 +66,8 @@ export default class RolesService extends BaseService {
     }
 
     await ModelRole.create({
-      modelType: model.getMorphMapName(),
-      modelId: model.getModelId(),
+      modelType,
+      modelId,
       roleId: r.id,
     })
 
@@ -94,5 +95,11 @@ export default class RolesService extends BaseService {
       return await Role.query().where('slug', role).first()
     }
     return role
+  }
+
+  roleModelPermissionQuery() {
+    return Role.query()
+      .leftJoin(ModelPermission.table + ' as mp', 'mp.model_id', '=', Role.table + '.id')
+      .where('mp.model_type', new Role().getMorphMapName())
   }
 }

@@ -91,7 +91,11 @@ export default class PermissionsService extends BaseService {
       .select(Permission.table + '.*')
   }
 
-  hasDirect(modelType: string, modelId: number, permisison: string | Permission) {}
+  async hasDirect(modelType: string, modelId: number, permisison: string | Permission) {
+    const r = await this.hasAnyDirect(modelType, modelId, [permisison])
+
+    return r
+  }
 
   /**
    * @param modelType
@@ -111,7 +115,7 @@ export default class PermissionsService extends BaseService {
     }).groupBy(Permission.table + '.id')
     const r = await q.select(Permission.table + '.id')
 
-    return r.length >= 0
+    return r.length > 0
   }
   async hasAllDirect(modelType: string, modelId: number, permisisons: (string | Permission)[]) {
     const { slugs, ids } = this.formatList(permisisons)
@@ -173,7 +177,7 @@ export default class PermissionsService extends BaseService {
     }).groupBy(Permission.table + '.id')
     const r = await q.select(Permission.table + '.id')
 
-    return r.length >= 0
+    return r.length > 0
   }
 
   /**
