@@ -10,7 +10,6 @@ import { AppFactory } from '@adonisjs/core/factories/app'
 import { LoggerFactory } from '@adonisjs/core/factories/logger'
 import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 import { join } from 'node:path'
-import { mkdir } from 'node:fs/promises'
 import fs from 'node:fs'
 
 export const encryption: Encryption = new EncryptionFactory().create()
