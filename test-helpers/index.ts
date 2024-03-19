@@ -9,6 +9,9 @@ import { Scrypt } from '@adonisjs/hash/drivers/scrypt'
 import { AppFactory } from '@adonisjs/core/factories/app'
 import { LoggerFactory } from '@adonisjs/core/factories/logger'
 import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
+import { join } from 'node:path'
+import { mkdir } from 'node:fs/promises'
+import fs from 'node:fs'
 
 export const encryption: Encryption = new EncryptionFactory().create()
 configDotenv()
@@ -33,6 +36,12 @@ export async function createDatabase() {
     throw new Error('Cannot use "createDatabase" outside of a Japa test')
   }
 
+  var dir = '../tmp'
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir)
+  }
+
   const app = new AppFactory().create(BASE_URL, () => {})
   const logger = new LoggerFactory().create()
   const emitter = new Emitter(app)
@@ -40,6 +49,12 @@ export async function createDatabase() {
     {
       connection: process.env.DB || 'sqlite',
       connections: {
+        sqlite: {
+          client: 'sqlite3',
+          connection: {
+            filename: join('../tmp', 'db.sqlite3'),
+          },
+        },
         pg: {
           client: 'pg',
           connection: {
