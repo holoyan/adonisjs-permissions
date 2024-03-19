@@ -204,7 +204,7 @@ export class ModelHasRolePermissions {
     return result
   }
 
-  async assignePermission(permisison: string | Permission) {
+  async assigneDirectPermission(permisison: string | Permission) {
     const map = await morphMap()
     let permissionId
     if (typeof permisison === 'string') {
@@ -223,6 +223,28 @@ export class ModelHasRolePermissions {
       this.model.getModelId(),
       permissionId
     )
+  }
+
+  async revokeDirectPermission(permisison: string | Permission) {
+    const map = await morphMap()
+    permisison = typeof permisison === 'string' ? permisison : permisison.slug
+    return this.permissionsService.revokeAll(map.getAlias(this.model), this.model.getModelId(), [
+      permisison,
+    ])
+  }
+
+  async revokeAllDirectPermission(permisisons: string[]) {
+    const map = await morphMap()
+    return this.permissionsService.revokeAll(
+      map.getAlias(this.model),
+      this.model.getModelId(),
+      permisisons
+    )
+  }
+
+  async flushDirectPermission() {
+    const map = await morphMap()
+    return this.permissionsService.flush(map.getAlias(this.model), this.model.getModelId())
   }
 
   // detachPermission(permisison: string | Permission) {

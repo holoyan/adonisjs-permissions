@@ -3,6 +3,7 @@ import ModelRole from '../../models/model_role.js'
 import { AclModel } from '../../types.js'
 import BaseService from '../base_service.js'
 import ModelPermission from '../../models/model_permission.js'
+import { morphMap } from '../helper.js'
 
 export default class RolesService extends BaseService {
   private modelRolesQuery(modelType: string, modelId: number) {
@@ -80,9 +81,10 @@ export default class RolesService extends BaseService {
     if (!r) {
       throw new Error('Role  not found')
     }
+    const map = await morphMap()
 
     await ModelRole.query()
-      .where('model_type', model.getMorphMapName())
+      .where('model_type', map.getAlias(model))
       .where('model_id', model.getModelId())
       .where('role_id', r.id)
       .delete()
@@ -97,9 +99,9 @@ export default class RolesService extends BaseService {
     return role
   }
 
-  roleModelPermissionQuery() {
+  roleModelPermissionQuery(modelType: string) {
     return Role.query()
       .leftJoin(ModelPermission.table + ' as mp', 'mp.model_id', '=', Role.table + '.id')
-      .where('mp.model_type', new Role().getMorphMapName())
+      .where('mp.model_type', modelType)
   }
 }

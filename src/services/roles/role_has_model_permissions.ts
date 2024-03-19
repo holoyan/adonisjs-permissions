@@ -1,15 +1,23 @@
 import Permission from '../../models/permission.js'
 import Role from '../../models/role.js'
 import { morphMap } from '../helper.js'
+import ModelService from '../model_service.js'
 import PermissionsService from '../permissions/permissions_service.js'
 
 export class RoleHasModelPermissions {
   constructor(
     private role: Role,
-    private permissionService: PermissionsService
+    private permissionService: PermissionsService,
+    private modelService: ModelService
   ) {}
 
-  models() {}
+  models() {
+    return this.modelService.all(this.role.getModelId())
+  }
+
+  modelsFor(modelType: string) {
+    return this.modelService.allFor(modelType, this.role.getModelId())
+  }
 
   // permissions related BEGIN
 
@@ -148,8 +156,26 @@ export class RoleHasModelPermissions {
 
   async give(permisison: string) {
     const map = await morphMap()
-    const p = await this.permissionService.findBySlug(permisison)
+    const p = await this.permissionService.findBySlug(permisison, true)
     return this.permissionService.give(map.getAlias(this.role), this.role.getModelId(), p.id)
+  }
+
+  async revoke(permisison: string) {
+    return this.revokeAll([permisison])
+  }
+
+  async revokeAll(permisison: string[]) {
+    const map = await morphMap()
+    return this.permissionService.revokeAll(
+      map.getAlias(this.role),
+      this.role.getModelId(),
+      permisison
+    )
+  }
+
+  async flush() {
+    const map = await morphMap()
+    return this.permissionService.flush(map.getAlias(this.role), this.role.getModelId())
   }
 
   async forbid(permisison: string) {
@@ -161,7 +187,7 @@ export class RoleHasModelPermissions {
     )
   }
 
-  async revoke(permisison: string) {
+  async unforbid(permisison: string) {
     const map = await morphMap()
     return this.permissionService.unforbid(
       map.getAlias(this.role),

@@ -4,18 +4,19 @@ import Permission from '../../models/permission.js'
 import Role from '../../models/role.js'
 import { ModelPermissionsQuery } from '../../types.js'
 import BaseService from '../base_service.js'
+import { morphMap } from '../helper.js'
 
 export default class PermissionsService extends BaseService {
   /**
    * return all permissions, including fodbidden
    */
-  all(modelType: string, modelId: number) {
-    const roleMorhpMap = new Role().getMorphMapName()
+  async all(modelType: string, modelId: number) {
+    const map = await morphMap()
 
     return this.modelPermissionQuery({
       modelType,
       modelId,
-      directPermissions: roleMorhpMap === modelType,
+      directPermissions: map.getAlias(Role) === modelType,
     })
       .groupBy(Permission.table + '.id')
       .select(Permission.table + '.*')
@@ -24,13 +25,13 @@ export default class PermissionsService extends BaseService {
   /**
    * return only global assigned permissions, through role or direct
    */
-  global(modelType: string, modelId: number) {
-    const roleMorhpMap = new Role().getMorphMapName()
+  async global(modelType: string, modelId: number) {
+    const map = await morphMap()
 
     return this.modelPermissionQuery({
       modelType,
       modelId,
-      directPermissions: roleMorhpMap === modelType,
+      directPermissions: map.getAlias(Role) === modelType,
     })
       .whereNull(Permission.table + '.entity_id')
       .groupBy(Permission.table + '.id')
@@ -40,13 +41,13 @@ export default class PermissionsService extends BaseService {
   /**
    * get all permissions which is assigned to concrete resource
    */
-  onResource(modelType: string, modelId: number) {
-    const roleMorhpMap = new Role().getMorphMapName()
+  async onResource(modelType: string, modelId: number) {
+    const map = await morphMap()
 
     return this.modelPermissionQuery({
       modelType,
       modelId,
-      directPermissions: roleMorhpMap === modelType,
+      directPermissions: map.getAlias(Role) === modelType,
     })
       .whereNotNull(Permission.table + '.entity_id')
       .groupBy(Permission.table + '.id')
@@ -146,13 +147,13 @@ export default class PermissionsService extends BaseService {
    * has all permissions
    */
   async hasAll(modelType: string, modelId: number, permisisons: (string | Permission)[]) {
-    const roleMorhpMap = new Role().getMorphMapName()
+    const map = await morphMap()
     const { slugs, ids } = this.formatList(permisisons)
 
     const q = this.modelPermissionQueryWithForbiddenCheck({
       modelType,
       modelId,
-      directPermissions: roleMorhpMap === modelType,
+      directPermissions: map.getAlias(Role) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
     }).groupBy(Permission.table + '.id')
@@ -165,13 +166,13 @@ export default class PermissionsService extends BaseService {
    * has any of permissions
    */
   async hasAny(modelType: string, modelId: number, permisison: (string | Permission)[]) {
-    const roleMorhpMap = new Role().getMorphMapName()
+    const map = await morphMap()
     const { slugs, ids } = this.formatList(permisison)
 
     const q = this.modelPermissionQueryWithForbiddenCheck({
       modelType,
       modelId,
-      directPermissions: roleMorhpMap === modelType,
+      directPermissions: map.getAlias(Role) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
     }).groupBy(Permission.table + '.id')
@@ -194,13 +195,13 @@ export default class PermissionsService extends BaseService {
    * has all permissions
    */
   async containsAll(modelType: string, modelId: number, permisison: (string | Permission)[]) {
-    const roleMorhpMap = new Role().getMorphMapName()
+    const map = await morphMap()
     const { slugs, ids } = this.formatList(permisison)
 
     const q = this.modelPermissionQuery({
       modelType,
       modelId,
-      directPermissions: roleMorhpMap === modelType,
+      directPermissions: map.getAlias(Role) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
     }).groupBy(Permission.table + '.id')
@@ -213,13 +214,13 @@ export default class PermissionsService extends BaseService {
    * has any of permissions
    */
   async containsAny(modelType: string, modelId: number, permisison: (string | Permission)[]) {
-    const roleMorhpMap = new Role().getMorphMapName()
+    const map = await morphMap()
     const { slugs, ids } = this.formatList(permisison)
 
     const q = this.modelPermissionQuery({
       modelType,
       modelId,
-      directPermissions: roleMorhpMap === modelType,
+      directPermissions: map.getAlias(Role) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
     }).groupBy(Permission.table + '.id')
@@ -296,6 +297,27 @@ export default class PermissionsService extends BaseService {
       modelId,
       permissionId,
     })
+  }
+
+  revoke(modelType: string, modelId: number, permission: string) {
+    return this.revokeAll(modelType, modelId, [permission])
+  }
+
+  revokeAll(modelType: string, modelId: number, permissions: string[]) {
+    return ModelPermission.query()
+      .leftJoin(Permission.table + ' as p', 'p.id', '=', ModelPermission.table + '.permission_id')
+      .whereIn('p.slug', permissions)
+      .where('p.allowed', true)
+      .where(ModelPermission.table + '.model_type', modelType)
+      .where(ModelPermission.table + '.model_id', modelId)
+      .delete()
+  }
+
+  flush(modelType: string, modelId: number) {
+    return ModelPermission.query()
+      .where(ModelPermission.table + '.model_type', modelType)
+      .where(ModelPermission.table + '.model_id', modelId)
+      .delete()
   }
 
   /**

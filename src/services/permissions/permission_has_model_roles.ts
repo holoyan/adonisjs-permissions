@@ -2,6 +2,7 @@ import ModelPermission from '../../models/model_permission.js'
 import Permission from '../../models/permission.js'
 import Role from '../../models/role.js'
 import { morphMap } from '../helper.js'
+import ModelService from '../model_service.js'
 import RolesService from '../roles/roles_service.js'
 import PermissionsService from './permissions_service.js'
 
@@ -9,16 +10,29 @@ export default class PermissionHasModelRoles {
   constructor(
     private permission: Permission,
     private roleService: RolesService,
-    private permissionService: PermissionsService
+    private permissionService: PermissionsService,
+    private modelService: ModelService
   ) {}
 
-  roles() {
-    return this.roleService.roleModelPermissionQuery().where('mp.permission_id', this.permission.id)
+  models() {
+    return this.modelService.allByPermission(this.permission.getModelId())
+  }
+
+  modelsFor(modelType: string) {
+    return this.modelService.allByPermissionFor(modelType, this.permission.getModelId())
+  }
+
+  async roles() {
+    const map = await morphMap()
+    return this.roleService
+      .roleModelPermissionQuery(map.getAlias(Role))
+      .where('mp.permission_id', this.permission.id)
   }
 
   async belongsToRole(role: string | number) {
+    const map = await morphMap()
     const q = this.roleService
-      .roleModelPermissionQuery()
+      .roleModelPermissionQuery(map.getAlias(Role))
       .where('mp.permission_id', this.permission.id)
     if (typeof role === 'string') {
       q.where(Role.table + '.slug', role)

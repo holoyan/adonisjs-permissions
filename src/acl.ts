@@ -6,6 +6,7 @@ import { AclModel } from './types.js'
 import Role from './models/role.js'
 import Permission from './models/permission.js'
 import PermissionHasModelRoles from './services/permissions/permission_has_model_roles.js'
+import ModelService from './services/model_service.js'
 
 export class Acl {
   static model(model: AclModel): ModelHasRolePermissions {
@@ -14,7 +15,7 @@ export class Acl {
 
   static role(role: Role | null) {
     if (role) {
-      return new RoleHasModelPermissions(role, new PermissionsService())
+      return new RoleHasModelPermissions(role, new PermissionsService(), new ModelService())
     } else {
       return Role.query()
     }
@@ -22,7 +23,12 @@ export class Acl {
 
   static permission(permisison: Permission | null) {
     if (permisison) {
-      return new PermissionHasModelRoles(permisison, new RolesService(), new PermissionsService())
+      return new PermissionHasModelRoles(
+        permisison,
+        new RolesService(),
+        new PermissionsService(),
+        new ModelService()
+      )
     } else {
       return Permission.query()
     }
