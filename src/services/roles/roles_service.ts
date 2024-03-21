@@ -59,7 +59,7 @@ export default class RolesService extends BaseService {
     return r[0].total > 0
   }
 
-  async assigne(role: string | Role, modelType: string, modelId: number) {
+  async assign(role: string | Role, modelType: string, modelId: number) {
     const r = await this.extractRoleModel(role)
 
     if (!r) {
@@ -75,18 +75,22 @@ export default class RolesService extends BaseService {
     return true
   }
 
-  async revoke(role: string | Role, model: AclModel) {
-    const r = await this.extractRoleModel(role)
+  async revoke(role: string | number, model: AclModel) {
+    return this.revokeAll([role], model)
+  }
 
-    if (!r) {
-      throw new Error('Role  not found')
-    }
+  async revokeAll(roles: (string | number)[], model: AclModel) {
     const map = await morphMap()
 
+    const { slugs, ids } = this.formatListStringNumbers(roles)
+
     await ModelRole.query()
+      .leftJoin(Role.table + ' as r', 'r.id', '=', ModelRole.table + '.role_id')
       .where('model_type', map.getAlias(model))
       .where('model_id', model.getModelId())
-      .where('role_id', r.id)
+      .where((query) => {
+        query.whereIn('r.id', ids).orWhereIn('r.slug', slugs)
+      })
       .delete()
 
     return true
@@ -103,5 +107,9 @@ export default class RolesService extends BaseService {
     return Role.query()
       .leftJoin(ModelPermission.table + ' as mp', 'mp.model_id', '=', Role.table + '.id')
       .where('mp.model_type', modelType)
+  }
+
+  async flush(modelType: string, modelId: number) {
+    ModelRole.query().where('model_type', modelType).where('model_id', modelId).delete()
   }
 }

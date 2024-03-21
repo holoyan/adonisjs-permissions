@@ -1,17 +1,15 @@
+import { formatList, formatListStringNumbers, formatStringNumbers } from './helper.js'
+
 export default class BaseService {
-  protected formatList(models: (string | any)[]) {
-    let slugs: string[] = []
-    let ids: number[] = []
+  protected formatList(models: (string | number | any)[]) {
+    return formatList(models)
+  }
 
-    for (let model of models) {
-      if (typeof model === 'string') {
-        slugs.push(model)
-      } else {
-        // @ts-ignore
-        ids.push(model.id)
-      }
-    }
+  protected formatListStringNumbers(models: (string | number)[]) {
+    return formatListStringNumbers(models)
+  }
 
-    return { slugs, ids }
+  protected formatStringNumbers(models: string | number | any) {
+    return formatStringNumbers(models)
   }
 }

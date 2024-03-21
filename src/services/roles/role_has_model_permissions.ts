@@ -1,8 +1,9 @@
 import Permission from '../../models/permission.js'
 import Role from '../../models/role.js'
-import { morphMap } from '../helper.js'
+import { destructTarget, morphMap } from '../helper.js'
 import ModelService from '../model_service.js'
 import PermissionsService from '../permissions/permissions_service.js'
+import { AclModel } from '../../types.js'
 
 export class RoleHasModelPermissions {
   constructor(
@@ -18,6 +19,12 @@ export class RoleHasModelPermissions {
   modelsFor(modelType: string) {
     return this.modelService.allFor(modelType, this.role.getModelId())
   }
+
+  /**
+   * todo
+   * @param model
+   */
+  // attachTo(model: LucidModel) {}
 
   // permissions related BEGIN
 
@@ -39,10 +46,10 @@ export class RoleHasModelPermissions {
 
   async containsPermission(permisison: string | Permission) {
     const map = await morphMap()
-    const result = await this.permissionService.has(
+    const result = await this.permissionService.containsAny(
       map.getAlias(this.role),
       this.role.getModelId(),
-      permisison
+      [permisison]
     )
 
     return result
@@ -55,7 +62,7 @@ export class RoleHasModelPermissions {
    */
   async containsAllPermissions(permisisons: (string | Permission)[]) {
     const map = await morphMap()
-    const result = await this.permissionService.hasAll(
+    const result = await this.permissionService.containsAll(
       map.getAlias(this.role),
       this.role.getModelId(),
       permisisons
@@ -71,7 +78,7 @@ export class RoleHasModelPermissions {
    */
   async containsAnyPermissions(permisisons: (string | Permission)[]) {
     const map = await morphMap()
-    const result = await this.permissionService.hasAny(
+    const result = await this.permissionService.containsAny(
       map.getAlias(this.role),
       this.role.getModelId(),
       permisisons
@@ -80,12 +87,15 @@ export class RoleHasModelPermissions {
     return result
   }
 
-  async hasPermission(permisison: string | Permission) {
+  async hasPermission(permisison: string | Permission, target?: AclModel | Function) {
     const map = await morphMap()
-    const result = await this.permissionService.has(
+    const entity = await destructTarget(target)
+    const result = await this.permissionService.hasAny(
       map.getAlias(this.role),
       this.role.getModelId(),
-      permisison
+      [permisison],
+      entity.targetClass,
+      entity.targetId
     )
 
     return result
@@ -96,12 +106,15 @@ export class RoleHasModelPermissions {
    * @param permisisons
    * @returns
    */
-  async hasAllPermissions(permisisons: (string | Permission)[]) {
+  async hasAllPermissions(permisisons: (string | Permission)[], target?: AclModel | Function) {
     const map = await morphMap()
+    const entity = await destructTarget(target)
     const result = await this.permissionService.hasAll(
       map.getAlias(this.role),
       this.role.getModelId(),
-      permisisons
+      permisisons,
+      entity.targetClass,
+      entity.targetId
     )
 
     return result
@@ -112,24 +125,18 @@ export class RoleHasModelPermissions {
    * @param permisisons
    * @returns
    */
-  async hasAnyPermissions(permisisons: (string | Permission)[]) {
+  async hasAnyPermissions(permisisons: (string | Permission)[], target?: AclModel | Function) {
     const map = await morphMap()
+    const entity = await destructTarget(target)
     const result = await this.permissionService.hasAny(
       map.getAlias(this.role),
       this.role.getModelId(),
-      permisisons
+      permisisons,
+      entity.targetClass,
+      entity.targetId
     )
 
     return result
-  }
-
-  async allowed(permisison: string | Permission) {
-    const map = await morphMap()
-    return this.permissionService.allowed(
-      map.getAlias(this.role),
-      this.role.getModelId(),
-      permisison
-    )
   }
 
   /**
@@ -138,39 +145,87 @@ export class RoleHasModelPermissions {
    * @returns
    */
   can(permisison: string | Permission) {
-    return this.allowed(permisison)
+    return this.hasPermission(permisison)
   }
 
-  async forbidden(permisison: string | Permission) {
+  canAll(permisisons: (string | Permission)[]) {
+    return this.hasAllPermissions(permisisons)
+  }
+
+  canAny(permisisons: (string | Permission)[]) {
+    return this.hasAnyPermissions(permisisons)
+  }
+
+  async forbidden(permisison: string | Permission, target?: AclModel | Function) {
     const map = await morphMap()
+    const entity = await destructTarget(target)
     return this.permissionService.forbidden(
       map.getAlias(this.role),
       this.role.getModelId(),
-      permisison
+      permisison,
+      entity.targetClass,
+      entity.targetId
     )
   }
 
-  assigne(permisison: string) {
-    return this.give(permisison)
+  assign(permisison: string, target?: AclModel | Function) {
+    return this.give(permisison, target)
   }
 
-  async give(permisison: string) {
+  async give(permisison: string, target?: AclModel | Function) {
     const map = await morphMap()
-    const p = await this.permissionService.findBySlug(permisison, true)
-    return this.permissionService.give(map.getAlias(this.role), this.role.getModelId(), p.id)
+    const entity = await destructTarget(target)
+
+    return this.permissionService.giveAll(
+      map.getAlias(this.role),
+      this.role.getModelId(),
+      [permisison],
+      entity.targetClass,
+      entity.targetId,
+      true
+    )
+  }
+
+  async giveAll(permisisons: string[], target?: AclModel | Function) {
+    const map = await morphMap()
+    const entity = await destructTarget(target)
+
+    return this.permissionService.giveAll(
+      map.getAlias(this.role),
+      this.role.getModelId(),
+      permisisons,
+      entity.targetClass,
+      entity.targetId,
+      true
+    )
+  }
+
+  assingAll(permisisons: string[], target?: AclModel | Function) {
+    return this.giveAll(permisisons, target)
+  }
+
+  async revokePermission(permisison: string) {
+    return this.revoke(permisison)
   }
 
   async revoke(permisison: string) {
     return this.revokeAll([permisison])
   }
 
-  async revokeAll(permisison: string[]) {
+  async revokeAll(permisisons: string[], target?: AclModel | Function) {
     const map = await morphMap()
+    const entity = await destructTarget(target)
     return this.permissionService.revokeAll(
       map.getAlias(this.role),
       this.role.getModelId(),
-      permisison
+      permisisons,
+      entity.targetClass,
+      entity.targetId
     )
+  }
+
+  async revokeAllPermissions(permisisons: string[]) {
+    return this.revokeAll(permisisons)
   }
 
   async flush() {
@@ -178,21 +233,28 @@ export class RoleHasModelPermissions {
     return this.permissionService.flush(map.getAlias(this.role), this.role.getModelId())
   }
 
-  async forbid(permisison: string) {
+  async forbid(permisison: string, target?: AclModel | Function) {
     const map = await morphMap()
+    const entity = await destructTarget(target)
+
     return this.permissionService.forbid(
       map.getAlias(this.role),
       this.role.getModelId(),
-      permisison
+      permisison,
+      entity.targetClass,
+      entity.targetId
     )
   }
 
-  async unforbid(permisison: string) {
+  async unforbid(permisison: string, target?: AclModel | Function) {
     const map = await morphMap()
-    return this.permissionService.unforbid(
+    const entity = await destructTarget(target)
+    return this.permissionService.unforbidAll(
       map.getAlias(this.role),
       this.role.getModelId(),
-      permisison
+      [permisison],
+      entity.targetClass,
+      entity.targetId
     )
   }
 

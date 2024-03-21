@@ -17,7 +17,7 @@ export class Acl {
     if (role) {
       return new RoleHasModelPermissions(role, new PermissionsService(), new ModelService())
     } else {
-      return Role.query()
+      return Role
     }
   }
 
@@ -30,7 +30,7 @@ export class Acl {
         new ModelService()
       )
     } else {
-      return Permission.query()
+      return Permission
     }
   }
 }

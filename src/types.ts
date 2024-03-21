@@ -5,8 +5,6 @@ export interface Permissions {
 }
 
 export interface AclModelInterface {
-  getMorphMapName(): string
-
   getModelId(): number
 }
 
@@ -21,6 +19,7 @@ export interface ModelPermissionsQuery extends AclModelQuery {
   permissionSlugs: string[]
   permissionIds: number[]
   directPermissions: boolean
+  includeForbiddens: boolean
 }
 
 export interface MorphMapInterface {

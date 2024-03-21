@@ -1,7 +1,8 @@
 import ModelPermission from '../../models/model_permission.js'
 import Permission from '../../models/permission.js'
 import Role from '../../models/role.js'
-import { morphMap } from '../helper.js'
+import { AclModel } from '../../types.js'
+import { destructTarget, morphMap } from '../helper.js'
 import ModelService from '../model_service.js'
 import RolesService from '../roles/roles_service.js'
 import PermissionsService from './permissions_service.js'
@@ -45,7 +46,7 @@ export default class PermissionHasModelRoles {
     return r.length > 0
   }
 
-  async attachToRole(role: string | number) {
+  async attachToRole(role: string | number, target?: AclModel | Function) {
     if (typeof role === 'string') {
       const r = await Role.query().where('slug', role).first()
 
@@ -56,7 +57,15 @@ export default class PermissionHasModelRoles {
       role = r.id
     }
     const map = await morphMap()
-    return this.permissionService.give(map.getAlias(Role), role, this.permission.id)
+    const entity = await destructTarget(target)
+    return this.permissionService.giveAll(
+      map.getAlias(Role),
+      role,
+      [this.permission.slug],
+      entity.targetClass,
+      entity.targetId,
+      true
+    )
   }
 
   async detachFromRole(role: string | number) {
