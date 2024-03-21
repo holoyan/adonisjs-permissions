@@ -13,7 +13,7 @@ export class Acl {
     return new ModelHasRolePermissions(model, new RolesService(), new PermissionsService())
   }
 
-  static role(role: Role | null) {
+  static role(role?: Role) {
     if (role) {
       return new RoleHasModelPermissions(role, new PermissionsService(), new ModelService())
     } else {
@@ -21,7 +21,7 @@ export class Acl {
     }
   }
 
-  static permission(permisison: Permission | null) {
+  static permission(permisison?: Permission) {
     if (permisison) {
       return new PermissionHasModelRoles(
         permisison,

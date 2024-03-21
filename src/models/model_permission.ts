@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, scope } from '@adonisjs/lucid/orm'
+import { BaseModel, column } from '@adonisjs/lucid/orm'
 import config from '@adonisjs/core/services/config'
 
 export default class ModelPermission extends BaseModel {
@@ -23,9 +23,4 @@ export default class ModelPermission extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
-
-  static forModel = scope((query, modelType: string, modelId: number | null) => {
-    query.where('model_type', modelType)
-    modelId === null ? query.whereNull('model_id') : query.where('model_id', modelId)
-  })
 }
