@@ -7,8 +7,6 @@ import {
   // morphMap,
   seedDb,
 } from '../../test-helpers/index.js'
-import { Acl } from '../../index.js'
-import { AclModel } from '../../src/types.js'
 import Role from '../../src/models/role.js'
 
 test.group('Has role | model - role interaction', (group) => {
@@ -23,19 +21,29 @@ test.group('Has role | model - role interaction', (group) => {
 
     await seedDb({ User, Post, Product })
 
-    // get user
-    // get role
-    // assigne role to user
-    // check if record exists in db
+    const user = await User.first()
+    console.log(user) // this is ok
+    const post = await Post.create({})
+    console.log(post) // this is ok too
+
+    await Role.create({
+      slug: 'edit',
+      title: 'Edit',
+    }) // TypeError: Cannot read properties of undefined (reading 'booted')
+
+    /* //----------------------------------------
+
     Role.boot()
     Role.useAdapter(db.modelAdapter())
 
-    const role = await Role.first()
-    const user = (await User.query().first()) as unknown as AclModel
-    // console.log(user)
-    if (user && role) {
-      await Acl.role(role)
-    }
+    // again error
+    await Role.create({
+      slug: 'edit',
+      title: 'Edit',
+    }) // TypeError: Cannot read properties of undefined (reading 'booted')
+
+    
+*/
 
     assert.isTrue(true)
   })

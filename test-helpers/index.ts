@@ -236,83 +236,6 @@ export async function defineModels() {
     }
   }
 
-  // @MorphMapDecorator('roles')
-  // class Role extends RoleParent {}
-
-  // @MorphMapDecorator('permissions')
-  // class Permission extends BaseModel implements AclModelInterface {
-  //   getModelId(): number {
-  //     return this.id
-  //   }
-
-  //   @column({ isPrimary: true })
-  //   declare id: number
-
-  //   @column()
-  //   declare slug: string
-
-  //   @column()
-  //   declare title: string
-
-  //   @column()
-  //   declare entityType: string | null
-
-  //   @column()
-  //   declare entityId: number | null
-
-  //   @column()
-  //   declare allowed: boolean
-
-  //   @column()
-  //   declare scope: number
-
-  //   @column.dateTime({ autoCreate: true })
-  //   declare createdAt: DateTime
-
-  //   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  //   declare updatedAt: DateTime
-  // }
-
-  // class ModelRole extends BaseModel {
-  //   @column({ isPrimary: true })
-  //   declare id: number
-
-  //   @column()
-  //   declare roleId: number
-
-  //   @column()
-  //   declare modelType: string
-
-  //   @column()
-  //   declare modelId: number | null
-
-  //   @column.dateTime({ autoCreate: true })
-  //   declare createdAt: DateTime
-
-  //   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  //   declare updatedAt: DateTime
-  // }
-
-  // class ModelPermission extends BaseModel {
-  //   @column({ isPrimary: true })
-  //   declare id: number
-
-  //   @column()
-  //   declare permissionId: number
-
-  //   @column()
-  //   declare modelType: string
-
-  //   @column()
-  //   declare modelId: number
-
-  //   @column.dateTime({ autoCreate: true })
-  //   declare createdAt: DateTime
-
-  //   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  //   declare updatedAt: DateTime
-  // }
-
   @MorphMapDecorator('products')
   class Product extends BaseModel {
     @column({ isPrimary: true })
@@ -339,10 +262,6 @@ export async function defineModels() {
 
   return {
     User,
-    // Role,
-    // Permission,
-    // ModelRole,
-    // ModelPermission,
     Product,
     Post,
   }
@@ -350,8 +269,8 @@ export async function defineModels() {
 
 export async function seedDb(models: any) {
   await models.User.createMany(getUsers(100))
-  // await models.Role.createMany(getRoles(10))
-  // await models.Permission.createMany(getPermissions(50))
+  await models.Post.createMany(getPosts(20))
+  await models.Product.createMany(getProduts(20))
 }
 
 /**
