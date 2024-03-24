@@ -1,33 +1,36 @@
 import type { NormalizeConstructor } from '@adonisjs/core/types/helpers'
-import PermissionsService from '../services/permissions/permissions_service.js'
 import Permission from '../models/permission.js'
+import { BaseModel } from '@adonisjs/lucid/orm'
+import { Acl } from '../acl.js'
+import { AclModel, AclModelInterface } from '../types.js'
 
-export default <
-  Model extends NormalizeConstructor<import('@adonisjs/lucid/types/model').LucidModel>,
->(
-  superclass: Model
-) => {
-  class HasPermissionsMixin extends superclass {
-    getMorphMapName(): string {
-      throw new Error(
-        'method getMorphMapName must be implemented in target model, which will return string alias for model class'
-      )
+// class Abg extends BaseModel implements AclModelInterface {
+//   getModelId(): number {
+//     return 0
+//   }
+// }
+//
+// const abg = new Abg()
+//
+// Acl.model(abg).permissions()
+
+export function hasPermissions() {
+  return <Model extends NormalizeConstructor<typeof BaseModel>>(superclass: Model) => {
+    class HasPermissionsMixin extends superclass implements AclModelInterface {
+      getModelId(): number {
+        throw new Error(
+          'method getModelId must be implemented in target model, which will return key for current object'
+        )
+      }
+
+      /**
+       * return all permissions including global, direct
+       */
+      permissions(includeForbiddens: boolean = false): Promise<Permission[] | null> {
+        return Acl.model(this as AclModel).permissions(includeForbiddens)
+      }
     }
 
-    getModelId(): number {
-      throw new Error(
-        'method getModelId must be implemented in target model, which will return key for current object'
-      )
-    }
-
-    /**
-     * return all permissions including global, direct
-     */
-    permissions(): Promise<Permission[] | null> {
-      const service = new PermissionsService()
-      return service.all(this.getMorphMapName(), this.getModelId())
-    }
+    return HasPermissionsMixin
   }
-
-  return HasPermissionsMixin
 }

@@ -1,14 +1,9 @@
-import app from '@adonisjs/core/services/app'
+import morphMap from './morph_map.js'
 
 export function MorphMap(param: string) {
   return function <T extends { new (...args: any[]): {} }>(target: T) {
-    const service = async function () {
-      var result = await app.container.make('morphMap')
-      result.set(param, target)
-      return param
-    }
-
-    target.prototype.__morphMapName = service()
+    target.prototype.__morphMapName = param
+    morphMap.set(param, target)
   }
 }
 

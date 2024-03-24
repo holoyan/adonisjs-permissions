@@ -1,9 +1,8 @@
-import app from '@adonisjs/core/services/app'
 import { AclModel, AclModelInterface } from '../types.js'
+import morphMapInstance from '../morph_map.js'
 
-export async function morphMap() {
-  const map = await app.container.make('morphMap')
-  return map
+export function morphMap() {
+  return morphMapInstance
 }
 
 export function formatList(models: (string | number | any)[]) {

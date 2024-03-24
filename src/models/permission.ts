@@ -4,7 +4,7 @@ import config from '@adonisjs/core/services/config'
 import { MorphMap } from '../decorators.js'
 import { AclModelInterface } from '../types.js'
 
-@MorphMap(config.get('permissions.permissionsConfig.morphMaps.permissions') as string)
+@MorphMap('permissions')
 export default class Permission extends BaseModel implements AclModelInterface {
   static get table() {
     return config.get('permissions.permissionsConfig.tables.permissions') as string

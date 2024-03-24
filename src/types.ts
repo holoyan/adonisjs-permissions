@@ -1,14 +1,10 @@
 import { LucidModel } from '@adonisjs/lucid/types/model'
 
-export interface Permissions {
-  tables: Object
-}
-
 export interface AclModelInterface {
   getModelId(): number
 }
 
-export type AclModel = LucidModel & AclModelInterface
+export interface AclModel extends LucidModel, AclModelInterface {}
 
 export interface AclModelQuery {
   modelType: string
