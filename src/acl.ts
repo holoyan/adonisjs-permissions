@@ -22,10 +22,10 @@ export class Acl {
     }
   }
 
-  static permission(permisison: Permission | null) {
-    if (permisison) {
+  static permission(permission: Permission | null) {
+    if (permission) {
       return new PermissionHasModelRoles(
-        permisison,
+        permission,
         new RolesService(),
         new PermissionsService(),
         new ModelService()
