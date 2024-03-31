@@ -14,10 +14,10 @@ export default class extends BaseSchema {
       table.increments('id')
 
       table.string('slug').index()
-      table.string('title')
-      table.string('entity_type')
-      table.bigint('entity_id').unsigned()
-      table.integer('scope').unsigned()
+      table.string('title').nullable()
+      table.string('entity_type').defaultTo('*')
+      table.bigint('entity_id').unsigned().nullable()
+      table.integer('scope').unsigned().defaultTo(0)
       table.boolean('allowed').defaultTo(true)
 
       /**
@@ -52,10 +52,10 @@ export default class extends BaseSchema {
       table.increments('id')
 
       table.string('slug').index()
-      table.string('title')
-      table.string('entity_type')
-      table.bigint('entity_id').unsigned()
-      table.integer('scope').unsigned()
+      table.string('title').nullable()
+      table.string('entity_type').defaultTo('*')
+      table.bigint('entity_id').unsigned().nullable()
+      table.integer('scope').unsigned().defaultTo('*')
       table.boolean('allowed').defaultTo(true)
 
       /**

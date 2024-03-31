@@ -9,14 +9,21 @@ import PermissionHasModelRoles from './services/permissions/permission_has_model
 import ModelService from './services/model_service.js'
 
 export class Acl {
-  // static model<T extends LucidModel & AclModelInterface>(model: T): ModelHasRolePermissions {
   static model(model: AclModel): ModelHasRolePermissions {
-    return new ModelHasRolePermissions(model, new RolesService(), new PermissionsService())
+    return new ModelHasRolePermissions(
+      model,
+      new RolesService(),
+      new PermissionsService(Permission)
+    )
   }
 
   static role(role: Role | null) {
     if (role) {
-      return new RoleHasModelPermissions(role, new PermissionsService(), new ModelService())
+      return new RoleHasModelPermissions(
+        role,
+        new PermissionsService(Permission),
+        new ModelService()
+      )
     } else {
       return Role
     }
@@ -27,7 +34,7 @@ export class Acl {
       return new PermissionHasModelRoles(
         permission,
         new RolesService(),
-        new PermissionsService(),
+        new PermissionsService(Permission),
         new ModelService()
       )
     } else {

@@ -7,7 +7,7 @@ import {
   // morphMap,
   seedDb,
 } from '../../test-helpers/index.js'
-import TestService from '../../src/services/test_service.js'
+import PermissionsService from '../../src/services/permissions/permissions_service.js'
 
 test.group('Has role | model - role interaction', (group) => {
   group.setup(async () => {})
@@ -17,18 +17,26 @@ test.group('Has role | model - role interaction', (group) => {
   test('Ensure model can assign role', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role } = await defineModels()
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
 
-    await seedDb({ User, Post, Product })
+    await seedDb({ User, Post, Product, Permission })
+    const user = await User.first()
+    if (user) {
+      await Permission.create({
+        slug: 'sss',
+        title: 'ddd',
+      })
+      // console.log(p1)
+      const service = new PermissionsService(Permission, Role, ModelPermission, ModelRole)
+      const perm = await service.giveAll('users', user.id, ['kkk'], null, null, true)
+      console.log(perm)
+    }
 
-    await Role.create({
-      slug: 'edit',
-      title: 'Edit',
-    }) // TypeError: Cannot read properties of undefined (reading 'booted')
-
-    const service = new TestService(Role.query())
-    const a = await service.permissions()
-    console.log(a)
+    // await Role.create({
+    //   slug: 'edit',
+    //   title: 'Edit',
+    // }) // TypeError: Cannot read properties of undefined (reading 'booted')
 
     // const user = await User.first()
     // console.log(user) // this is ok

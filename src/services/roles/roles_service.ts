@@ -1,36 +1,76 @@
-import Role from '../../models/role.js'
-import ModelRole from '../../models/model_role.js'
-import { AclModel } from '../../types.js'
+import { AclModel, RoleInterface } from '../../types.js'
 import BaseService from '../base_service.js'
-import ModelPermission from '../../models/model_permission.js'
 import { morphMap } from '../helper.js'
+import { BaseModel } from '@adonisjs/lucid/orm'
+import {
+  // getModelPermissionModelQuery,
+  getModelRoleModelQuery,
+  // getPermissionModelQuery,
+  getRoleModelQuery,
+} from '../query_helper.js'
 
 export default class RolesService extends BaseService {
+  // private permissionQuery
+  // private readonly permissionTable
+
+  private roleQuery
+  private readonly roleTable
+
+  // private modelPermissionQuery
+  private readonly modelPermissionTable
+
+  private modelRoleQuery
+  private readonly modelRoleTable
+
+  constructor(
+    private roleClassName: typeof BaseModel,
+    // private permissionClassName: typeof BaseModel,
+    private modelPermissionClassName: typeof BaseModel,
+    private modelRoleClassName: typeof BaseModel
+  ) {
+    super()
+    // this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
+    // this.permissionTable = this.permissionClassName.table
+
+    this.roleQuery = getRoleModelQuery(this.roleClassName)
+    this.roleTable = this.roleClassName.table
+
+    // this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
+    this.modelPermissionTable = this.modelPermissionClassName.table
+
+    this.modelRoleQuery = getModelRoleModelQuery(this.modelRoleClassName)
+    this.modelRoleTable = this.modelRoleClassName.table
+  }
+
   private modelRolesQuery(modelType: string, modelId: number) {
-    return Role.query()
-      .join(ModelRole.table + ' as mr', 'mr.role_id', '=', Role.table + '.id')
+    return this.roleQuery
+      .join(this.modelRoleTable + ' as mr', 'mr.role_id', '=', this.roleTable + '.id')
       .where('mr.model_type', modelType)
       .where('mr.model_id', modelId)
   }
 
   all(modelType: string, modelId: number) {
-    return this.modelRolesQuery(modelType, modelId).select(Role.table + '.*')
+    return this.modelRolesQuery(modelType, modelId).select(this.roleTable + '.*')
   }
 
-  async has(modelType: string, modelId: number, role: string | Role): Promise<boolean> {
+  async has(modelType: string, modelId: number, role: string | RoleInterface): Promise<boolean> {
     return this.hasAll(modelType, modelId, [role])
   }
 
-  async hasAll(modelType: string, modelId: number, roles: (string | Role)[]): Promise<boolean> {
+  async hasAll(
+    modelType: string,
+    modelId: number,
+    roles: (string | RoleInterface)[]
+  ): Promise<boolean> {
     const rolesQuery = this.modelRolesQuery(modelType, modelId)
 
     let { slugs, ids } = this.formatList(roles)
     if (slugs.length) {
-      rolesQuery.whereIn(Role.table + '.slug', slugs)
+      rolesQuery.whereIn(this.roleTable + '.slug', slugs)
     }
 
     if (ids.length) {
-      rolesQuery.whereIn(Role.table + '.id', ids)
+      rolesQuery.whereIn(this.roleTable + '.id', ids)
     }
 
     const r = await rolesQuery.count('* as total')
@@ -39,18 +79,22 @@ export default class RolesService extends BaseService {
     return r[0].total === roles.length
   }
 
-  async hasAny(modelType: string, modelId: number, roles: (string | Role)[]): Promise<boolean> {
+  async hasAny(
+    modelType: string,
+    modelId: number,
+    roles: (string | RoleInterface)[]
+  ): Promise<boolean> {
     // if is string then we are going to check against slug
     // map roles
     const rolesQuery = this.modelRolesQuery(modelType, modelId)
 
     let { slugs, ids } = this.formatList(roles)
     if (slugs.length) {
-      rolesQuery.whereIn(Role.table + '.slug', slugs)
+      rolesQuery.whereIn(this.roleTable + '.slug', slugs)
     }
 
     if (ids.length) {
-      rolesQuery.whereIn(Role.table + '.id', ids)
+      rolesQuery.whereIn(this.roleTable + '.id', ids)
     }
 
     const r = await rolesQuery.count('* as total')
@@ -59,14 +103,14 @@ export default class RolesService extends BaseService {
     return r[0].total > 0
   }
 
-  async assign(role: string | Role, modelType: string, modelId: number) {
+  async assign(role: string | RoleInterface, modelType: string, modelId: number) {
     const r = await this.extractRoleModel(role)
 
     if (!r) {
       throw new Error('Role  not found')
     }
 
-    await ModelRole.create({
+    await this.modelRoleClassName.create({
       modelType,
       modelId,
       roleId: r.id,
@@ -84,8 +128,8 @@ export default class RolesService extends BaseService {
 
     const { slugs, ids } = this.formatListStringNumbers(roles)
 
-    await ModelRole.query()
-      .leftJoin(Role.table + ' as r', 'r.id', '=', ModelRole.table + '.role_id')
+    await this.modelRoleQuery
+      .leftJoin(this.roleTable + ' as r', 'r.id', '=', this.modelRoleTable + '.role_id')
       .where('model_type', map.getAlias(model))
       .where('model_id', model.getModelId())
       .where((query) => {
@@ -96,20 +140,20 @@ export default class RolesService extends BaseService {
     return true
   }
 
-  private async extractRoleModel(role: string | Role) {
+  private async extractRoleModel(role: string | RoleInterface) {
     if (typeof role === 'string') {
-      return await Role.query().where('slug', role).first()
+      return await this.roleQuery.where('slug', role).first()
     }
     return role
   }
 
   roleModelPermissionQuery(modelType: string) {
-    return Role.query()
-      .leftJoin(ModelPermission.table + ' as mp', 'mp.model_id', '=', Role.table + '.id')
+    return this.roleQuery
+      .leftJoin(this.modelPermissionTable + ' as mp', 'mp.model_id', '=', this.roleTable + '.id')
       .where('mp.model_type', modelType)
   }
 
   async flush(modelType: string, modelId: number) {
-    ModelRole.query().where('model_type', modelType).where('model_id', modelId).delete()
+    this.modelRoleQuery.where('model_type', modelType).where('model_id', modelId).delete()
   }
 }

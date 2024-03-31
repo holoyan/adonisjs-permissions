@@ -10,7 +10,7 @@ import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 import { join } from 'node:path'
 import fs from 'node:fs'
 import { DateTime } from 'luxon'
-import { AclModelInterface } from '../src/types.js'
+import { AclModelInterface, PermissionInterface } from '../src/types.js'
 import morphMap from '../src/morph_map.js'
 import { ApplicationService } from '@adonisjs/core/types'
 import { Chance } from 'chance'
@@ -261,7 +261,7 @@ export async function defineModels() {
   }
 
   @MorphMapDecorator('permissions')
-  class Permission extends BaseModel implements AclModelInterface {
+  class Permission extends BaseModel implements PermissionInterface {
     getModelId(): number {
       return this.id
     }
@@ -276,7 +276,7 @@ export async function defineModels() {
     declare title: string
 
     @column()
-    declare entityType: string | null
+    declare entityType: string
 
     @column()
     declare entityId: number | null
@@ -352,7 +352,7 @@ export async function defineModels() {
   }
 
   @MorphMapDecorator('posts')
-  class Post extends BaseModel {
+  class Post extends BaseModel implements AclModelInterface {
     @column({ isPrimary: true })
     declare id: number
 
@@ -361,16 +361,20 @@ export async function defineModels() {
 
     @column.dateTime({ autoCreate: true, autoUpdate: true })
     declare updatedAt: DateTime
+
+    getModelId(): number {
+      return this.id
+    }
   }
 
   return {
-    User,
-    Product,
-    Post,
-    Role,
-    Permission,
-    ModelRole,
-    ModelPermission,
+    User: User,
+    Product: Product,
+    Post: Post,
+    Role: Role,
+    Permission: Permission,
+    ModelRole: ModelRole,
+    ModelPermission: ModelPermission,
   }
 }
 
