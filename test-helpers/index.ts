@@ -10,8 +10,12 @@ import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 import { join } from 'node:path'
 import fs from 'node:fs'
 import { DateTime } from 'luxon'
-import { AclModelInterface, PermissionInterface } from '../src/types.js'
-import morphMap from '../src/morph_map.js'
+import {
+  AclModelInterface,
+  MorphInterface,
+  MorphMapInterface,
+  PermissionInterface,
+} from '../src/types.js'
 import { ApplicationService } from '@adonisjs/core/types'
 import { Chance } from 'chance'
 
@@ -23,13 +27,62 @@ const BASE_URL = new URL('./tmp/', import.meta.url)
 const app = new AppFactory().create(BASE_URL, () => {}) as ApplicationService
 await app.init()
 await app.boot()
-// app.container.singleton('morphMap', async () => {
-//   return new MorphMap()
-// })
 
 const logger = new LoggerFactory().create()
 const emitter = new Emitter(app)
 
+class MorphMap implements MorphInterface {
+  _map: MorphMapInterface = {}
+
+  static _instance?: MorphMap
+
+  static create() {
+    if (this._instance) {
+      return this._instance
+    }
+
+    return new MorphMap()
+  }
+
+  set(alias: string, target: any) {
+    this._map[alias] = target
+  }
+
+  get(alias: string) {
+    if (!(alias in this._map)) {
+      throw new Error('morph map not found for ' + alias)
+    }
+
+    return this._map[alias] || null
+  }
+
+  has(alias: string) {
+    return alias in this._map
+  }
+
+  hasTarget(target: any) {
+    const keys = Object.keys(this._map)
+    for (const key of keys) {
+      if (this._map[key] === target) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  getAlias(target: any) {
+    const keys = Object.keys(this._map)
+    for (const key of keys) {
+      if (target instanceof this._map[key] || target === this._map[key]) {
+        return key
+      }
+    }
+
+    throw new Error('Target not found')
+  }
+}
+export const morphMap = MorphMap.create()
 export function MorphMapDecorator(param: string) {
   return function <T extends { new (...args: any[]): {} }>(target: T) {
     target.prototype.__morphMapName = param

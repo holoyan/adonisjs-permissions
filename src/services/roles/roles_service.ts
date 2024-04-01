@@ -1,6 +1,5 @@
-import { AclModel, RoleInterface } from '../../types.js'
+import { AclModel, MorphInterface, RoleInterface } from '../../types.js'
 import BaseService from '../base_service.js'
-import { morphMap } from '../helper.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import {
   // getModelPermissionModelQuery,
@@ -26,7 +25,8 @@ export default class RolesService extends BaseService {
     private roleClassName: typeof BaseModel,
     // private permissionClassName: typeof BaseModel,
     private modelPermissionClassName: typeof BaseModel,
-    private modelRoleClassName: typeof BaseModel
+    private modelRoleClassName: typeof BaseModel,
+    private map: MorphInterface
   ) {
     super()
     // this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
@@ -124,13 +124,11 @@ export default class RolesService extends BaseService {
   }
 
   async revokeAll(roles: (string | number)[], model: AclModel) {
-    const map = await morphMap()
-
     const { slugs, ids } = this.formatListStringNumbers(roles)
 
     await this.modelRoleQuery
       .leftJoin(this.roleTable + ' as r', 'r.id', '=', this.modelRoleTable + '.role_id')
-      .where('model_type', map.getAlias(model))
+      .where('model_type', this.map.getAlias(model))
       .where('model_id', model.getModelId())
       .where((query) => {
         query.whereIn('r.id', ids).orWhereIn('r.slug', slugs)

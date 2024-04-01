@@ -1,11 +1,9 @@
-import { MorphMapInterface } from './types.js'
+import { MorphInterface, MorphMapInterface } from './types.js'
 
-class MorphMap {
-  _map: MorphMapInterface = {}
+export default class MorphMap implements MorphInterface {
+  private _map: MorphMapInterface = {}
 
   private static _instance?: MorphMap
-
-  private constructor() {}
 
   static create() {
     if (this._instance) {
@@ -53,5 +51,3 @@ class MorphMap {
     throw new Error('Target not found')
   }
 }
-
-export default MorphMap.create()

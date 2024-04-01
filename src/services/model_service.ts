@@ -1,7 +1,7 @@
-import { morphMap } from './helper.js'
 import BaseService from './base_service.js'
 import { getModelPermissionModelQuery, getModelRoleModelQuery } from './query_helper.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
+import { MorphInterface } from '../types.js'
 
 export default class ModelService extends BaseService {
   // private permissionQuery
@@ -20,7 +20,8 @@ export default class ModelService extends BaseService {
     // private roleClassName: typeof BaseModel,
     // private permissionClassName: typeof BaseModel,
     private modelPermissionClassName: typeof BaseModel,
-    private modelRoleClassName: typeof BaseModel
+    private modelRoleClassName: typeof BaseModel,
+    private map: MorphInterface
   ) {
     super()
     // this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
@@ -41,8 +42,7 @@ export default class ModelService extends BaseService {
   }
 
   async allFor(modelType: string, roleId: number) {
-    const map = await morphMap()
-    const modelClass = map.get(modelType)
+    const modelClass = this.map.get(modelType)
     return modelClass
       .query()
       .join(this.modelRoleTable + ' as mr', 'mr.model_id', '=', modelClass.table + '.id')
@@ -57,8 +57,7 @@ export default class ModelService extends BaseService {
   }
 
   async allByPermissionFor(modelType: string, permissionId: number) {
-    const map = await morphMap()
-    const modelClass = map.get(modelType)
+    const modelClass = this.map.get(modelType)
     return modelClass
       .query()
       .join(this.modelPermissionTable + ' as mp', 'mp.model_id', '=', modelClass.table + '.id')

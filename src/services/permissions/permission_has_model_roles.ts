@@ -1,5 +1,5 @@
-import { AclModel, PermissionInterface } from '../../types.js'
-import { destructTarget, morphMap } from '../helper.js'
+import { AclModel, MorphInterface, PermissionInterface } from '../../types.js'
+import { destructTarget } from '../helper.js'
 import ModelService from '../model_service.js'
 import RolesService from '../roles/roles_service.js'
 import PermissionsService from './permissions_service.js'
@@ -19,7 +19,8 @@ export default class PermissionHasModelRoles {
     private permissionService: PermissionsService,
     private modelService: ModelService,
     private modelPermissionClassName: typeof BaseModel,
-    private roleClassName: typeof BaseModel
+    private roleClassName: typeof BaseModel,
+    private map: MorphInterface
   ) {
     this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
     // this.modelPermissionTable = this.modelPermissionClassName.table
@@ -36,16 +37,14 @@ export default class PermissionHasModelRoles {
   }
 
   async roles() {
-    const map = await morphMap()
     return this.roleService
-      .roleModelPermissionQuery(map.getAlias(this.roleClassName))
+      .roleModelPermissionQuery(this.map.getAlias(this.roleClassName))
       .where('mp.permission_id', this.permission.id)
   }
 
   async belongsToRole(role: string | number) {
-    const map = await morphMap()
     const q = this.roleService
-      .roleModelPermissionQuery(map.getAlias(this.roleClassName))
+      .roleModelPermissionQuery(this.map.getAlias(this.roleClassName))
       .where('mp.permission_id', this.permission.id)
     if (typeof role === 'string') {
       q.where(this.roleTable + '.slug', role)
@@ -68,10 +67,9 @@ export default class PermissionHasModelRoles {
 
       role = r.id
     }
-    const map = await morphMap()
-    const entity = await destructTarget(target)
+    const entity = await destructTarget(this.map, target)
     return this.permissionService.giveAll(
-      map.getAlias(this.roleClassName),
+      this.map.getAlias(this.roleClassName),
       role,
       [this.permission.slug],
       entity.targetClass,
@@ -91,9 +89,8 @@ export default class PermissionHasModelRoles {
       role = r.id
     }
 
-    const map = await morphMap()
     return this.modelPermissionQuery
-      .where('model_type', map.getAlias(this.roleClassName))
+      .where('model_type', this.map.getAlias(this.roleClassName))
       .where('model_id', role)
       .delete()
   }

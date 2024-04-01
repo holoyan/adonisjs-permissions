@@ -1,8 +1,12 @@
 import { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 
-import { ModelPermissionsQuery, PermissionInterface, PermissionModel } from '../../types.js'
+import {
+  ModelPermissionsQuery,
+  MorphInterface,
+  PermissionInterface,
+  PermissionModel,
+} from '../../types.js'
 import BaseService from '../base_service.js'
-import { morphMap } from '../helper.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import {
   getModelPermissionModelQuery,
@@ -28,7 +32,8 @@ export default class PermissionsService extends BaseService {
     private permissionClassName: typeof BaseModel,
     private roleClassName: typeof BaseModel,
     private modelPermissionClassName: typeof BaseModel,
-    private modelRoleClassName: typeof BaseModel
+    private modelRoleClassName: typeof BaseModel,
+    private map: MorphInterface
   ) {
     super()
     this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
@@ -48,12 +53,10 @@ export default class PermissionsService extends BaseService {
    * return all permissions, including forbidden
    */
   async all(modelType: string, modelId: number, includeForbiddings: boolean = false) {
-    const map = await morphMap()
-
     return this.modelPermissionQueryBuilder({
       modelType,
       modelId,
-      directPermissions: map.getAlias(this.roleClassName) === modelType,
+      directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       includeForbiddings,
     })
       .groupBy(this.permissionTable + '.id')
@@ -64,12 +67,10 @@ export default class PermissionsService extends BaseService {
    * return only global assigned permissions, through role or direct
    */
   async global(modelType: string, modelId: number, includeForbiddings: boolean = false) {
-    const map = await morphMap()
-
     return this.modelPermissionQueryBuilder({
       modelType,
       modelId,
-      directPermissions: map.getAlias(this.roleClassName) === modelType,
+      directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       includeForbiddings,
     })
       .where(this.permissionTable + '.entity_type', '*')
@@ -82,12 +83,10 @@ export default class PermissionsService extends BaseService {
    * get all permissions which is assigned to concrete resource
    */
   async onResource(modelType: string, modelId: number, includeForbiddings: boolean = false) {
-    const map = await morphMap()
-
     return this.modelPermissionQueryBuilder({
       modelType,
       modelId,
-      directPermissions: map.getAlias(this.roleClassName) === modelType,
+      directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       includeForbiddings,
     })
       .where(this.permissionTable + '.entity_type', '!=', '*')
@@ -200,13 +199,12 @@ export default class PermissionsService extends BaseService {
     entityType: string | null,
     entityId: number | null
   ) {
-    const map = await morphMap()
     const { slugs, ids } = this.formatList(permissions)
 
     const q = this.modelPermissionQueryWithForbiddenCheck({
       modelType,
       modelId,
-      directPermissions: map.getAlias(this.roleClassName) === modelType,
+      directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
     })
@@ -228,13 +226,12 @@ export default class PermissionsService extends BaseService {
     entityType: string | null,
     entityId: number | null
   ) {
-    const map = await morphMap()
     const { slugs, ids } = this.formatList(permission)
 
     const q = this.modelPermissionQueryWithForbiddenCheck({
       modelType,
       modelId,
-      directPermissions: map.getAlias(this.roleClassName) === modelType,
+      directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
     })
@@ -254,13 +251,12 @@ export default class PermissionsService extends BaseService {
     modelId: number,
     permission: (string | PermissionInterface)[]
   ) {
-    const map = await morphMap()
     const { slugs, ids } = this.formatList(permission)
 
     const q = this.modelPermissionQueryBuilder({
       modelType,
       modelId,
-      directPermissions: map.getAlias(this.roleClassName) === modelType,
+      directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
     }).groupBy(this.permissionTable + '.id')
@@ -277,13 +273,12 @@ export default class PermissionsService extends BaseService {
     modelId: number,
     permission: (string | PermissionInterface)[]
   ) {
-    const map = await morphMap()
     const { slugs, ids } = this.formatList(permission)
 
     const q = this.modelPermissionQueryBuilder({
       modelType,
       modelId,
-      directPermissions: map.getAlias(this.roleClassName) === modelType,
+      directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
     }).groupBy(this.permissionTable + '.id')
