@@ -9,6 +9,10 @@ import {
 } from '../../test-helpers/index.js'
 import PermissionsService from '../../src/services/permissions/permissions_service.js'
 
+// import RolesService from '../../src/services/roles/roles_service.js'
+import { Acl } from '../../src/acl.js'
+import ModelManager from '../../src/model_manager.js'
+
 test.group('Has role | model - role interaction', (group) => {
   group.setup(async () => {})
 
@@ -19,9 +23,21 @@ test.group('Has role | model - role interaction', (group) => {
     await createTables(db)
     const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
       await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    Acl.setModelManager(modelManager)
 
     await seedDb({ User, Post, Product, Permission })
     const user = await User.first()
+
+    if (user) {
+      const r = await Acl.model(user).roles()
+      console.log(r)
+    }
+
     if (user) {
       await Permission.create({
         slug: 'sss',

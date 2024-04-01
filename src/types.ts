@@ -72,7 +72,7 @@ export interface ModelPermissionInterface extends AclModelInterface {
   updatedAt: DateTime
 }
 
-export type AclModel = LucidModel & AclModelInterface
+export type AclModel = InstanceType<LucidModel> & AclModelInterface
 
 export type PermissionModel<T extends new (...args: any[]) => any> = InstanceType<T> &
   PermissionInterface

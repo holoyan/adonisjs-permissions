@@ -1,7 +1,6 @@
-import ModelPermission from '../models/model_permission.js'
 import { morphMap } from './helper.js'
 import BaseService from './base_service.js'
-import { getModelRoleModelQuery } from './query_helper.js'
+import { getModelPermissionModelQuery, getModelRoleModelQuery } from './query_helper.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 
 export default class ModelService extends BaseService {
@@ -11,8 +10,8 @@ export default class ModelService extends BaseService {
   // private roleQuery
   // private readonly roleTable
 
-  // private modelPermissionQuery
-  // private readonly modelPermissionTable
+  private modelPermissionQuery
+  private readonly modelPermissionTable
 
   private modelRoleQuery
   private readonly modelRoleTable
@@ -20,7 +19,7 @@ export default class ModelService extends BaseService {
   constructor(
     // private roleClassName: typeof BaseModel,
     // private permissionClassName: typeof BaseModel,
-    // private modelPermissionClassName: typeof BaseModel,
+    private modelPermissionClassName: typeof BaseModel,
     private modelRoleClassName: typeof BaseModel
   ) {
     super()
@@ -30,8 +29,8 @@ export default class ModelService extends BaseService {
     // this.roleQuery = getRoleModelQuery(this.roleClassName)
     // this.roleTable = this.roleClassName.table
 
-    // this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
-    // this.modelPermissionTable = this.modelPermissionClassName.table
+    this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
+    this.modelPermissionTable = this.modelPermissionClassName.table
 
     this.modelRoleQuery = getModelRoleModelQuery(this.modelRoleClassName)
     this.modelRoleTable = this.modelRoleClassName.table
@@ -52,7 +51,7 @@ export default class ModelService extends BaseService {
   }
 
   allByPermission(permissionId: number) {
-    return ModelPermission.query()
+    return this.modelPermissionQuery
       .where('permission_id', permissionId)
       .groupBy(['model_type', 'model_id'])
   }
@@ -62,7 +61,7 @@ export default class ModelService extends BaseService {
     const modelClass = map.get(modelType)
     return modelClass
       .query()
-      .join(ModelPermission.table + ' as mp', 'mp.model_id', '=', modelClass.table + '.id')
+      .join(this.modelPermissionTable + ' as mp', 'mp.model_id', '=', modelClass.table + '.id')
       .where('mp.permission_id', permissionId)
       .where('mp.model_type', modelType)
   }
