@@ -17,30 +17,38 @@ export class ModelHasRolePermissions {
     return this.roleService.all(this.map.getAlias(this.model), this.model.getModelId())
   }
 
-  async hasRole(role: string | RoleInterface) {
+  hasRole(role: string | RoleInterface) {
     return this.roleService.has(this.map.getAlias(this.model), this.model.getModelId(), role)
   }
 
-  async hasAllRoles(roles: (string | RoleInterface)[]) {
+  hasAllRoles(...roles: (string | RoleInterface)[]) {
     return this.roleService.hasAll(this.map.getAlias(this.model), this.model.getModelId(), roles)
   }
 
-  async hasAnyRole(roles: (string | RoleInterface)[]) {
-    return this.roleService.hasAll(this.map.getAlias(this.model), this.model.getModelId(), roles)
+  hasAnyRole(...roles: (string | RoleInterface)[]) {
+    return this.roleService.hasAny(this.map.getAlias(this.model), this.model.getModelId(), roles)
   }
 
-  async assignRole(role: string | RoleInterface) {
+  assignRole(role: string | RoleInterface) {
     return this.roleService.assign(role, this.map.getAlias(this.model), this.model.getModelId())
   }
 
-  revokeRole(role: string | number | RoleInterface) {
-    return this.revokeAllRoles([role])
+  assignAllRoles(...roles: (string | RoleInterface)[]) {
+    return this.roleService.assignAll(roles, this.map.getAlias(this.model), this.model.getModelId())
   }
 
-  revokeAllRoles(roles: (string | number | RoleInterface)[]) {
+  revokeRole(role: string | number | RoleInterface) {
+    return this.revokeAllRoles(role)
+  }
+
+  revokeAllRoles(...roles: (string | number | RoleInterface)[]) {
     const { slugs, ids } = formatList(roles)
 
     return this.roleService.revokeAll([...slugs, ...ids], this.model)
+  }
+
+  flushRoles() {
+    return this.roleService.flush(this.map.getAlias(this.model), this.model.getModelId())
   }
 
   // roles related section END

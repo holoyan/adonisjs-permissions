@@ -53,7 +53,7 @@ export default class RolesService extends BaseService {
     return this.modelRolesQuery(modelType, modelId).select(this.roleTable + '.*')
   }
 
-  async has(modelType: string, modelId: number, role: string | RoleInterface): Promise<boolean> {
+  has(modelType: string, modelId: number, role: string | RoleInterface): Promise<boolean> {
     return this.hasAll(modelType, modelId, [role])
   }
 
@@ -76,7 +76,7 @@ export default class RolesService extends BaseService {
     const r = await rolesQuery.count('* as total')
 
     // @ts-ignore
-    return r[0].total === roles.length
+    return +r[0].$extras.total === roles.length
   }
 
   async hasAny(
@@ -100,21 +100,42 @@ export default class RolesService extends BaseService {
     const r = await rolesQuery.count('* as total')
 
     // @ts-ignore
-    return r[0].total > 0
+    return +r[0].$extras.total > 0
   }
 
   async assign(role: string | RoleInterface, modelType: string, modelId: number) {
-    const r = await this.extractRoleModel(role)
+    const r = await this.extractRoleModel([role])
 
-    if (!r) {
+    if (!r.length) {
       throw new Error('Role  not found')
     }
 
     await this.modelRoleClassName.create({
       modelType,
       modelId,
-      roleId: r.id,
+      roleId: r[0].id,
     })
+
+    return true
+  }
+
+  async assignAll(roles: (string | RoleInterface)[], modelType: string, modelId: number) {
+    const rs = await this.extractRoleModel(roles)
+
+    if (!rs.length) {
+      throw new Error('One or many roles not found')
+    }
+
+    const data = []
+    for (const r of rs) {
+      data.push({
+        modelType,
+        modelId,
+        roleId: r.id,
+      })
+    }
+
+    await this.modelRoleClassName.createMany(data)
 
     return true
   }
@@ -138,11 +159,21 @@ export default class RolesService extends BaseService {
     return true
   }
 
-  private async extractRoleModel(role: string | RoleInterface) {
-    if (typeof role === 'string') {
-      return await this.roleQuery.where('slug', role).first()
+  private async extractRoleModel(roles: (string | RoleInterface)[]) {
+    const slugs = []
+    const oldRoles = []
+
+    for (const role of roles) {
+      if (typeof role === 'string') {
+        slugs.push(role)
+      } else {
+        oldRoles.push(role)
+      }
     }
-    return role
+
+    const newRoles = await this.roleQuery.whereIn('slug', slugs)
+
+    return [...newRoles, ...oldRoles]
   }
 
   roleModelPermissionQuery(modelType: string) {
@@ -151,7 +182,7 @@ export default class RolesService extends BaseService {
       .where('mp.model_type', modelType)
   }
 
-  async flush(modelType: string, modelId: number) {
-    this.modelRoleQuery.where('model_type', modelType).where('model_id', modelId).delete()
+  flush(modelType: string, modelId: number) {
+    return this.modelRoleQuery.where('model_type', modelType).where('model_id', modelId).delete()
   }
 }
