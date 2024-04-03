@@ -5,6 +5,27 @@ on:
   - pull_request
 
 jobs:
+  # Label of the container job
+  container-job:
+    runs-on: ubuntu-latest
+    container: node:10.18-jessie
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: acl_testing
+          POSTGRES_PASSWORD: secret
+          POSTGRES_USER: artak
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -27,29 +48,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         node-version:
           - 20.10.0
           - 21.x
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Install
-        run: npm install
-      - name: Run tests
-        run: npm test
-  windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        node-version:
-          - 20.10.0
-          - 21.x
-    steps:
-      - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:

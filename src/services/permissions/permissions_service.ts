@@ -365,7 +365,7 @@ export default class PermissionsService extends BaseService {
     entityId: number | null,
     allowed: boolean
   ) {
-    // if entityType is not null then we need to assigne permission for specific entity
+    // if entityType is not null then we need to assign permission for specific entity
 
     let permissions = await this.findAssignableEntity(slugs, entityType, entityId, allowed)
     //if no permissions then we will create permission for this specific entity

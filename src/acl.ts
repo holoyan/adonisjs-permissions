@@ -6,6 +6,8 @@ import { AclModel, MorphInterface, PermissionInterface, RoleInterface } from './
 import PermissionHasModelRoles from './services/permissions/permission_has_model_roles.js'
 import ModelService from './services/model_service.js'
 import ModelManager from './model_manager.js'
+import EmptyPermission from './services/permissions/empty_permission.js'
+import EmptyRoles from './services/roles/empty_roles.js'
 
 export class Acl {
   private static modelManager: ModelManager
@@ -59,7 +61,7 @@ export class Acl {
         this.map
       )
     } else {
-      return this.modelManager.getModel('role')
+      return new EmptyRoles(this.modelManager.getModel('role'))
     }
   }
 
@@ -90,7 +92,7 @@ export class Acl {
         this.map
       )
     } else {
-      return this.modelManager.getModel('permission')
+      return new EmptyPermission(this.modelManager.getModel('permission'))
     }
   }
 }
