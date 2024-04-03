@@ -13,7 +13,6 @@ declare module '@adonisjs/core/types' {
     modelManager: ModelManager
   }
 }
-
 export default class RolePermissionProvider {
   constructor(protected app: ApplicationService) {}
 
@@ -34,6 +33,8 @@ export default class RolePermissionProvider {
     modelManager.setModel('modelRole', ModelRole)
     Acl.setModelManager(modelManager)
     const map = await this.app.container.make('morphMap')
+    map.set('permissions', Permission)
+    map.set('roles', Role)
     Acl.setMorphMap(map)
   }
 }

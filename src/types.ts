@@ -87,11 +87,17 @@ export interface AclModelQuery {
   modelId: number
 }
 
+type Entity = {
+  type: string | null
+  id: number | null
+}
+
 export interface ModelPermissionsQuery extends AclModelQuery {
   permissionSlugs: string[]
   permissionIds: number[]
   directPermissions: boolean
   includeForbiddings: boolean
+  entity: Entity
 }
 
 export interface MorphMapInterface {

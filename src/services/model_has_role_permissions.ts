@@ -135,14 +135,12 @@ export class ModelHasRolePermissions {
     return result
   }
 
-  async containsAllPermissionsDirectly(permissions: (string | PermissionInterface)[]) {
-    const result = await this.permissionsService.containsAllDirect(
+  containsAllPermissionsDirectly(permissions: (string | PermissionInterface)[]) {
+    return this.permissionsService.containsAllDirect(
       this.map.getAlias(this.model),
       this.model.getModelId(),
       permissions
     )
-
-    return result
   }
 
   async containsAnyPermissionDirectly(permissions: (string | PermissionInterface)[]) {
@@ -241,6 +239,19 @@ export class ModelHasRolePermissions {
       this.map.getAlias(this.model),
       this.model.getModelId(),
       [permission],
+      entity.targetClass,
+      entity.targetId,
+      true
+    )
+  }
+
+  async assignDirectAllPermissions(permissions: string[], target?: AclModel | Function) {
+    const entity = await destructTarget(this.map, target)
+
+    return this.permissionsService.giveAll(
+      this.map.getAlias(this.model),
+      this.model.getModelId(),
+      permissions,
       entity.targetClass,
       entity.targetId,
       true

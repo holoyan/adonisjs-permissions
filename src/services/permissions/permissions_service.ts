@@ -158,9 +158,13 @@ export default class PermissionsService extends BaseService {
       directPermissions: true,
       permissionSlugs: slugs,
       permissionIds: ids,
+      entity: {
+        type: entityType,
+        id: entityId,
+      },
     })
 
-    this.applyTargetRestriction(q, entityType, entityId)
+    this.applyTargetRestriction(this.permissionTable, q, entityType, entityId)
     const r = await q.groupBy(this.permissionTable + '.id').select(this.permissionTable + '.id')
 
     return r.length > 0
@@ -180,9 +184,13 @@ export default class PermissionsService extends BaseService {
       directPermissions: true,
       permissionSlugs: slugs,
       permissionIds: ids,
+      entity: {
+        type: entityType,
+        id: entityId,
+      },
     })
 
-    this.applyTargetRestriction(q, entityType, entityId)
+    this.applyTargetRestriction(this.permissionTable, q, entityType, entityId)
 
     const r = await q.groupBy(this.permissionTable + '.id').select(this.permissionTable + '.id')
 
@@ -207,9 +215,13 @@ export default class PermissionsService extends BaseService {
       directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
+      entity: {
+        type: entityType,
+        id: entityId,
+      },
     })
 
-    this.applyTargetRestriction(q, entityType, entityId)
+    this.applyTargetRestriction(this.permissionTable, q, entityType, entityId)
 
     const r = await q.groupBy(this.permissionTable + '.id').select(this.permissionTable + '.id')
 
@@ -234,9 +246,13 @@ export default class PermissionsService extends BaseService {
       directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
+      entity: {
+        type: entityType,
+        id: entityId,
+      },
     })
 
-    this.applyTargetRestriction(q, entityType, entityId)
+    this.applyTargetRestriction(this.permissionTable, q, entityType, entityId)
 
     const r = await q.groupBy(this.permissionTable + '.id').select(this.permissionTable + '.id')
 
@@ -422,7 +438,7 @@ export default class PermissionsService extends BaseService {
       }
     }
 
-    return q
+    return q.delete()
   }
 
   flush(modelType: string, modelId: number) {
@@ -510,24 +526,15 @@ export default class PermissionsService extends BaseService {
   }
 
   private modelPermissionQueryWithForbiddenCheck(conditions: Partial<ModelPermissionsQuery>) {
-    const q = this.modelPermissionQueryBuilder(conditions)
-    q.whereNotExists((subQuery) => {
-      subQuery
-        .from(this.permissionTable + ' as p2')
-        .join(this.modelPermissionTable + ' as mp2', 'mp2.permission_id', '=', 'p2.id')
-        .where('p2.allowed', false)
-        .whereRaw('p2.slug=' + this.permissionTable + '.slug')
-        .whereRaw('mp2.id=mp.id')
-    })
-
-    return q
+    conditions.includeForbiddings = false
+    return this.modelPermissionQueryBuilder(conditions)
   }
 
   private modelPermissionQueryBuilder(conditions: Partial<ModelPermissionsQuery>) {
     const { modelId, modelType, permissionSlugs, directPermissions, includeForbiddings } =
       conditions
 
-    const q = this.permissionQuery.join(
+    const q = this.permissionQuery.leftJoin(
       this.modelPermissionTable + ' as mp',
       'mp.permission_id',
       '=',
@@ -538,7 +545,7 @@ export default class PermissionsService extends BaseService {
       if (directPermissions) {
         q.where('mp.model_type', modelType).where('mp.model_id', modelId)
       } else {
-        q.join(this.modelRoleTable + ' as mr', (joinQuery) => {
+        q.leftJoin(this.modelRoleTable + ' as mr', (joinQuery) => {
           joinQuery.onVal('mr.model_type', modelType).onVal('mr.model_id', modelId)
         }).where((subQuery) => {
           subQuery
@@ -556,10 +563,14 @@ export default class PermissionsService extends BaseService {
       q.whereNotExists((subQuery) => {
         subQuery
           .from(this.permissionTable + ' as p2')
-          .join(this.modelPermissionTable + ' as mp2', 'mp2.permission_id', '=', 'p2.id')
+          .leftJoin(this.modelPermissionTable + ' as mp2', 'mp2.permission_id', '=', 'p2.id')
           .where('p2.allowed', false)
           .whereRaw('p2.slug=' + this.permissionTable + '.slug')
-          .whereRaw('mp2.id=mp.id')
+          .select('p2.slug')
+          .groupBy('p2.slug')
+        if (conditions.entity) {
+          this.applyTargetRestriction('p2', subQuery, conditions.entity.type, conditions.entity.id)
+        }
       })
     }
 
@@ -627,34 +638,31 @@ export default class PermissionsService extends BaseService {
         q.whereNull('entity_id')
       }
     } else {
-      q.whereNull('entity_type').whereNull('entity_id')
+      q.where('entity_type', '*').whereNull('entity_id')
     }
 
     return q
   }
 
   private applyTargetRestriction(
+    table: string,
     q: ModelQueryBuilderContract<typeof BaseModel, PermissionInterface>,
     entityType: string | null,
     entityId: number | null
   ) {
     if (entityType) {
       q.where((query) => {
-        query
-          .where(this.permissionTable + '.entity_type', entityType)
-          .orWhereNull(this.permissionTable + '.entity_type')
+        query.where(table + '.entity_type', entityType).orWhere(table + '.entity_type', '*')
       })
       if (entityId) {
         q.where((query) => {
-          query
-            .where(this.permissionTable + '.entity_id', entityId)
-            .orWhereNull(this.permissionTable + '.entity_id')
+          query.where(table + '.entity_id', entityId).orWhereNull(table + '.entity_id')
         })
+      } else {
+        q.whereNull(table + '.entity_id')
       }
     } else {
-      q.whereNull(this.permissionTable + '.entity_type').whereNull(
-        this.permissionTable + '.entity_id'
-      )
+      q.where(table + '.entity_type', '*').whereNull(table + '.entity_id')
     }
   }
 }
