@@ -697,7 +697,6 @@ test.group('Has permission | model - permission direct resource interaction', (g
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
-    const post2 = await Post.query().limit(1).offset(5).first()
 
     await Permission.create({
       slug: 'create',
@@ -718,6 +717,7 @@ test.group('Has permission | model - permission direct resource interaction', (g
     if (!post) {
       throw new Error('Post not found')
     }
+    const post2 = await Post.query().where('id', '<>', post.id).first()
 
     if (!post2) {
       throw new Error('Post2 not found')
@@ -745,7 +745,6 @@ test.group('Has permission | model - permission direct resource interaction', (g
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
-    const post2 = await Post.query().limit(1).offset(5).first()
 
     await Permission.create({
       slug: 'create',
@@ -766,6 +765,8 @@ test.group('Has permission | model - permission direct resource interaction', (g
     if (!post) {
       throw new Error('Post not found')
     }
+
+    const post2 = await Post.query().where('id', '<>', post.id).first()
 
     if (!post2) {
       throw new Error('Post2 not found')
@@ -797,7 +798,6 @@ test.group('Has permission | model - permission direct resource interaction', (g
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
-    const post2 = await Post.query().limit(1).offset(5).first()
 
     await Permission.create({
       slug: 'create',
@@ -819,6 +819,8 @@ test.group('Has permission | model - permission direct resource interaction', (g
       throw new Error('Post not found')
     }
 
+    const post2 = await Post.query().where('id', '<>', post.id).first()
+
     if (!post2) {
       throw new Error('Post2 not found')
     }
@@ -832,5 +834,91 @@ test.group('Has permission | model - permission direct resource interaction', (g
     assert.isFalse(hasGlobaly)
     assert.isFalse(hasOnOthers)
     assert.isFalse(hasOnFirst)
+  })
+
+  test('Get only global permissions', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    Acl.setModelManager(modelManager)
+    Acl.setMorphMap(morphMap)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+    const post = await Post.first()
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    await Permission.create({
+      slug: 'delete',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    if (!post) {
+      throw new Error('Post not found')
+    }
+
+    await Acl.model(user).assignDirectAllPermissions(['create', 'edit'])
+    await Acl.model(user).assignDirectAllPermissions(['delete'], post)
+
+    const onlyGlobals = await Acl.model(user).globalPermissions()
+    assert.lengthOf(onlyGlobals, 2)
+  })
+
+  test('Get only on resource permissions', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    Acl.setModelManager(modelManager)
+    Acl.setMorphMap(morphMap)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+    const post = await Post.first()
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    await Permission.create({
+      slug: 'delete',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    if (!post) {
+      throw new Error('Post not found')
+    }
+
+    await Acl.model(user).assignDirectAllPermissions(['create', 'edit'])
+    await Acl.model(user).assignDirectAllPermissions(['delete'], post)
+
+    const onlyGlobals = await Acl.model(user).onResourcePermissions()
+    assert.lengthOf(onlyGlobals, 1)
   })
 })

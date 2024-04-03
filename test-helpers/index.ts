@@ -126,6 +126,29 @@ export async function createDatabase() {
             password: process.env.PG_PASSWORD as string,
           },
         },
+        mssql: {
+          client: 'mssql',
+          connection: {
+            server: process.env.MSSQL_HOST as string,
+            port: Number(process.env.MSSQL_PORT! as string),
+            user: process.env.MSSQL_USER as string,
+            password: process.env.MSSQL_PASSWORD as string,
+            database: 'master',
+            options: {
+              enableArithAbort: true,
+            },
+          },
+        },
+        mysql: {
+          client: 'mysql2',
+          connection: {
+            host: process.env.MYSQL_HOST as string,
+            port: Number(process.env.MYSQL_PORT),
+            database: process.env.MYSQL_DATABASE as string,
+            user: process.env.MYSQL_USER as string,
+            password: process.env.MYSQL_PASSWORD as string,
+          },
+        },
       },
     },
     logger,
@@ -200,7 +223,7 @@ export async function createTables(db: Database) {
 
     table.index(['model_type', 'model_id'])
 
-    table.foreign('role_id').references('roles.id').onDelete('CASCADE')
+    // table.foreign('role_id').references('roles.id').onDelete('CASCADE')
   })
 
   await db.connection().schema.createTableIfNotExists('permissions', (table) => {
@@ -238,7 +261,7 @@ export async function createTables(db: Database) {
 
     table.index(['model_type', 'model_id'])
 
-    table.foreign('permission_id').references('permissions.id').onDelete('CASCADE')
+    // table.foreign('permission_id').references('permissions.id').onDelete('CASCADE')
   })
 
   await db.connection().schema.createTableIfNotExists('products', (table) => {
