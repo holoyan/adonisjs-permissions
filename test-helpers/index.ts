@@ -1,7 +1,7 @@
 import { configDotenv } from 'dotenv'
 import { getActiveTest } from '@japa/runner'
 import { Emitter } from '@adonisjs/core/events'
-import { BaseModel, column, scope } from '@adonisjs/lucid/orm'
+import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { Database } from '@adonisjs/lucid/database'
 import { Encryption } from '@adonisjs/core/encryption'
 import { AppFactory } from '@adonisjs/core/factories/app'
@@ -172,7 +172,7 @@ export async function createTables(db: Database) {
     table.string('title')
     table.string('entity_type').defaultTo('*')
     table.bigint('entity_id').unsigned().nullable()
-    table.integer('scope').unsigned().defaultTo('*')
+    table.integer('scope').unsigned().defaultTo(0)
     table.boolean('allowed').defaultTo(true)
 
     /**
@@ -181,7 +181,7 @@ export async function createTables(db: Database) {
     table.timestamp('created_at', { useTz: true })
     table.timestamp('updated_at', { useTz: true })
 
-    table.unique(['slug', 'scope'])
+    table.index(['slug', 'scope'])
     table.index(['entity_type', 'entity_id'])
   })
 
@@ -219,7 +219,7 @@ export async function createTables(db: Database) {
     table.timestamp('created_at', { useTz: true })
     table.timestamp('updated_at', { useTz: true })
 
-    table.unique(['slug', 'scope'])
+    table.index(['slug', 'scope'])
     table.index(['entity_type', 'entity_id'])
   })
 
@@ -385,15 +385,10 @@ export async function defineModels() {
 
     @column.dateTime({ autoCreate: true, autoUpdate: true })
     declare updatedAt: DateTime
-
-    static forModel = scope((query, modelType: string, modelId: number | null) => {
-      query.where('model_type', modelType)
-      modelId === null ? query.whereNull('model_id') : query.where('model_id', modelId)
-    })
   }
 
   @MorphMapDecorator('products')
-  class Product extends BaseModel {
+  class Product extends BaseModel implements AclModelInterface {
     @column({ isPrimary: true })
     declare id: number
 
@@ -402,6 +397,10 @@ export async function defineModels() {
 
     @column.dateTime({ autoCreate: true, autoUpdate: true })
     declare updatedAt: DateTime
+
+    getModelId(): number {
+      return this.id
+    }
   }
 
   @MorphMapDecorator('posts')
@@ -433,8 +432,12 @@ export async function defineModels() {
 
 export async function seedDb(models: any) {
   await models.User.createMany(getUsers(100))
-  await models.Post.createMany(getPosts(20))
-  await models.Product.createMany(getProduts(20))
+  if (models.Post) {
+    await models.Post.createMany(getPosts(20))
+  }
+  if (models.Product) {
+    await models.Product.createMany(getProduts(20))
+  }
 }
 
 /**
