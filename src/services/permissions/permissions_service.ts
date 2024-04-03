@@ -8,12 +8,7 @@ import {
 } from '../../types.js'
 import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
-import {
-  getModelPermissionModelQuery,
-  // getModelRoleModelQuery,
-  getPermissionModelQuery,
-  // getRoleModelQuery,
-} from '../query_helper.js'
+import { getModelPermissionModelQuery, getPermissionModelQuery } from '../query_helper.js'
 
 export default class PermissionsService extends BaseService {
   private permissionQuery
@@ -454,9 +449,7 @@ export default class PermissionsService extends BaseService {
       .where('model_id', modelId)
       .delete()
 
-    const many = await this.giveAll(modelType, modelId, permissionId, null, null, true)
-
-    return many
+    return await this.giveAll(modelType, modelId, permissionId, null, null, true)
   }
 
   /**

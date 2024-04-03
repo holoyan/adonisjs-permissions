@@ -30,7 +30,7 @@
   - [Forbidding permissions on a resource](#forbidding-permissions-on-a-resource)
   - [Checking for forbidden permissions](#checking-for-forbidden-permissions)
   - [Unforbidding the permissions](#unforbidding-the-permissions)
-  - [Global v resource permissions (Important!)](#global-v-resource-permissions-important)
+  - [Global vs resource permissions (Important!)](#global-vs-resource-permissions-important)
   - [containsPermission v hasPermission](#containspermission-v-haspermission)
 - [License](#license)
 </p></details>
@@ -242,7 +242,7 @@ you can pass array of roles
 ```typescript
 
 // returns true only if user has all roles
-await Acl.model(user).hasAllRoles(['admin', 'manager']) 
+await Acl.model(user).hasAllRoles('admin', 'manager') 
 
 ```
 
@@ -250,7 +250,7 @@ to check if user has any of roles, will return true if user has at least one rol
 
 ```typescript
 
-await Acl.model(user).hasAnyRole(['admin', 'manager']) 
+await Acl.model(user).hasAnyRole('admin', 'manager') 
 
 ```
 
@@ -550,89 +550,87 @@ await Acl.role(role).containsPermission('delete') // true
 
 ```
 
-### Global v resource permissions (Important!)
+### Global vs resource permissions (Important!)
 
-> Important! Action performed globally will affect on resource models
+> Important! Action performed globally will affect on a resource models
 
 It is very important to understood difference between global and resource permissions and their scope.
 Look at this way, if there is no `entity` model then action will be performed **globally**, otherwise **on resource**
 
+```
+
+
+|--------------Global--------------|
+|                                  |
+|    |------Class level------|     |
+|    |                       |     |
+|    |   |--Model level--|   |     |
+|    |   |               |   |     |
+|    |   |               |   |     |
+|    |   |               |   |     |
+|    |   |---------------|   |     |
+|    |                       |     |
+|    |-----------------------|     |
+|                                  |
+|----------------------------------|
+
+```
+
+
+
 ```typescript
-// global actions
 import {Acl} from "@holoyan/adonisjs-permissions";
+import Post from "#models/post";
 
-// Give a user the permission to edit
-await Acl.model(user).allow('edit');
 
-Acl.model(user).assignDirectPermission('uploadFile')
+// Global level
+await Acl.model(admin).allow('create');
+await Acl.model(admin).allow('edit');
+await Acl.model(admin).allow('view');
 
-await Acl.model(user).forbid('delete')
+// class level
+await Acl.model(manager).allow('create', Post)
 
-await Acl.model(user).hasPermission('create')
-await Acl.model(user).unforbid('delete')
+// model level
+const myPost = await Post.find(id)
+await Acl.model(client).allow('view', myPost)
+
+// checking
+// admin
+await Acl.model(admin).hasPermission('create') // true
+await Acl.model(admin).hasPermission('create', Post) // true
+await Acl.model(admin).hasPermission('create', myPost) // true
+
+// manager
+await Acl.model(manager).hasPermission('create') // false
+await Acl.model(manager).hasPermission('create', Post) // true
+await Acl.model(manager).hasPermission('create', myPost) // true
+await Acl.model(manager).hasPermission('create', myOtherPost) // true
+
+// client
+await Acl.model(client).hasPermission('create') // false
+await Acl.model(client).hasPermission('create', Post) // false
+await Acl.model(client).hasPermission('create', myPost) // true
+await Acl.model(client).hasPermission('create', myOtherPost) // false
 // ... and so on
 
 ```
 
-```typescript
-// On resource actions
-
-await Acl.role(admin).assign('edit', product1)
-await Acl.model(user).hasPermission('edit', product1)
-await Acl.model(user).assignDirectPermission('edit', Post)
-
-```
-
-As you can see if `entity` (product1, Post and so on) is specified then it's a *on resource* action
-
-Now let's see few examples
-
-```typescript
-import {Acl} from "@holoyan/adonisjs-permissions";
-
-// Global action
-await Acl.model(user).allow('edit');
-
-const product1 = Product.first();
-
-await Acl.model(user).hasPermission('edit') // true
-await Acl.model(user).hasPermission('edit', product1) // true becouse 'edit' permission assigned globaly
-await Acl.model(user).hasPermission('edit', ImageModel) // true becouse 'edit' permission assigned globaly
-
-```
-
-Now if do same but assign on Resource, result will be different
+Same is true when using `forbidden` action
 
 ```typescript
 
-const product1 = Product.first();
+// class level
+await Acl.model(manager).allow('edit', Post) // allow to edit all posts
 
-await Acl.model(user).allow('edit', product1);
+await Acl.model(manager).forbid('edit', myPost) // forbid editing on a specific post
 
-await Acl.model(user).hasPermission('edit', product1) // true becouse 'edit' permission assigned to this specific model instance
 
-await Acl.model(user).hasPermission('edit') // false
-await Acl.model(user).hasPermission('edit', Product) // false becouse 'edit' permission assigned to the specific model instance
-
-```
-
-let's see one more example
-
-```typescript
-
-await Acl.model(user).allow('edit', Product); // assing to Product model, for all Product instances it will be true
-
-const product1 = Product.first();
-await Acl.model(user).hasPermission('edit', product1) // true
-const product2 = Product.find(someId);
-await Acl.model(user).hasPermission('edit', product2) // true
-await Acl.model(user).hasPermission('edit', Product) // true
-
-await Acl.model(user).hasPermission('edit') // false , becouse it's not global, it's only on Product resrouce
+await Acl.model(client).hasPermission('edit', Post) // true
+await Acl.model(client).hasPermission('edit', myPost) // false
+await Acl.model(client).hasPermission('edit', myOtherPost) // true
 
 ```
-
-Anytime you can use `containsPermission()` method to check if user has it
 
 ### containsPermission v hasPermission
 
