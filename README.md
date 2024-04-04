@@ -36,6 +36,7 @@
   - [Unforbidding the permissions](#unforbidding-the-permissions)
   - [Global vs resource permissions (Important!)](#global-vs-resource-permissions-important)
   - [containsPermission v hasPermission](#containspermission-v-haspermission)
+- [Todo](#todo)
 - [Test](#test)
 - [License](#license)
 </p></details>
@@ -750,6 +751,13 @@ await Acl.model(user).forbid('read'); // forbid read action
 await Acl.model(user).containsPermission('read') // true
 
 ```
+
+## TODO
+
+- [ ] Scopes (Multitenancy)
+- [ ] Events
+- [ ] UUID support
+- [ ] More test coverage
 
 ## Test
 
