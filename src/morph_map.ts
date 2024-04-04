@@ -1,28 +1,38 @@
-import { MorphMapInterface } from './types.js'
+import { MorphInterface, MorphMapInterface } from './types.js'
 
-export default class MorphMap {
-  private map: MorphMapInterface = {}
+export default class MorphMap implements MorphInterface {
+  private _map: MorphMapInterface = {}
+
+  private static _instance?: MorphMap
+
+  static create() {
+    if (this._instance) {
+      return this._instance
+    }
+
+    return new MorphMap()
+  }
 
   set(alias: string, target: any) {
-    this.map[alias] = target
+    this._map[alias] = target
   }
 
   get(alias: string) {
-    if (!(alias in this.map)) {
+    if (!(alias in this._map)) {
       throw new Error('morph map not found for ' + alias)
     }
 
-    return this.map[alias] || null
+    return this._map[alias] || null
   }
 
   has(alias: string) {
-    return alias in this.map
+    return alias in this._map
   }
 
   hasTarget(target: any) {
-    const keys = Object.keys(this.map)
+    const keys = Object.keys(this._map)
     for (const key of keys) {
-      if (this.map[key] === target) {
+      if (this._map[key] === target) {
         return true
       }
     }
@@ -31,9 +41,9 @@ export default class MorphMap {
   }
 
   getAlias(target: any) {
-    const keys = Object.keys(this.map)
+    const keys = Object.keys(this._map)
     for (const key of keys) {
-      if (target instanceof this.map[key] || target === this.map[key]) {
+      if (target instanceof this._map[key] || target === this._map[key]) {
         return key
       }
     }

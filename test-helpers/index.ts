@@ -1,28 +1,93 @@
-import { Hash } from '@adonisjs/hash'
 import { configDotenv } from 'dotenv'
 import { getActiveTest } from '@japa/runner'
 import { Emitter } from '@adonisjs/core/events'
-import { BaseModel } from '@adonisjs/lucid/orm'
+import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { Database } from '@adonisjs/lucid/database'
 import { Encryption } from '@adonisjs/core/encryption'
-import { Scrypt } from '@adonisjs/hash/drivers/scrypt'
 import { AppFactory } from '@adonisjs/core/factories/app'
 import { LoggerFactory } from '@adonisjs/core/factories/logger'
 import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 import { join } from 'node:path'
 import fs from 'node:fs'
+import { DateTime } from 'luxon'
+import {
+  AclModelInterface,
+  MorphInterface,
+  MorphMapInterface,
+  PermissionInterface,
+} from '../src/types.js'
+import { ApplicationService } from '@adonisjs/core/types'
+import { Chance } from 'chance'
 
 export const encryption: Encryption = new EncryptionFactory().create()
 configDotenv()
 
 const BASE_URL = new URL('./tmp/', import.meta.url)
 
-/**
- * Creates a fresh instance of AdonisJS hash module
- * with scrypt driver
- */
-export function getHasher() {
-  return new Hash(new Scrypt({}))
+const app = new AppFactory().create(BASE_URL, () => {}) as ApplicationService
+await app.init()
+await app.boot()
+
+const logger = new LoggerFactory().create()
+const emitter = new Emitter(app)
+
+class MorphMap implements MorphInterface {
+  _map: MorphMapInterface = {}
+
+  static _instance?: MorphMap
+
+  static create() {
+    if (this._instance) {
+      return this._instance
+    }
+
+    return new MorphMap()
+  }
+
+  set(alias: string, target: any) {
+    this._map[alias] = target
+  }
+
+  get(alias: string) {
+    if (!(alias in this._map)) {
+      throw new Error('morph map not found for ' + alias)
+    }
+
+    return this._map[alias] || null
+  }
+
+  has(alias: string) {
+    return alias in this._map
+  }
+
+  hasTarget(target: any) {
+    const keys = Object.keys(this._map)
+    for (const key of keys) {
+      if (this._map[key] === target) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  getAlias(target: any) {
+    const keys = Object.keys(this._map)
+    for (const key of keys) {
+      if (target instanceof this._map[key] || target === this._map[key]) {
+        return key
+      }
+    }
+
+    throw new Error('Target not found')
+  }
+}
+export const morphMap = MorphMap.create()
+export function MorphMapDecorator(param: string) {
+  return function <T extends { new (...args: any[]): {} }>(target: T) {
+    target.prototype.__morphMapName = param
+    morphMap.set(param, target)
+  }
 }
 
 /**
@@ -41,9 +106,6 @@ export async function createDatabase() {
     fs.mkdirSync(dir)
   }
 
-  const app = new AppFactory().create(BASE_URL, () => {})
-  const logger = new LoggerFactory().create()
-  const emitter = new Emitter(app)
   const db = new Database(
     {
       connection: process.env.DB || 'sqlite',
@@ -62,6 +124,29 @@ export async function createDatabase() {
             database: process.env.PG_DATABASE as string,
             user: process.env.PG_USER as string,
             password: process.env.PG_PASSWORD as string,
+          },
+        },
+        mssql: {
+          client: 'mssql',
+          connection: {
+            server: process.env.MSSQL_HOST as string,
+            port: Number(process.env.MSSQL_PORT! as string),
+            user: process.env.MSSQL_USER as string,
+            password: process.env.MSSQL_PASSWORD as string,
+            database: 'master',
+            options: {
+              enableArithAbort: true,
+            },
+          },
+        },
+        mysql: {
+          client: 'mysql2',
+          connection: {
+            host: process.env.MYSQL_HOST as string,
+            port: Number(process.env.MYSQL_PORT),
+            database: process.env.MYSQL_DATABASE as string,
+            user: process.env.MYSQL_USER as string,
+            password: process.env.MYSQL_PASSWORD as string,
           },
         },
       },
@@ -91,13 +176,13 @@ export async function createTables(db: Database) {
 
     await db.connection().schema.dropTableIfExists('roles')
     await db.connection().schema.dropTableIfExists('permissions')
+
+    await db.connection().schema.dropTableIfExists('products')
+    await db.connection().schema.dropTableIfExists('posts')
   })
 
   await db.connection().schema.createTableIfNotExists('users', (table) => {
     table.increments('id').notNullable()
-    table.string('full_name').nullable()
-    table.string('email', 254).notNullable().unique()
-    table.string('password').notNullable()
 
     table.timestamp('created_at').notNullable()
     table.timestamp('updated_at').nullable()
@@ -108,14 +193,18 @@ export async function createTables(db: Database) {
 
     table.string('slug').index()
     table.string('title')
-    table.string('entity_type')
-    table.bigint('entity_id').unsigned()
-    table.integer('scope').unsigned()
+    table.string('entity_type').defaultTo('*')
+    table.bigint('entity_id').unsigned().nullable()
+    table.integer('scope').unsigned().defaultTo(0)
+    table.boolean('allowed').defaultTo(true)
 
+    /**
+     * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+     */
     table.timestamp('created_at', { useTz: true })
     table.timestamp('updated_at', { useTz: true })
 
-    table.unique(['slug', 'scope'])
+    table.index(['slug', 'scope'])
     table.index(['entity_type', 'entity_id'])
   })
 
@@ -134,7 +223,7 @@ export async function createTables(db: Database) {
 
     table.index(['model_type', 'model_id'])
 
-    table.foreign('role_id').references('roles.id').onDelete('CASCADE')
+    // table.foreign('role_id').references('roles.id').onDelete('CASCADE')
   })
 
   await db.connection().schema.createTableIfNotExists('permissions', (table) => {
@@ -142,10 +231,10 @@ export async function createTables(db: Database) {
 
     table.string('slug').index()
     table.string('title')
-    table.string('entity_type')
-    table.bigint('entity_id').unsigned()
-    table.integer('scope').unsigned()
-    table.boolean('allowed')
+    table.string('entity_type').defaultTo('*')
+    table.bigint('entity_id').unsigned().nullable()
+    table.integer('scope').unsigned().defaultTo(0)
+    table.boolean('allowed').defaultTo(true)
 
     /**
      * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
@@ -153,7 +242,7 @@ export async function createTables(db: Database) {
     table.timestamp('created_at', { useTz: true })
     table.timestamp('updated_at', { useTz: true })
 
-    table.unique(['slug', 'scope'])
+    table.index(['slug', 'scope'])
     table.index(['entity_type', 'entity_id'])
   })
 
@@ -172,42 +261,252 @@ export async function createTables(db: Database) {
 
     table.index(['model_type', 'model_id'])
 
-    table.foreign('permission_id').references('permissions.id').onDelete('CASCADE')
+    // table.foreign('permission_id').references('permissions.id').onDelete('CASCADE')
+  })
+
+  await db.connection().schema.createTableIfNotExists('products', (table) => {
+    table.increments('id')
+
+    /**
+     * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+     */
+    table.timestamp('created_at', { useTz: true })
+    table.timestamp('updated_at', { useTz: true })
+  })
+
+  await db.connection().schema.createTableIfNotExists('posts', (table) => {
+    table.increments('id')
+
+    /**
+     * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+     */
+    table.timestamp('created_at', { useTz: true })
+    table.timestamp('updated_at', { useTz: true })
+  })
+}
+
+export async function defineModels() {
+  @MorphMapDecorator('users')
+  class User extends BaseModel implements AclModelInterface {
+    @column({ isPrimary: true })
+    declare id: number
+
+    @column.dateTime({ autoCreate: true })
+    declare createdAt: DateTime
+
+    @column.dateTime({ autoCreate: true, autoUpdate: true })
+    declare updatedAt: DateTime | null
+
+    getModelId() {
+      return this.id
+    }
+  }
+
+  @MorphMapDecorator('roles')
+  class Role extends BaseModel implements AclModelInterface {
+    getModelId(): number {
+      return this.id
+    }
+
+    @column({ isPrimary: true })
+    declare id: number
+
+    @column()
+    declare slug: string
+
+    @column()
+    declare title: string
+
+    @column()
+    declare entityType: string
+
+    @column()
+    declare entityId: number | null
+
+    @column()
+    declare scope: number
+
+    @column()
+    declare allowed: boolean
+
+    @column.dateTime({ autoCreate: true })
+    declare createdAt: DateTime
+
+    @column.dateTime({ autoCreate: true, autoUpdate: true })
+    declare updatedAt: DateTime
+  }
+
+  @MorphMapDecorator('permissions')
+  class Permission extends BaseModel implements PermissionInterface {
+    getModelId(): number {
+      return this.id
+    }
+
+    @column({ isPrimary: true })
+    declare id: number
+
+    @column()
+    declare slug: string
+
+    @column()
+    declare title: string
+
+    @column()
+    declare entityType: string
+
+    @column()
+    declare entityId: number | null
+
+    @column()
+    declare allowed: boolean
+
+    @column()
+    declare scope: number
+
+    @column.dateTime({ autoCreate: true })
+    declare createdAt: DateTime
+
+    @column.dateTime({ autoCreate: true, autoUpdate: true })
+    declare updatedAt: DateTime
+  }
+
+  class ModelRole extends BaseModel {
+    @column({ isPrimary: true })
+    declare id: number
+
+    @column()
+    declare roleId: number
+
+    @column()
+    declare modelType: string
+
+    @column()
+    declare modelId: number | null
+
+    @column.dateTime({ autoCreate: true })
+    declare createdAt: DateTime
+
+    @column.dateTime({ autoCreate: true, autoUpdate: true })
+    declare updatedAt: DateTime
+  }
+
+  class ModelPermission extends BaseModel {
+    @column({ isPrimary: true })
+    declare id: number
+
+    @column()
+    declare permissionId: number
+
+    @column()
+    declare modelType: string
+
+    @column()
+    declare modelId: number
+
+    @column.dateTime({ autoCreate: true })
+    declare createdAt: DateTime
+
+    @column.dateTime({ autoCreate: true, autoUpdate: true })
+    declare updatedAt: DateTime
+  }
+
+  @MorphMapDecorator('products')
+  class Product extends BaseModel implements AclModelInterface {
+    @column({ isPrimary: true })
+    declare id: number
+
+    @column.dateTime({ autoCreate: true })
+    declare createdAt: DateTime
+
+    @column.dateTime({ autoCreate: true, autoUpdate: true })
+    declare updatedAt: DateTime
+
+    getModelId(): number {
+      return this.id
+    }
+  }
+
+  @MorphMapDecorator('posts')
+  class Post extends BaseModel implements AclModelInterface {
+    @column({ isPrimary: true })
+    declare id: number
+
+    @column.dateTime({ autoCreate: true })
+    declare createdAt: DateTime
+
+    @column.dateTime({ autoCreate: true, autoUpdate: true })
+    declare updatedAt: DateTime
+
+    getModelId(): number {
+      return this.id
+    }
+  }
+
+  return {
+    User: User,
+    Product: Product,
+    Post: Post,
+    Role: Role,
+    Permission: Permission,
+    ModelRole: ModelRole,
+    ModelPermission: ModelPermission,
+  }
+}
+
+export async function seedDb(models: any) {
+  await models.User.createMany(getUsers(100))
+  if (models.Post) {
+    await models.Post.createMany(getPosts(20))
+  }
+  if (models.Product) {
+    await models.Product.createMany(getProduts(20))
+  }
+}
+
+/**
+ * Returns an array of users filled with random data
+ */
+export function getUsers(count: number) {
+  // const chance = new Chance()
+  return [...new Array(count)].map(() => {
+    return {}
+  })
+}
+
+export function getRoles(count: number) {
+  const chance = new Chance()
+  return [...new Array(count)].map(() => {
+    return {
+      slug: chance.name(),
+      title: chance.name(),
+    }
+  })
+}
+
+export function getPermissions(count: number) {
+  const chance = new Chance()
+  return [...new Array(count)].map(() => {
+    return {
+      slug: chance.name(),
+      title: chance.name(),
+    }
   })
 }
 
 /**
- * Creates an emitter instance for testing with typed
- * events
+ * Returns an array of posts for a given user, filled with random data
  */
-export function createEmitter<Events extends Record<string, any>>() {
-  const test = getActiveTest()
-  if (!test) {
-    throw new Error('Cannot use "createEmitter" outside of a Japa test')
-  }
-
-  const app = new AppFactory().create(BASE_URL, () => {})
-  return new Emitter<Events>(app)
+export function getPosts(count: number) {
+  return [...new Array(count)].map(() => {
+    return {}
+  })
 }
 
 /**
- * Promisify an event
+ * Returns an array of posts for a given user, filled with random data
  */
-export function pEvent<T extends Record<string | symbol | number, any>, K extends keyof T>(
-  emitter: Emitter<T>,
-  event: K,
-  timeout: number = 500
-) {
-  return new Promise<T[K] | null>((resolve) => {
-    function handler(data: T[K]) {
-      emitter.off(event, handler)
-      resolve(data)
-    }
-
-    setTimeout(() => {
-      emitter.off(event, handler)
-      resolve(null)
-    }, timeout)
-    emitter.on(event, handler)
+export function getProduts(count: number) {
+  return [...new Array(count)].map(() => {
+    return {}
   })
 }

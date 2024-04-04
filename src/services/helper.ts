@@ -1,10 +1,4 @@
-import app from '@adonisjs/core/services/app'
-import { AclModel, AclModelInterface } from '../types.js'
-
-export async function morphMap() {
-  const map = await app.container.make('morphMap')
-  return map
-}
+import { AclModel, AclModelInterface, MorphInterface } from '../types.js'
 
 export function formatList(models: (string | number | any)[]) {
   let slugs: string[] = []
@@ -58,7 +52,7 @@ export function formatStringNumbers(models: string | number | any) {
   return { slugs, ids }
 }
 
-export async function destructTarget(target?: AclModel | Function) {
+export async function destructTarget(map: MorphInterface, target?: AclModel | Function) {
   if (!target) {
     return {
       targetClass: null,
@@ -66,7 +60,6 @@ export async function destructTarget(target?: AclModel | Function) {
     }
   }
 
-  const map = await morphMap()
   return {
     targetClass: map.getAlias(target),
     targetId: isAclModelInterface(target) ? target.getModelId() : null,

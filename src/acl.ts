@@ -2,35 +2,97 @@ import { RoleHasModelPermissions } from './services/roles/role_has_model_permiss
 import { ModelHasRolePermissions } from './services/model_has_role_permissions.js'
 import PermissionsService from './services/permissions/permissions_service.js'
 import RolesService from './services/roles/roles_service.js'
-import { AclModel } from './types.js'
-import Role from './models/role.js'
-import Permission from './models/permission.js'
+import { AclModel, MorphInterface, PermissionInterface, RoleInterface } from './types.js'
 import PermissionHasModelRoles from './services/permissions/permission_has_model_roles.js'
 import ModelService from './services/model_service.js'
+import ModelManager from './model_manager.js'
+import EmptyPermission from './services/permissions/empty_permission.js'
+import EmptyRoles from './services/roles/empty_roles.js'
 
 export class Acl {
-  static model(model: AclModel): ModelHasRolePermissions {
-    return new ModelHasRolePermissions(model, new RolesService(), new PermissionsService())
+  private static modelManager: ModelManager
+
+  private static map: MorphInterface
+
+  static setModelManager(manager: ModelManager) {
+    this.modelManager = manager
   }
 
-  static role(role: Role | null) {
+  static setMorphMap(map: MorphInterface) {
+    this.map = map
+  }
+
+  static model(model: AclModel): ModelHasRolePermissions {
+    return new ModelHasRolePermissions(
+      model,
+      new RolesService(
+        this.modelManager.getModel('role'),
+        this.modelManager.getModel('modelPermission'),
+        this.modelManager.getModel('modelRole'),
+        this.map
+      ),
+      new PermissionsService(
+        this.modelManager.getModel('permission'),
+        this.modelManager.getModel('role'),
+        this.modelManager.getModel('modelPermission'),
+        this.modelManager.getModel('modelRole'),
+        this.map
+      ),
+      this.map
+    )
+  }
+
+  static role(role?: RoleInterface) {
     if (role) {
-      return new RoleHasModelPermissions(role, new PermissionsService(), new ModelService())
+      return new RoleHasModelPermissions(
+        role,
+        new PermissionsService(
+          this.modelManager.getModel('permission'),
+          this.modelManager.getModel('role'),
+          this.modelManager.getModel('modelPermission'),
+          this.modelManager.getModel('modelRole'),
+          this.map
+        ),
+        new ModelService(
+          this.modelManager.getModel('modelPermission'),
+          this.modelManager.getModel('modelRole'),
+          this.map
+        ),
+        this.map
+      )
     } else {
-      return Role
+      return new EmptyRoles(this.modelManager.getModel('role'))
     }
   }
 
-  static permission(permisison: Permission | null) {
-    if (permisison) {
+  static permission(permission?: PermissionInterface) {
+    if (permission) {
       return new PermissionHasModelRoles(
-        permisison,
-        new RolesService(),
-        new PermissionsService(),
-        new ModelService()
+        permission,
+        new RolesService(
+          this.modelManager.getModel('role'),
+          this.modelManager.getModel('modelPermission'),
+          this.modelManager.getModel('modelRole'),
+          this.map
+        ),
+        new PermissionsService(
+          this.modelManager.getModel('permission'),
+          this.modelManager.getModel('role'),
+          this.modelManager.getModel('modelPermission'),
+          this.modelManager.getModel('modelRole'),
+          this.map
+        ),
+        new ModelService(
+          this.modelManager.getModel('modelPermission'),
+          this.modelManager.getModel('modelRole'),
+          this.map
+        ),
+        this.modelManager.getModel('modelPermission'),
+        this.modelManager.getModel('modelRole'),
+        this.map
       )
     } else {
-      return Permission
+      return new EmptyPermission(this.modelManager.getModel('permission'))
     }
   }
 }

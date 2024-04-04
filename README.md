@@ -1,6 +1,6 @@
 # Role permissions system for AdonisJS V6+
 
-## Under development!
+## Beta version
 
 [![test](https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml/badge.svg)](https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml)
 [![license](https://poser.pugx.org/silber/bouncer/license.svg)](https://github.com/holoyan/adonisjs-permissions/blob/master/LICENSE.md)
@@ -12,6 +12,9 @@
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Configuration](#configuration)
+- [Support](#support)
+  - [Database support](#database-support)
+  - [UUID support](#uuid-support)
 - [Basic Usage](#basic-usage)
   - [Creating roles and permissions](#creating-roles-and-permissions)
   - [Assigning permissions to the roles (Globally)](#assigning-permissions-to-the-roles-globally)
@@ -30,8 +33,9 @@
   - [Forbidding permissions on a resource](#forbidding-permissions-on-a-resource)
   - [Checking for forbidden permissions](#checking-for-forbidden-permissions)
   - [Unforbidding the permissions](#unforbidding-the-permissions)
-  - [Global v resource permissions (Important!)](#global-v-resource-permissions-important)
+  - [Global vs resource permissions (Important!)](#global-vs-resource-permissions-important)
   - [containsPermission v hasPermission](#containspermission-v-haspermission)
+- [Test](#test)
 - [License](#license)
 </p></details>
 
@@ -58,13 +62,72 @@ const post = await Post.first()
 await Acl.model(user).allow('delete', post);
 ```
 
-To be able to use full power of Acl you should have clear understanding how it is structured and works, that's why documentation will be divided into two parts - [Basic usage](#basic-usage) and [Advanced usage](#advanced-usage) .
+To be able to use full power of Acl you should have clear understanding how it is structured and works, that's why documentation will be divided into two parts - [Basic usage](#basic-usage) and [Advanced usage](#digging-deeper) .
 For most of the applications [Basic usage](#basic-usage) will be enough
 
 ## Installation
-    npm install ...
+    
+    npm i @holoyan/adonisjs-permissions
+
+
+Next publish config files
+
+    node ace configure @holoyan/adonisjs-permissions
+this will create permissions.ts file in `configs` and migration file in the `database/migrations` directory
+
+Next run migration
+    
+    node ace migration:run
+
 
 ## Configuration
+
+All models which will interact with `Acl` MUST use `@MorphMap('ALIAS_FOR_CLASS')` decorator and implement `AclModelInterface` contract
+
+Example. 
+
+```typescript
+
+import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { MorphMap } from '@holoyan/adonisjs-permissions'
+import { AclModelInterface } from '@holoyan/adonisjs-permissions/types'
+
+@MorphMap('users')
+export default class User extends BaseModel implements AclModelInterface {
+  getModelId(): number {
+    return this.id
+  }
+  
+  // other code goes here
+}
+
+@MorphMap('admins')
+export default class Admin extends BaseModel implements AclModelInterface {
+  getModelId(): number {
+    return this.id
+  }
+  // other code goes here
+}
+
+@MorphMap('posts')
+export default class Post extends BaseModel implements AclModelInterface {
+  getModelId(): number {
+    return this.id
+  }
+
+  // other code goes here
+}
+
+```
+
+## Support
+
+### Database Support
+
+Currently supported databases: `postgres`, `mysql`, `mssql`
+
+### UUID support
+No uuid support *yet*
 
 ## Basic Usage
 
@@ -200,7 +263,7 @@ const roles = await Acl.model(user).permissions()
 const models = await Acl.permission(permission).models()
 
 ```
-this will return array of `ModelPermission` which will contain `modelType,modelId` attributes, where `modelType` is *alias* which you had specified in [morphMap decorator](#morph-map-decorator), `modelId` is the value of column, you've specified in [getModelId]() method.
+this will return array of `ModelPermission` which will contain `modelType,modelId` attributes, where `modelType` is *alias* which you had specified in [morphMap decorator](#configuration), `modelId` is the value of column, you've specified in [getModelId](#configuration) method.
 
 Most of the cases you will have only one model (User), it's better to use `modelsFor()` to get  concrete models
 
@@ -242,7 +305,7 @@ you can pass array of roles
 ```typescript
 
 // returns true only if user has all roles
-await Acl.model(user).hasAllRoles(['admin', 'manager']) 
+await Acl.model(user).hasAllRoles('admin', 'manager') 
 
 ```
 
@@ -250,7 +313,7 @@ to check if user has any of roles, will return true if user has at least one rol
 
 ```typescript
 
-await Acl.model(user).hasAnyRole(['admin', 'manager']) 
+await Acl.model(user).hasAnyRole('admin', 'manager') 
 
 ```
 
@@ -550,89 +613,87 @@ await Acl.role(role).containsPermission('delete') // true
 
 ```
 
-### Global v resource permissions (Important!)
+### Global vs resource permissions (Important!)
 
-> Important! Action performed globally will affect on resource models
+> Important! Action performed globally will affect on a resource models
 
 It is very important to understood difference between global and resource permissions and their scope.
 Look at this way, if there is no `entity` model then action will be performed **globally**, otherwise **on resource**
 
+```
+
+
+|--------------Global--------------|
+|                                  |
+|    |------Class level------|     |
+|    |                       |     |
+|    |   |--Model level--|   |     |
+|    |   |               |   |     |
+|    |   |               |   |     |
+|    |   |               |   |     |
+|    |   |---------------|   |     |
+|    |                       |     |
+|    |-----------------------|     |
+|                                  |
+|----------------------------------|
+
+```
+
+
+
 ```typescript
-// global actions
 import {Acl} from "@holoyan/adonisjs-permissions";
+import Post from "#models/post";
 
-// Give a user the permission to edit
-await Acl.model(user).allow('edit');
 
-Acl.model(user).assignDirectPermission('uploadFile')
+// Global level
+await Acl.model(admin).allow('create');
+await Acl.model(admin).allow('edit');
+await Acl.model(admin).allow('view');
 
-await Acl.model(user).forbid('delete')
+// class level
+await Acl.model(manager).allow('create', Post)
 
-await Acl.model(user).hasPermission('create')
-await Acl.model(user).unforbid('delete')
+// model level
+const myPost = await Post.find(id)
+await Acl.model(client).allow('view', myPost)
+
+// checking
+// admin
+await Acl.model(admin).hasPermission('create') // true
+await Acl.model(admin).hasPermission('create', Post) // true
+await Acl.model(admin).hasPermission('create', myPost) // true
+
+// manager
+await Acl.model(manager).hasPermission('create') // false
+await Acl.model(manager).hasPermission('create', Post) // true
+await Acl.model(manager).hasPermission('create', myPost) // true
+await Acl.model(manager).hasPermission('create', myOtherPost) // true
+
+// client
+await Acl.model(client).hasPermission('create') // false
+await Acl.model(client).hasPermission('create', Post) // false
+await Acl.model(client).hasPermission('create', myPost) // true
+await Acl.model(client).hasPermission('create', myOtherPost) // false
 // ... and so on
 
 ```
 
-```typescript
-// On resource actions
-
-await Acl.role(admin).assign('edit', product1)
-await Acl.model(user).hasPermission('edit', product1)
-await Acl.model(user).assignDirectPermission('edit', Post)
-
-```
-
-As you can see if `entity` (product1, Post and so on) is specified then it's a *on resource* action
-
-Now let's see few examples
-
-```typescript
-import {Acl} from "@holoyan/adonisjs-permissions";
-
-// Global action
-await Acl.model(user).allow('edit');
-
-const product1 = Product.first();
-
-await Acl.model(user).hasPermission('edit') // true
-await Acl.model(user).hasPermission('edit', product1) // true becouse 'edit' permission assigned globaly
-await Acl.model(user).hasPermission('edit', ImageModel) // true becouse 'edit' permission assigned globaly
-
-```
-
-Now if do same but assign on Resource, result will be different
+Same is true when using `forbidden` action
 
 ```typescript
 
-const product1 = Product.first();
+// class level
+await Acl.model(manager).allow('edit', Post) // allow to edit all posts
 
-await Acl.model(user).allow('edit', product1);
+await Acl.model(manager).forbid('edit', myPost) // forbid editing on a specific post
 
-await Acl.model(user).hasPermission('edit', product1) // true becouse 'edit' permission assigned to this specific model instance
 
-await Acl.model(user).hasPermission('edit') // false
-await Acl.model(user).hasPermission('edit', Product) // false becouse 'edit' permission assigned to the specific model instance
-
-```
-
-let's see one more example
-
-```typescript
-
-await Acl.model(user).allow('edit', Product); // assing to Product model, for all Product instances it will be true
-
-const product1 = Product.first();
-await Acl.model(user).hasPermission('edit', product1) // true
-const product2 = Product.find(someId);
-await Acl.model(user).hasPermission('edit', product2) // true
-await Acl.model(user).hasPermission('edit', Product) // true
-
-await Acl.model(user).hasPermission('edit') // false , becouse it's not global, it's only on Product resrouce
+await Acl.model(client).hasPermission('edit', Post) // true
+await Acl.model(client).hasPermission('edit', myPost) // false
+await Acl.model(client).hasPermission('edit', myOtherPost) // true
 
 ```
-
-Anytime you can use `containsPermission()` method to check if user has it
 
 ### containsPermission v hasPermission
 
@@ -656,6 +717,12 @@ await Acl.model(user).containsPermission('read') // true
 
 ```
 
+## Test
+
+    npm run test
+
+
 ## License
+
 
 MIT

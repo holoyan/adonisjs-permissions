@@ -9,6 +9,7 @@ export function MorphMap(param: string) {
     }
 
     target.prototype.__morphMapName = service()
+    target.prototype.__morphMapName = param
   }
 }
 
