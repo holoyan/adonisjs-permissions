@@ -1,7 +1,7 @@
 {
   "name": "@holoyan/adonisjs-permissions",
   "description": "Adonisjs role permission system",
-  "version": "0.0.0",
+  "version": "0.5.0",
   "engines": {
     "node": ">=18.16.0"
   },
