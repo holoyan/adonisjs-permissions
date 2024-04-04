@@ -2,7 +2,7 @@
 
 ## Beta version
 
-[![test](https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml/badge.svg)](https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml)
+[//]: # ([![test]&#40;https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml/badge.svg&#41;]&#40;https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml&#41;)
 [![license](https://poser.pugx.org/silber/bouncer/license.svg)](https://github.com/holoyan/adonisjs-permissions/blob/master/LICENSE.md)
 
 ## Table of Contents
@@ -12,6 +12,7 @@
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Configuration](#configuration)
+- [Mixins](#mixins)
 - [Support](#support)
   - [Database support](#database-support)
   - [UUID support](#uuid-support)
@@ -60,6 +61,8 @@ await Acl.permission('edit').attachToModel(user);
 // You can also grant a permission only to a specific model
 const post = await Post.first()
 await Acl.model(user).allow('delete', post);
+// or 
+await user.allow('delete', post)
 ```
 
 To be able to use full power of Acl you should have clear understanding how it is structured and works, that's why documentation will be divided into two parts - [Basic usage](#basic-usage) and [Advanced usage](#digging-deeper) .
@@ -117,6 +120,37 @@ export default class Post extends BaseModel implements AclModelInterface {
 
   // other code goes here
 }
+
+```
+
+
+## Mixins
+
+If you want to be able to call these methods on a `User` model then consider using `hasPermissions` mixin
+
+```typescript
+
+import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { MorphMap } from '@holoyan/adonisjs-permissions'
+import { AclModelInterface } from '@holoyan/adonisjs-permissions/types'
+
+// import mixin
+import { hasPermissions } from '@holoyan/adonisjs-permissions'
+import { compose } from '@adonisjs/core/helpers'
+
+@MorphMap('users')
+export default class User extends compose(BaseModel, hasPermissions()) implements AclModelInterface {
+  getModelId(): number {
+    return this.id
+  }
+  // other code goes here
+}
+
+// then all methods are available on the user
+
+const user = await User.first()
+const roles = await user.roles() // and so on
+
 
 ```
 
