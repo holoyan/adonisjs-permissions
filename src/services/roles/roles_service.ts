@@ -44,13 +44,15 @@ export default class RolesService extends BaseService {
 
   private modelRolesQuery(modelType: string, modelId: number) {
     return this.roleQuery
-      .join(this.modelRoleTable + ' as mr', 'mr.role_id', '=', this.roleTable + '.id')
+      .leftJoin(this.modelRoleTable + ' as mr', 'mr.role_id', '=', this.roleTable + '.id')
       .where('mr.model_type', modelType)
       .where('mr.model_id', modelId)
   }
 
   all(modelType: string, modelId: number) {
-    return this.modelRolesQuery(modelType, modelId).select(this.roleTable + '.*')
+    return this.modelRolesQuery(modelType, modelId)
+      .distinct(this.roleTable + '.id')
+      .select(this.roleTable + '.*')
   }
 
   has(modelType: string, modelId: number, role: string | RoleInterface): Promise<boolean> {
@@ -103,20 +105,8 @@ export default class RolesService extends BaseService {
     return +r[0].$extras.total > 0
   }
 
-  async assign(role: string | RoleInterface, modelType: string, modelId: number) {
-    const r = await this.extractRoleModel([role])
-
-    if (!r.length) {
-      throw new Error('Role  not found')
-    }
-
-    await this.modelRoleClassName.create({
-      modelType,
-      modelId,
-      roleId: r[0].id,
-    })
-
-    return true
+  assign(role: string | RoleInterface, modelType: string, modelId: number) {
+    return this.assignAll([role], modelType, modelId)
   }
 
   async assignAll(roles: (string | RoleInterface)[], modelType: string, modelId: number) {
@@ -126,12 +116,26 @@ export default class RolesService extends BaseService {
       throw new Error('One or many roles not found')
     }
 
+    let roleIds = rs.map((role) => role.id)
+
+    const modelRoles = await this.modelRoleQuery
+      .whereIn('role_id', roleIds)
+      .where('model_type', modelType)
+      .where('model_id', modelId)
+      .select('id')
+
+    const modelRoleIds = modelRoles.map((modelRole) => modelRole.id)
+
+    roleIds = roleIds.filter((roleId) => {
+      return !modelRoleIds.includes(roleId)
+    })
+
     const data = []
-    for (const r of rs) {
+    for (const id of roleIds) {
       data.push({
         modelType,
         modelId,
-        roleId: r.id,
+        roleId: id,
       })
     }
 
