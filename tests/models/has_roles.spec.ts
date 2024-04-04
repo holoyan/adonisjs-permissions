@@ -438,4 +438,40 @@ test.group('Has role | model - role interaction', (group) => {
 
     assert.lengthOf(roles, 0)
   })
+
+  test('Duplicate assign will not make effect', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    Acl.setModelManager(modelManager)
+    Acl.setMorphMap(morphMap)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+    // create role
+    const admin = await Role.create({
+      slug: 'admin',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    await Acl.model(user).assignRole(admin)
+    await Acl.model(user).assignRole(admin)
+    await Acl.model(user).assignRole(admin)
+    await Acl.model(user).assignRole(admin)
+
+    const modelRoles = await ModelRole.query()
+      .where('model_type', 'users')
+      .where('model_id', user.id)
+      .where('role_id', admin.id)
+
+    assert.lengthOf(modelRoles, 1)
+  })
 })

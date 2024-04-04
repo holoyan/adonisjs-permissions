@@ -402,6 +402,19 @@ export default class PermissionsService extends BaseService {
       newPermissions.map((i) => permissionIds.push(i.id))
     }
 
+    // first check if there are assigned or not
+    const alreadyAssigned = await this.modelPermissionQuery
+      .whereIn('id', permissionIds)
+      .where('model_type', modelType)
+      .where('model_id', modelId)
+      .select('id')
+
+    const alreadyAssignedIds = alreadyAssigned.map((item) => item.id)
+
+    permissionIds = permissionIds.filter((item) => {
+      return !alreadyAssignedIds.includes(item)
+    })
+
     let modelPermissionMany = permissionIds.map((i) => ({
       modelType: modelType,
       modelId: modelId,

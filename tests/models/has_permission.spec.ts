@@ -921,4 +921,119 @@ test.group('Has permission | model - permission direct resource interaction', (g
     const onlyGlobals = await Acl.model(user).onResourcePermissions()
     assert.lengthOf(onlyGlobals, 1)
   })
+
+  test('Duplicate global assign will not make effect', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    Acl.setModelManager(modelManager)
+    Acl.setMorphMap(morphMap)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+
+    const create = await Permission.create({
+      slug: 'create',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    await Acl.model(user).assignDirectAllPermissions(['create'])
+    await Acl.model(user).assignDirectAllPermissions(['create'])
+    await Acl.model(user).assignDirectAllPermissions(['create'])
+
+    const modelPermissions = await ModelPermission.query()
+      .where('model_type', 'users')
+      .where('model_id', user.id)
+      .where('permission_id', create.id)
+
+    assert.lengthOf(modelPermissions, 1)
+  })
+
+  test('Duplicate global and resource assign will not make effect', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    Acl.setModelManager(modelManager)
+    Acl.setMorphMap(morphMap)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+    const post = await Post.first()
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    if (!post) {
+      throw new Error('Post not found')
+    }
+
+    await Acl.model(user).assignDirectAllPermissions(['create'])
+    await Acl.model(user).assignDirectAllPermissions(['create'], post)
+    await Acl.model(user).assignDirectAllPermissions(['create'], Post)
+    await Acl.model(user).assignDirectAllPermissions(['create'], post)
+
+    const modelPermissions = await ModelPermission.query()
+      .where('model_type', 'users')
+      .where('model_id', user.id)
+
+    assert.lengthOf(modelPermissions, 3)
+  })
+
+  test('Forbid multiple time will not make effect', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    Acl.setModelManager(modelManager)
+    Acl.setMorphMap(morphMap)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+    const post = await Post.first()
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    if (!post) {
+      throw new Error('Post not found')
+    }
+
+    await Acl.model(user).assignDirectAllPermissions(['create'])
+    await Acl.model(user).forbid('create', post)
+    await Acl.model(user).forbid('create', post)
+    await Acl.model(user).forbid('create', post)
+
+    const modelPermissions = await ModelPermission.query()
+      .where('model_type', 'users')
+      .where('model_id', user.id)
+
+    assert.lengthOf(modelPermissions, 2)
+  })
 })
