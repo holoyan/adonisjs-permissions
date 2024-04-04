@@ -174,34 +174,38 @@ Let's create `create,update,read,delete` permissions and `admin,manager` roles
 
 ```typescript
 
+import { Permission } from '@holoyan/adonisjs-permissions'
+import { Role } from '@holoyan/adonisjs-permissions'
+
+
 // create permissions
-const create = await Acl.permission().create({
+const create = await Permission.create({
   slug:'create',
-  title:'Create some resource',
+  title:'Create some resource', // optional
 })
 
-const update = await Acl.permission().create({
+const update = await Permission.create({
   slug:'update',
   title:'update some resource',
 })
 
-const read = await Acl.permission().create({
+const read = await Permission.create({
   slug:'read',
   title:'read some resource',
 })
 
-const delete = await Acl.permission().create({
+const delete = await Permission.create({
   slug:'delete',
   title:'delete some resource',
 })
 
 // create roles
-const admin = await Acl.role().create({
+const admin = await Role.create({
   slug:'admin',
-  title:'Cool title for Admin',
+  title:'Cool title for Admin', // optional
 })
 
-const manager = await Acl.role().create({
+const manager = await Role.create({
   slug:'manager',
   title:'Cool title for Manager',
 })
@@ -245,7 +249,7 @@ Or we can give permissions directly to users without having any role
 import {Acl} from "@holoyan/adonisjs-permissions";
 
 // create new permission
-const uploadFile = await Acl.permission().create({
+const uploadFile = await Permission.create({
   slug: 'upload-file-slug',
   title: 'permisison to upload files',
 })
