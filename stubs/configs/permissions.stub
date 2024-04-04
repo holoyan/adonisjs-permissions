@@ -16,5 +16,5 @@ export const permissionsConfig: Permissions = {
   morphMaps: {
     roles: 'roles',
     permissions: 'permissions',
-  }
+  },
 }

@@ -2,8 +2,7 @@ import type { NormalizeConstructor } from '@adonisjs/core/types/helpers'
 import Permission from '../models/permission.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { Acl } from '../acl.js'
-import { AclModel, AclModelInterface } from '../types.js'
-import Role from '../models/role.js'
+import { AclModel, AclModelInterface, RoleInterface } from '../types.js'
 
 export function hasPermissions() {
   return <Model extends NormalizeConstructor<typeof BaseModel>>(superclass: Model) => {
@@ -18,28 +17,28 @@ export function hasPermissions() {
         return Acl.model(this as unknown as AclModel).roles()
       }
 
-      hasRole(role: string | Role) {
+      hasRole(role: string | RoleInterface) {
         return Acl.model(this as unknown as AclModel).hasRole(role)
       }
 
-      hasAllRoles(roles: (string | Role)[]) {
-        return Acl.model(this as unknown as AclModel).hasAllRoles(roles)
+      hasAllRoles(...roles: (string | RoleInterface)[]) {
+        return Acl.model(this as unknown as AclModel).hasAllRoles(...roles)
       }
 
-      hasAnyRole(roles: (string | Role)[]) {
-        return Acl.model(this as unknown as AclModel).hasAnyRole(roles)
+      hasAnyRole(...roles: (string | RoleInterface)[]) {
+        return Acl.model(this as unknown as AclModel).hasAnyRole(...roles)
       }
 
-      assignRole(role: string | Role) {
+      assignRole(role: string | RoleInterface) {
         return Acl.model(this as unknown as AclModel).assignRole(role)
       }
 
-      revokeRole(role: string | number | Role) {
+      revokeRole(role: string | number | RoleInterface) {
         return Acl.model(this as unknown as AclModel).revokeRole(role)
       }
 
-      revokeAllRoles(roles: (string | number | Role)[]) {
-        return Acl.model(this as unknown as AclModel).revokeAllRoles(roles)
+      revokeAllRoles(...roles: (string | number | RoleInterface)[]) {
+        return Acl.model(this as unknown as AclModel).revokeAllRoles(...roles)
       }
 
       // roles related section END

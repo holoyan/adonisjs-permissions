@@ -115,3 +115,8 @@ export interface MorphInterface {
 export interface ModelManagerInterface {
   [key: string]: LucidModel
 }
+
+export interface Permissions {
+  tables: Object
+  morphMaps: Object
+}

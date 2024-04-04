@@ -53,7 +53,9 @@ export default class PermissionsService extends BaseService {
       modelId,
       directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       includeForbiddings,
-    }).select(this.permissionTable + '.*')
+    })
+      .distinct(this.permissionTable + '.id')
+      .select(this.permissionTable + '.*')
   }
 
   /**
@@ -68,6 +70,7 @@ export default class PermissionsService extends BaseService {
     })
       .where(this.permissionTable + '.entity_type', '*')
       .whereNull(this.permissionTable + '.entity_id')
+      .distinct(this.permissionTable + '.id')
       .select(this.permissionTable + '.*')
   }
 
@@ -82,7 +85,7 @@ export default class PermissionsService extends BaseService {
       includeForbiddings,
     })
       .where(this.permissionTable + '.entity_type', '!=', '*')
-
+      .distinct(this.permissionTable + '.id')
       .select(this.permissionTable + '.*')
   }
 
@@ -96,7 +99,7 @@ export default class PermissionsService extends BaseService {
       directPermissions: true,
       includeForbiddings,
     })
-
+      .distinct(this.permissionTable + '.id')
       .select(this.permissionTable + '.*')
   }
 
@@ -108,7 +111,7 @@ export default class PermissionsService extends BaseService {
       includeForbiddings,
     })
       .whereNull(this.permissionTable + '.entity_id')
-
+      .distinct(this.permissionTable + '.id')
       .select(this.permissionTable + '.*')
   }
 
@@ -123,7 +126,7 @@ export default class PermissionsService extends BaseService {
       includeForbiddings,
     })
       .whereNotNull(this.permissionTable + '.entity_id')
-
+      .distinct(this.permissionTable + '.id')
       .select(this.permissionTable + '.*')
   }
 
@@ -157,7 +160,8 @@ export default class PermissionsService extends BaseService {
     })
 
     this.applyTargetRestriction(this.permissionTable, q, entityType, entityId)
-    const r = await q.select(this.permissionTable + '.id')
+
+    const r = await q.distinct(this.permissionTable + '.id').select(this.permissionTable + '.id')
 
     return r.length > 0
   }
@@ -184,7 +188,7 @@ export default class PermissionsService extends BaseService {
 
     this.applyTargetRestriction(this.permissionTable, q, entityType, entityId)
 
-    const r = await q.select(this.permissionTable + '.id')
+    const r = await q.distinct(this.permissionTable + '.id').select(this.permissionTable + '.id')
 
     return r.length >= permissions.length
   }
@@ -215,7 +219,7 @@ export default class PermissionsService extends BaseService {
 
     this.applyTargetRestriction(this.permissionTable, q, entityType, entityId)
 
-    const r = await q.select(this.permissionTable + '.id')
+    const r = await q.distinct(this.permissionTable + '.id').select(this.permissionTable + '.id')
 
     return r.length >= permissions.length
   }
@@ -246,7 +250,7 @@ export default class PermissionsService extends BaseService {
 
     this.applyTargetRestriction(this.permissionTable, q, entityType, entityId)
 
-    const r = await q.select(this.permissionTable + '.id')
+    const r = await q.distinct(this.permissionTable + '.id').select(this.permissionTable + '.id')
 
     return r.length > 0
   }
@@ -267,7 +271,8 @@ export default class PermissionsService extends BaseService {
       directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
-    })
+    }).distinct(this.permissionTable + '.id')
+
     const r = await q.select(this.permissionTable + '.id')
 
     return r.length >= permission.length
@@ -289,7 +294,8 @@ export default class PermissionsService extends BaseService {
       directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
-    })
+    }).distinct(this.permissionTable + '.id')
+
     const r = await q.select(this.permissionTable + '.id')
 
     // @ts-ignore
@@ -312,7 +318,8 @@ export default class PermissionsService extends BaseService {
       directPermissions: true,
       permissionSlugs: slugs,
       permissionIds: ids,
-    })
+    }).distinct(this.permissionTable + '.id')
+
     const r = await q.select(this.permissionTable + '.id')
 
     return r.length >= permission.length
@@ -334,7 +341,8 @@ export default class PermissionsService extends BaseService {
       directPermissions: true,
       permissionSlugs: slugs,
       permissionIds: ids,
-    })
+    }).distinct(this.permissionTable + '.id')
+
     const r = await q.select(this.permissionTable + '.id')
 
     // @ts-ignore

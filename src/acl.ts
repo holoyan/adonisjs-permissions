@@ -42,7 +42,7 @@ export class Acl {
     )
   }
 
-  static role(role: RoleInterface | null) {
+  static role(role?: RoleInterface) {
     if (role) {
       return new RoleHasModelPermissions(
         role,
@@ -65,7 +65,7 @@ export class Acl {
     }
   }
 
-  static permission(permission: PermissionInterface | null) {
+  static permission(permission?: PermissionInterface) {
     if (permission) {
       return new PermissionHasModelRoles(
         permission,
