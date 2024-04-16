@@ -1,17 +1,19 @@
 import { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 
 import {
+  ModelPermissionInterface,
   ModelPermissionsQuery,
   MorphInterface,
   PermissionInterface,
   PermissionModel,
+  ScopeInterface,
 } from '../../types.js'
 import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { getModelPermissionModelQuery, getPermissionModelQuery } from '../query_helper.js'
 
 export default class PermissionsService extends BaseService {
-  private permissionQuery
+  // private permissionQuery
   private readonly permissionTable
 
   // private roleQuery
@@ -28,10 +30,11 @@ export default class PermissionsService extends BaseService {
     private roleClassName: typeof BaseModel,
     private modelPermissionClassName: typeof BaseModel,
     private modelRoleClassName: typeof BaseModel,
-    private map: MorphInterface
+    private map: MorphInterface,
+    private scope: ScopeInterface
   ) {
     super()
-    this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
+    // this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
     this.permissionTable = this.permissionClassName.table
 
     // this.roleQuery = getRoleModelQuery(this.roleClassName)
@@ -42,6 +45,13 @@ export default class PermissionsService extends BaseService {
 
     // this.modelRoleQuery = getModelRoleModelQuery(this.modelRoleClassName)
     this.modelRoleTable = this.modelRoleClassName.table
+  }
+
+  private get permissionQuery() {
+    const q = getPermissionModelQuery(this.permissionClassName)
+    this.applyScopes(q)
+
+    return q
   }
 
   /**
@@ -103,6 +113,17 @@ export default class PermissionsService extends BaseService {
       .select(this.permissionTable + '.*')
   }
 
+  async throughRoles(modelType: string, modelId: number, includeForbiddings: boolean = false) {
+    return this.modelPermissionQueryBuilder({
+      modelType,
+      modelId,
+      includeForbiddings,
+      throughRoles: true,
+    })
+      .distinct(this.permissionTable + '.id')
+      .select(this.permissionTable + '.*')
+  }
+
   directGlobal(modelType: string, modelId: number, includeForbiddings: boolean = false) {
     return this.modelPermissionQueryBuilder({
       modelType,
@@ -125,7 +146,7 @@ export default class PermissionsService extends BaseService {
       directPermissions: true,
       includeForbiddings,
     })
-      .whereNotNull(this.permissionTable + '.entity_id')
+      .where(this.permissionTable + '.entity_type', '!=', '*')
       .distinct(this.permissionTable + '.id')
       .select(this.permissionTable + '.*')
   }
@@ -443,6 +464,8 @@ export default class PermissionsService extends BaseService {
       .where(this.modelPermissionTable + '.model_type', modelType)
       .where(this.modelPermissionTable + '.model_id', modelId)
 
+    this.applyModelPermissionScopes(q, 'p')
+
     if (entityType) {
       q.where('p.entity_type', entityType)
 
@@ -509,7 +532,6 @@ export default class PermissionsService extends BaseService {
     entityType: string | null,
     entityId: number | null
   ) {
-    // todo replace using reverseModelPermissionQuery() method
     const q = this.modelPermissionQuery
       .leftJoin(
         this.permissionTable + ' as p',
@@ -521,6 +543,8 @@ export default class PermissionsService extends BaseService {
       .where('model_id', modelId)
       .whereIn('p.slug', permissionsSlug)
       .where('p.allowed', false)
+
+    this.applyModelPermissionScopes(q, 'p')
 
     if (entityType) {
       q.where('p.entity_type', entityType)
@@ -558,15 +582,20 @@ export default class PermissionsService extends BaseService {
       } else {
         q.leftJoin(this.modelRoleTable + ' as mr', (joinQuery) => {
           joinQuery.onVal('mr.model_type', modelType).onVal('mr.model_id', modelId)
-        }).where((subQuery) => {
-          subQuery
-            .where((query) => {
-              query.where('mp.model_type', modelType).where('mp.model_id', modelId)
-            })
-            .orWhere((query) => {
-              query.whereRaw('mr.role_id=mp.model_id').where('mp.model_type', 'roles')
-            })
         })
+        if (conditions.throughRoles) {
+          q.whereRaw('mr.role_id=mp.model_id').where('mp.model_type', 'roles')
+        } else {
+          q.where((subQuery) => {
+            subQuery
+              .where((query) => {
+                query.where('mp.model_type', modelType).where('mp.model_id', modelId)
+              })
+              .orWhere((query) => {
+                query.whereRaw('mr.role_id=mp.model_id').where('mp.model_type', 'roles')
+              })
+          })
+        }
       }
     }
 
@@ -577,6 +606,7 @@ export default class PermissionsService extends BaseService {
           .leftJoin(this.modelPermissionTable + ' as mp2', 'mp2.permission_id', '=', 'p2.id')
           .where('p2.allowed', false)
           .whereRaw('p2.slug=' + this.permissionTable + '.slug')
+          .whereRaw('p2.scope=' + this.permissionTable + '.scope')
           .select('p2.slug')
           .groupBy('p2.slug')
         if (conditions.entity) {
@@ -592,6 +622,10 @@ export default class PermissionsService extends BaseService {
     return q
   }
 
+  /**
+   * @deprecated
+   * @param conditions
+   */
   reverseModelPermissionQuery(conditions: Partial<ModelPermissionsQuery>) {
     const { modelId, modelType, permissionSlugs, directPermissions } = conditions
     const q = this.modelPermissionQuery.leftJoin(
@@ -675,5 +709,16 @@ export default class PermissionsService extends BaseService {
     } else {
       q.where(table + '.entity_type', '*').whereNull(table + '.entity_id')
     }
+  }
+
+  private applyScopes(q: ModelQueryBuilderContract<typeof BaseModel, PermissionInterface>) {
+    q.where(this.permissionTable + '.scope', this.scope.get())
+  }
+
+  private applyModelPermissionScopes(
+    q: ModelQueryBuilderContract<typeof BaseModel, ModelPermissionInterface>,
+    table: string
+  ) {
+    q.where(table + '.scope', this.scope.get())
   }
 }

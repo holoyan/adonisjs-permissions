@@ -1,10 +1,12 @@
-import { BaseModel } from '@adonisjs/lucid/orm'
-import { ModelManagerInterface } from './types.js'
+import { ModelManagerBindings, ModelManagerInterface } from './types.js'
 
 export default class ModelManager {
   private models: ModelManagerInterface = {}
 
-  setModel(key: string, className: typeof BaseModel) {
+  setModel<Binding extends keyof ModelManagerBindings>(
+    key: Binding,
+    className: ModelManagerBindings[Binding]
+  ) {
     this.models[key] = className
   }
 
@@ -12,7 +14,9 @@ export default class ModelManager {
     return key in this.models
   }
 
-  getModel(key: string) {
+  getModel<Binding extends keyof ModelManagerBindings>(
+    key: Binding
+  ): ModelManagerBindings[Binding] {
     if (key in this.models) {
       return this.models[key]
     }

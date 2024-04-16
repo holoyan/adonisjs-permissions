@@ -1,4 +1,10 @@
-import { AclModel, MorphInterface, PermissionInterface, RoleInterface } from '../types.js'
+import {
+  AclModel,
+  MorphInterface,
+  PermissionInterface,
+  RoleInterface,
+  ScopeInterface,
+} from '../types.js'
 import PermissionsService from './permissions/permissions_service.js'
 import RolesService from './roles/roles_service.js'
 import { destructTarget, formatList } from './helper.js'
@@ -8,12 +14,22 @@ export class ModelHasRolePermissions {
     private model: AclModel,
     private roleService: RolesService,
     private permissionsService: PermissionsService,
-    private map: MorphInterface
+    private map: MorphInterface,
+    private scope: ScopeInterface
   ) {}
+
+  on(scope: number) {
+    this.scope.set(scope)
+    return this
+  }
+
+  getScope() {
+    return this.scope.get()
+  }
 
   // roles related section BEGIN
 
-  async roles() {
+  roles() {
     return this.roleService.all(this.map.getAlias(this.model), this.model.getModelId())
   }
 
@@ -31,6 +47,10 @@ export class ModelHasRolePermissions {
 
   assignRole(role: string | RoleInterface) {
     return this.roleService.assign(role, this.map.getAlias(this.model), this.model.getModelId())
+  }
+
+  assign(role: string | RoleInterface) {
+    return this.assignRole(role)
   }
 
   assignAllRoles(...roles: (string | RoleInterface)[]) {
@@ -79,6 +99,22 @@ export class ModelHasRolePermissions {
     )
   }
 
+  directPermissions(includeForbiddings: boolean = false) {
+    return this.permissionsService.direct(
+      this.map.getAlias(this.model),
+      this.model.getModelId(),
+      includeForbiddings
+    )
+  }
+
+  rolePermissions(includeForbiddings: boolean = false) {
+    return this.permissionsService.throughRoles(
+      this.map.getAlias(this.model),
+      this.model.getModelId(),
+      includeForbiddings
+    )
+  }
+
   async directGlobalPermissions(includeForbiddings: boolean = false) {
     return this.permissionsService.directGlobal(
       this.map.getAlias(this.model),
@@ -103,6 +139,10 @@ export class ModelHasRolePermissions {
     )
 
     return result
+  }
+
+  async contains(permission: string | PermissionInterface) {
+    return this.containsPermission(permission)
   }
 
   async containsAllPermissions(permissions: (string | PermissionInterface)[]) {
@@ -264,6 +304,14 @@ export class ModelHasRolePermissions {
 
   async revokePermission(permission: string, target?: AclModel | Function) {
     return this.revokeAllPermissions([permission], target)
+  }
+
+  async revoke(permission: string, target?: AclModel | Function) {
+    return this.revokeAllPermissions([permission], target)
+  }
+
+  async revokeAll(permissions: string[], target?: AclModel | Function) {
+    return this.revokeAllPermissions(permissions, target)
   }
 
   async revokeAllPermissions(permissions: string[], target?: AclModel | Function) {

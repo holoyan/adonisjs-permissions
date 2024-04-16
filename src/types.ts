@@ -1,5 +1,7 @@
 import { LucidModel } from '@adonisjs/lucid/types/model'
 import { DateTime } from 'luxon'
+import { BaseModel } from '@adonisjs/lucid/orm'
+import { Scope } from './scope.js'
 
 export interface AclModelInterface {
   getModelId(): number
@@ -98,6 +100,7 @@ export interface ModelPermissionsQuery extends AclModelQuery {
   directPermissions: boolean
   includeForbiddings: boolean
   entity: Entity
+  throughRoles: boolean
 }
 
 export interface MorphMapInterface {
@@ -113,10 +116,31 @@ export interface MorphInterface {
 }
 
 export interface ModelManagerInterface {
-  [key: string]: LucidModel
+  [key: string]: any
 }
 
 export interface Permissions {
   tables: Object
   morphMaps: Object
+}
+
+export interface ScopeInterface {
+  set(scope: number): ScopeInterface
+  get(): number
+  default(): number
+}
+
+export interface ModelManagerBindings {
+  scope: typeof Scope
+  role: typeof BaseModel
+  permission: typeof BaseModel
+  modelRole: typeof BaseModel
+  modelPermission: typeof BaseModel
+}
+
+export interface AclMiddlewareOptions {
+  role: string
+  permission: string
+  scope: number
+  method: string
 }

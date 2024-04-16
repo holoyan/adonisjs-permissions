@@ -27,15 +27,19 @@
   - [Getting users (models) for a permission](#getting-users-models-for-a-permission)
   - [Getting models for a role](#getting-models-for-a-role)
   - [Checking for a permission](#checking-for-a-permission)
-  - [Removing (revoking) roles and permissions from the model](#removing-revoking-roles-and-permissions-from-the-model)
+  - [Middleware](#middleware)
+  - [Removing (revoking) roles and permissions from the model](#removing-revokingdetach-roles-and-permissions-from-the-model)
 - [Digging deeper](#digging-deeper)
-  - [Restricting a permission to a model (On resource)](#restricting-a-permission-to-a-model-on-resource)
+  - [Restricting a permission to a model (On a resource)](#restricting-a-permission-to-a-model-on-a-resource)
   - [Forbidding permissions](#forbidding-permissions)
   - [Forbidding permissions on a resource](#forbidding-permissions-on-a-resource)
   - [Checking for forbidden permissions](#checking-for-forbidden-permissions)
   - [Unforbidding the permissions](#unforbidding-the-permissions)
   - [Global vs resource permissions (Important!)](#global-vs-resource-permissions-important)
   - [containsPermission v hasPermission](#containspermission-v-haspermission)
+  - [Scopes or Multi-tenancy](#scopes-or-multi-tenancy)
+    - [The Scope middleware](#the-scope-middleware) 
+    - [Default Scope](#default-scope-tenant) 
 - [Todo](#todo)
 - [Test](#test)
 - [License](#license)
@@ -43,21 +47,18 @@
 
 ## Introduction
 
-AdonisJs acl is an elegant and powerful package to managing roles and permissions for any AdonisJs app. With an expressive and fluent syntax, it stays out of your way as much as possible: use it when you want, ignore it when you don't.
+AdonisJs Acl is an elegant and powerful package for managing roles and permissions in any AdonisJs app. With an expressive and fluent syntax, it stays out of your way as much as possible: use it when you want, ignore it when you don't.
 
-For a quick, glanceable list of acl's features, check out [the cheat sheet](#cheat-sheet).
+For a quick, glanceable list of Acl's features, check out the [cheat sheet](#cheat-sheet)
 
 Once installed, you can simply tell the Acl what you want to allow:
 
 ```typescript
 import {Acl} from '@holoyan/adonisjs-permissions'
 
-
 // Give a user the permission to edit
 await Acl.model(user).allow('edit');
-
-// Alternatively, do it through a permission
-await Acl.permission('edit').attachToModel(user);
+// Behind the scenes Acl will create 'edit' permission and assign to the user if not available
 
 // You can also grant a permission only to a specific model
 const post = await Post.first()
@@ -66,8 +67,7 @@ await Acl.model(user).allow('delete', post);
 await user.allow('delete', post)
 ```
 
-To be able to use full power of Acl you should have clear understanding how it is structured and works, that's why documentation will be divided into two parts - [Basic usage](#basic-usage) and [Advanced usage](#digging-deeper) .
-For most of the applications [Basic usage](#basic-usage) will be enough
+To be able to use the full power of Acl, you should have a clear understanding of how it is structured and how it works. That's why the documentation will be divided into two parts: [Basic usage](#basic-usage) and [Advanced usage](#digging-deeper). For most applications, Basic Usage will be enough.
 
 ## Installation
     
@@ -77,7 +77,7 @@ For most of the applications [Basic usage](#basic-usage) will be enough
 Next publish config files
 
     node ace configure @holoyan/adonisjs-permissions
-this will create permissions.ts file in `configs` and migration file in the `database/migrations` directory
+this will create `permissions.ts` file in `configs` directory, migration file in the `database/migrations` directory
 
 Next run migration
     
@@ -86,7 +86,7 @@ Next run migration
 
 ## Configuration
 
-All models which will interact with `Acl` MUST use `@MorphMap('ALIAS_FOR_CLASS')` decorator and implement `AclModelInterface` contract
+All models that will interact with `Acl` MUST use the `@MorphMap('ALIAS_FOR_CLASS')` decorator and implement the `AclModelInterface` contract.
 
 Example. 
 
@@ -124,10 +124,9 @@ export default class Post extends BaseModel implements AclModelInterface {
 
 ```
 
-
 ## Mixins
 
-If you want to be able to call these methods on a `User` model then consider using `hasPermissions` mixin
+If you want to be able to call `Acl` methods on a `User` model then consider using `hasPermissions` mixin
 
 ```typescript
 
@@ -150,8 +149,9 @@ export default class User extends compose(BaseModel, hasPermissions()) implement
 // then all methods are available on the user
 
 const user = await User.first()
-const roles = await user.roles() // and so on
-
+const roles = await user.roles() // get user roles
+await user.allow('edit') // give edit permission
+// and so on...
 
 ```
 
@@ -162,15 +162,15 @@ const roles = await user.roles() // and so on
 Currently supported databases: `postgres`, `mysql`, `mssql`
 
 ### UUID support
-No uuid support *yet*
+No uuid support *yet*, check [todo](#todo) list for more details
 
 ## Basic Usage
 
-On this section we will explore basic role permission methods
+On this section, we will explore basic role permission methods.
 
 ### Creating roles and permissions
 
-Let's create `create,update,read,delete` permissions and `admin,manager` roles
+Let's manually create `create,update,read,delete` permissions, as well as `admin,manager` roles
 
 ```typescript
 
@@ -186,17 +186,14 @@ const create = await Permission.create({
 
 const update = await Permission.create({
   slug:'update',
-  title:'update some resource',
 })
 
 const read = await Permission.create({
   slug:'read',
-  title:'read some resource',
 })
 
 const delete = await Permission.create({
   slug:'delete',
-  title:'delete some resource',
 })
 
 // create roles
@@ -207,24 +204,40 @@ const admin = await Role.create({
 
 const manager = await Role.create({
   slug:'manager',
-  title:'Cool title for Manager',
 })
 
 ```
 
-next step is to [assign permissions to the roles](#assigning-permissions-to-the-roles-globally)
+
+The next step is to [assign permissions to the roles](#assigning-permissions-to-the-roles-globally)
 
 ### Assigning permissions to the roles (Globally)
 
-Now once we've created roles and permissions let's assign them
+Now that we have created roles and permissions, let's assign them.
 
 ```typescript
+import {Acl} from "@holoyan/adonisjs-permissions";
+
+
 await Acl.role(admin).assign('create')
-// or you can use give() method, they are identical
-await Acl.role(admin).give('update')
-// or you use giveAll(), assigneAll() for bulk assign
+// alternatively you can use allow(), give() method, as they are identical
+
+await Acl.role(admin).allow('update')
 await Acl.role(admin).giveAll(['read', 'delete'])
+// alternatively you use giveAll(), assigneAll(), allowAll() for bulk assign
+
 ```
+
+In case you are assigning a permission that is not already available, `Acl` will create new permission behind the scenes and assign them.
+
+```typescript
+
+// uploadFile permissions not available
+await Acl.role(admin).allow('uploadFile')
+// uploadFile permission created and assigned
+
+```
+
 
 ### Assigning permissions and roles to the users (models)
 
@@ -237,6 +250,8 @@ import User from "#models/user";
 const user1 = await User.query().where(condition1).first()
 // give manager role to the user1
 await Acl.model(user1).assignRole(manager)
+// or just use assign() method, they are alias
+// await Acl.model(user1).assign(manager)
 
 const user2 = await User.query().where(condition2).first()
 await Acl.model(user2).assignRole(admin)
@@ -248,19 +263,15 @@ Or we can give permissions directly to users without having any role
 
 import {Acl} from "@holoyan/adonisjs-permissions";
 
-// create new permission
-const uploadFile = await Permission.create({
-  slug: 'upload-file-slug',
-  title: 'permisison to upload files',
-})
-
+// create and assign a new permission
 Acl.model(user1).assignDirectPermission('upload-file-slug')
-
+// or use allow method
+Acl.model(user1).allow('permissionSlug')
 ```
 
 ### Multi-model support
 
-We are not limiting to use only User model, if you have multi auth system like User and Admin you are free to use both of them with Acl.
+We are not limited to using only the User model. If you have a multi-auth system like User and Admin, you are free to use both of them with Acl.
 
 
 ```typescript
@@ -295,16 +306,16 @@ const roles = await Acl.role(role).permissions()
 const roles = await Acl.model(user).permissions()
 ```
 
-### Getting users (models) for a permission
+### Getting users (models) from the permission
 
 ```typescript
 
 const models = await Acl.permission(permission).models()
 
 ```
-this will return array of `ModelPermission` which will contain `modelType,modelId` attributes, where `modelType` is *alias* which you had specified in [morphMap decorator](#configuration), `modelId` is the value of column, you've specified in [getModelId](#configuration) method.
+this will return array of `ModelPermission` which will contain `modelType,modelId` attributes, where `modelType` is *alias* which you had specified in [morphMap decorator](#configuration), `modelId` is the value of column, you've specified inside [getModelId](#configuration) method.
 
-Most of the cases you will have only one model (User), it's better to use `modelsFor()` to get  concrete models
+Most of the time, you will have only one model (User). It's better to use the `modelsFor()` method to get concrete models.
 
 ```typescript
 
@@ -325,7 +336,7 @@ Or if you want to get for a specific model
 
 ```typescript
 
-const models = await Acl.role(permission).modelsFor(Admin)
+const models = await Acl.role(permission).modelsFor(User)
 
 ```
 
@@ -339,7 +350,7 @@ await Acl.model(user).hasRole('admin') // :boolean
 
 ```
 
-you can pass array of roles 
+you can pass list of roles 
 
 ```typescript
 
@@ -348,11 +359,12 @@ await Acl.model(user).hasAllRoles('admin', 'manager')
 
 ```
 
-to check if user has any of roles, will return true if user has at least one role 
+To check if a user has any of the roles
 
 ```typescript
 
 await Acl.model(user).hasAnyRole('admin', 'manager') 
+// it will return true if the user has at least one role.
 
 ```
 
@@ -366,6 +378,8 @@ await Acl.model(user).hasPermission('update')
 // or 
 await Acl.model(user).can('update') // alias for hasPermission() method
 
+// or simply call
+await user.hasPermission('update')
 ```
 
 To check array of permissions
@@ -377,9 +391,11 @@ await Acl.model(user).hasAllPermissions(['update', 'delete'])
 // or 
 await Acl.model(user).canAll(['update', 'delete']) // alias for hasAllPermissions() method
 
+// await user.canAll(['update', 'delete'])
+
 ```
 
-to check if user has any of permission, will return true if user has at least one permission
+to check if user has any of the permission
 
 ```typescript
 
@@ -388,9 +404,11 @@ await Acl.model(user).hasAnyPermission(['update', 'delete'])
 // or 
 await Acl.model(user).canAny(['update', 'delete']) // alias for hasAnyPermission() method
 
+// will return true if user has at least one permission
+
 ```
 
-Same applies for role
+Same applies for the roles
 
 ```typescript
 
@@ -400,9 +418,42 @@ await Acl.role(role).hasAnyPermission(['update', 'read'])
 
 ```
 
-### Removing (revoking) roles and permissions from the model
+### Middleware
 
-To remove role from the user we can use `revoke` method
+You are free to do your check anywhere, for example we can create [named](https://docs.adonisjs.com/guides/middleware#named-middleware-collection) middleware and do checking
+
+> don't forget to register your middleware inside kernel.ts
+
+
+```typescript
+
+// routes.ts
+import { middleware } from '#start/kernel'
+
+// routes.ts
+router.get('/posts/:id', [ProductsController, 'show']).use(middleware.acl({permission: 'edit'}))
+
+
+// acl_middleware.ts
+export default class AclMiddleware {
+  async handle(ctx: HttpContext, next: NextFn, options: { permission: string }) {
+
+    const hasPermission = await ctx.auth.user.hasPermission(options.permission)
+    
+    if(!hasPermission) {
+      ctx.response.abort({ message: 'Cannot edit post' }, 403)
+    }
+
+    const output = await next()
+    return output
+  }
+}
+
+```
+
+### Removing (revoking/detach) roles and permissions from the model
+
+To remove(detach) role from the user we can use `revoke` method
 
 ```typescript
 
@@ -418,11 +469,14 @@ Removing permissions from the user
 
 ```typescript
 await Acl.model(user).revokePermission('update')
+await Acl.model(user).revoke('delete') // alias for revokePermission()
+
 // await Acl.model(user).hasPermission('update') will return false
 
 await Acl.model(user).revokeAllPermissions(['update', 'delete'])
+await Acl.model(user).revokeAll(['update', 'delete']) // alias for revokeAllPermissions()
 
-// will remove all assigned permissions
+// revoke all assigned permissions
 await Acl.model(user).flushPermissions()
 
 // revokes all roles and permissions for a user
@@ -435,14 +489,14 @@ Removing permissions from the role
 ```typescript
 await Acl.role(role).revokePermission('update')
 // or 
-await Acl.role(role).revoke('update') // alias for revokePermission - WORKS ONLY on roles
+await Acl.role(role).revoke('update') // alias for revokePermission
 
 await Acl.role(role).revokeAllPermissions(['update', 'delete'])
-// alias revokeAll(['update', 'delete']) method availalbe ONLY on roles
+// alias revokeAll(['update', 'delete'])
 
 // remove all assigned permissions
 await Acl.role(role).flushPermissions()
-// alias flush() method availalbe ONLY on roles
+// alias flush()
 
 ```
 
@@ -463,40 +517,45 @@ To see in dept usage of this methods check [next section](#digging-deeper)
 
 ## Digging deeper
 
-In [previous](#basic-usage) section we looked basic examples and usage, most of the time basic usage probably will be enough for your project but there are much more we can do with `Acl`
+In the [previous](#basic-usage) section, we looked at basic examples and usage. Most of the time, basic usage will probably be enough for your project. However, there is much more we can do with `Acl`.
 
-### Restricting a permission to a model (On resource)
+### Restricting a permission to a model (On a resource)
 
-Sometimes you might want to restrict a permission to a specific model type. Simply pass the model name as a second argument:
+Sometimes you might want to restrict a permission to a specific model type. Simply pass the model as a second argument:
 
 ```typescript
 import Product from "#models/product";
 
-await Acl.model(user).assignDirectPermission('edit', Product)
+await Acl.model(user).allow('edit', Product)
 
 ```
->Just don't forget to add model `MorphMap` decorator on Product class
+>Important! - Don't forget to add `MorphMap` decorator and `AclModelInterface` on Product class
 
 ```typescript
 
 @MorphMap('products')
-export default class Product extends BaseModel {
+export default class Product extends BaseModel implements AclModelInterface {
+  getModelId(): number {
+    return this.id
+  }
   // other code
 }
 
 ```
 
->Warning: All models which interact with Acl **MUST** use [MorphMap]() decorator
+>Warning: All models which interact with Acl **MUST** use [MorphMap]() decorator and implement `AclModelInterface`
 
-In this case we check permission again
+Then we can make checking again
 
 ```typescript
 import Product from "#models/product";
 import Post from "#models/post";
 
-const productModel1 = Product.first()
-const productModel50 = Product.first()
-const postModel = Post.first()
+// await Acl.model(user).allow('edit', Product)
+
+const productModel1 = Product.find(id1)
+const productModel50 = Product.find(id50)
+const postModel = Post.find(postId)
 
 await Acl.model(user).hasPermission('edit', productModel1) // true
 await Acl.model(user).hasPermission('edit', productModel50) // true
@@ -537,16 +596,17 @@ await Acl.model(user).containsPermission('edit') // true
 
 ```
 
-This will behave same way if assign permission through the role instead of direct
+This will behave the same way if you assign the permission through the role instead of directly
 
 ```typescript
 
 const product1 = Product.find(1)
 
-await Acl.role(admin).assign('edit', product1)
+await Acl.role(admin).allow('edit', product1)
 
 const user = await User.first()
 
+// assign role
 await Acl.model(user).assignRole(role)
 
 // then if we start checking, result will be same
@@ -565,7 +625,9 @@ await Acl.model(user).containsPermission('edit') // true
 
 ### Forbidding permissions
 
-Let's imagine a situation when your `manager` role has `create,update,read,delete` permissions. All your users have `manager` role but there are small amount of users you want to give `manager` role but same time do not allow `delete` action. 
+Let's imagine a situation where `manager` role has `create,update,read,delete` permissions. 
+
+All your users have `manager` role but there are small amount of users you want to forbid `delete` action. 
 Good news!, we can do that
 
 ```typescript
@@ -573,18 +635,18 @@ Good news!, we can do that
 await Acl.role(manager).giveAll(['create','update','read','delete'])
 
 // assigning to the users
-await Acl.model(user1).assignRole(manager)
+await Acl.model(user1).assign(manager)
 
-await Acl.model(user3).assignRole(manager)
+await Acl.model(user3).assign(manager)
 await Acl.model(user3).forbid('delete')
 
 await Acl.model(user1).hasRole(manager) // true
-await Acl.model(user1).hasPermission('delete') // true
+await Acl.model(user1).can('delete') // true
 
 await Acl.model(user3).hasRole(manager) // true
-await Acl.model(user3).hasPermission('delete') // false
+await Acl.model(user3).can('delete') // false
 
-await Acl.model(user3).containsPermission('delete') // true
+await Acl.model(user3).contains('delete') // true
 
 ```
 
@@ -594,7 +656,7 @@ You can also forbid single action on a resource
 
 ```typescript
 
-const post = Post.find(id1ToFind)
+const post = Post.find(id1)
 
 await Acl.model(user3).forbid('delete', post)
 
@@ -611,17 +673,15 @@ await Acl.model(user3).forbid('delete')
 
 await Acl.model(user3).forbidden('delete') // true
 
-
-const post1 = Post.find(id1ToFind)
-
+const post1 = Post.find(id1)
 
 await Acl.model(user).allow('edit', Post) // allow for all posts
 await Acl.model(user).forbid('edit', post1) // except post1
 
 await Acl.model(user).forbidden('edit', post1) // true
 
-const post7 = Post.find(id7ToFind)
-await Acl.model(user).forbidden('edit', post7) // false becouse 'edit' action forbidden only for post1 instance
+const post7 = Post.find(id7)
+await Acl.model(user).forbidden('edit', post7) // false becouse 'edit' action forbidden only for the post1 instance
 ```
 
 ### Unforbidding the permissions
@@ -632,12 +692,12 @@ await Acl.model(user3).assignRole(manager)
 await Acl.model(user3).forbid('delete')
 
 await Acl.model(user3).forbidden('delete') // true
-await Acl.model(user3).hasPermission('delete') // false
-await Acl.model(user3).containsPermission('delete') // true
+await Acl.model(user3).can('delete') // false
+await Acl.model(user3).can('delete') // true
 
 await Acl.model(user3).unforbid('delete')
 await Acl.model(user3).forbidden('delete') // false
-await Acl.model(user3).hasPermission('delete') // true
+await Acl.model(user3).can('delete') // true
 
 ```
 Same behaviour applies with roles
@@ -648,7 +708,7 @@ await Acl.role(role).forbid('delete')
 
 await Acl.role(role).forbidden('delete') // true
 await Acl.role(role).hasPermission('delete') // false
-await Acl.role(role).containsPermission('delete') // true
+await Acl.role(role).contains('delete') // true
 
 ```
 
@@ -657,7 +717,7 @@ await Acl.role(role).containsPermission('delete') // true
 > Important! Action performed globally will affect on a resource models
 
 It is very important to understood difference between global and resource permissions and their scope.
-Look at this way, if there is no `entity` model then action will be performed **globally**, otherwise **on resource**
+Look at this way, if there is no `entity` model then actions will be performed **globally**, otherwise **on resource**
 
 ```
 
@@ -678,13 +738,11 @@ Look at this way, if there is no `entity` model then action will be performed **
 
 ```
 
-
-
 ```typescript
 import {Acl} from "@holoyan/adonisjs-permissions";
 import Post from "#models/post";
 
-
+// first assigning permissions
 // Global level
 await Acl.model(admin).allow('create');
 await Acl.model(admin).allow('edit');
@@ -697,19 +755,19 @@ await Acl.model(manager).allow('create', Post)
 const myPost = await Post.find(id)
 await Acl.model(client).allow('view', myPost)
 
-// checking
+// start checking
 // admin
 await Acl.model(admin).hasPermission('create') // true
 await Acl.model(admin).hasPermission('create', Post) // true
 await Acl.model(admin).hasPermission('create', myPost) // true
 
-// manager
+// manager - assigned class level
 await Acl.model(manager).hasPermission('create') // false
 await Acl.model(manager).hasPermission('create', Post) // true
 await Acl.model(manager).hasPermission('create', myPost) // true
 await Acl.model(manager).hasPermission('create', myOtherPost) // true
 
-// client
+// assigned model level
 await Acl.model(client).hasPermission('create') // false
 await Acl.model(client).hasPermission('create', Post) // false
 await Acl.model(client).hasPermission('create', myPost) // true
@@ -725,8 +783,7 @@ Same is true when using `forbidden` action
 // class level
 await Acl.model(manager).allow('edit', Post) // allow to edit all posts
 
-await Acl.model(manager).forbid('edit', myPost) // forbid editing on a specific post
-
+await Acl.model(manager).forbid('edit', myPost) // forbid editing ONLY on a myPost
 
 await Acl.model(client).hasPermission('edit', Post) // true
 await Acl.model(client).hasPermission('edit', myPost) // false
@@ -736,7 +793,9 @@ await Acl.model(client).hasPermission('edit', myOtherPost) // true
 
 ### containsPermission v hasPermission
 
-As you've already seen there are difference between `containsPermission` and `hasPermission`. `containsPermission()` method will return `true` if user has that permission, it doesn't matter if it's *global*, *on resource* or *forbidden*
+As you've already seen there are difference between `containsPermission` and `hasPermission` methods. `containsPermission()` method will return `true` if user has that permission, it doesn't matter if it's *global*, *on resource* or *forbidden*.
+
+> `contains()` method is alias for `containsPermission()`
 
 Lets in example see this difference
 
@@ -756,12 +815,121 @@ await Acl.model(user).containsPermission('read') // true
 
 ```
 
+## Scopes or Multi-tenancy
+
+Acl fully supports multi-tenant apps, allowing you to seamlessly integrate  roles and permissions for all tenants within the same app.
+
+```typescript
+console.log(user.project_id > 0) // true  - lets say user.project_id is not equal to zero
+
+await Acl.model(user).on(user.project_id).allow('edit')
+await Acl.model(user).on(user.project_id).allow('delete')
+
+// checking
+await Acl.model(user).on(user.project_id).hasPermission('edit') // true
+await Acl.model(user).on(user.project_id).hasPermission('delete') // true
+
+// checking without scope
+await Acl.model(user).hasPermission('edit') // false - by default scope is equal to 0
+
+
+```
+
+### The Scope middleware
+
+`Acl` has built-in middleware to make scope checking easier.
+
+
+This middleware is where you tell `Acl` which tenant to use for the current request. For example, assuming your users all have an account_id attribute, this is what your middleware would look like:
+
+```typescript
+
+// acl_middleware
+export default class AclScopeMiddleware {
+  async handle(ctx: HttpContext, next: NextFn) {
+    const scope = new Scope()
+    scope.set(auth.user.account_id)
+    ctx.acl = new AclManager().scope(scope)
+    /**
+     * Call next method in the pipeline and return its output
+     */
+    const output = await next()
+    return output
+  }
+}
+
+// then on controller you can do
+
+// post_controller.ts
+
+export default class PostController {
+  async show({acl}: HttpContext){
+    // will check inside auth.user.account_id scope
+    await acl.model().hasPermission('view')
+    // this both will be equal
+    // await acl.model().on(auth.user.account_id).hasPermission('view')
+  }
+}
+
+```
+> Important! If you are using `AclScopeMiddleware` and want to have scope functional per-request then use `acl` from the `ctx` instead of using global `Acl` object, otherwise changes inside `AclScopeMiddleware` will not make effect
+
+Let's see in example
+
+
+```typescript
+
+// acl_middleware
+export default class AclScopeMiddleware {
+  async handle(ctx: HttpContext, next: NextFn) {
+    const scope = new Scope()
+    scope.set(5) // set scope value to 5 for current request
+    ctx.acl = new AclManager().scope(scope)
+    /**
+     * Call next method in the pipeline and return its output
+     */
+    const output = await next()
+    return output
+  }
+}
+
+// post_controller.ts
+// global object
+import {Acl} from "@holoyan/adonisjs-permissions";
+
+export default class PostController {
+  async show({acl}: HttpContext){
+    const scope = acl.getScope() 
+    console.log(scope.get()) // 5
+    // global object
+    console.log(Acl.getScope()) // 0
+    
+    acl.scope(7)// update and set new scope
+    // for current request it will be 7
+    console.log(acl.getScope()) // 7
+
+    Acl.scope(7) // Throws error
+    // you can't update scope on global object, only runtime
+    await Acl.model(user).on(8).permissions() // get permissions for user on scope 8    
+  }
+}
+
+```
+
+
+### Default scope (Tenant)
+
+> Default Scope value is equal to 0 (zero)
+
+
 ## TODO
 
-- [ ] Scopes (Multitenancy)
-- [ ] Events
+- [X] Scopes (Multitenancy)
 - [ ] UUID support
+- [ ] Events
 - [ ] More test coverage
+- [ ] Caching
+- [ ] Integration with AdonisJs Bouncer
 
 ## Test
 

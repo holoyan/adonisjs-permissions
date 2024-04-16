@@ -19,7 +19,9 @@ export const Role = role
 
 export { configure } from './configure.js'
 export { stubsRoot } from './stubs/main.js'
-export { Acl } from './src/acl.js'
+export { Acl, AclManager } from './src/acl.js'
 export { MorphMap, getClassPath } from './src/decorators.js'
 export * as morphMapModel from './src/morph_map.js'
 export { hasPermissions } from './src/mixins/has_permissions.js'
+export { testScope } from './src/test_scope.js'
+export { Scope } from './src/scope.js'

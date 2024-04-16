@@ -8,8 +8,9 @@ import {
   seedDb,
 } from '../../test-helpers/index.js'
 
-import { Acl } from '../../src/acl.js'
+import { Acl, AclManager } from '../../src/acl.js'
 import ModelManager from '../../src/model_manager.js'
+import { Scope } from '../../src/scope.js'
 
 test.group('Has role | model - role interaction', (group) => {
   group.setup(async () => {})
@@ -28,8 +29,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -61,8 +64,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -101,8 +106,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -134,8 +141,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -163,8 +172,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -194,8 +205,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -233,8 +246,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -272,8 +287,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -311,8 +328,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -345,8 +364,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -378,8 +399,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -414,8 +437,9 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    modelManager.setModel('scope', Scope)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
@@ -449,8 +473,10 @@ test.group('Has role | model - role interaction', (group) => {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role

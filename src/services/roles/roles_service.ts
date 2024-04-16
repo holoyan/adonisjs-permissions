@@ -1,4 +1,10 @@
-import { AclModel, MorphInterface, RoleInterface } from '../../types.js'
+import {
+  AclModel,
+  ModelRoleInterface,
+  MorphInterface,
+  RoleInterface,
+  ScopeInterface,
+} from '../../types.js'
 import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import {
@@ -7,6 +13,7 @@ import {
   // getPermissionModelQuery,
   getRoleModelQuery,
 } from '../query_helper.js'
+import { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 
 export default class RolesService extends BaseService {
   // private permissionQuery
@@ -21,19 +28,25 @@ export default class RolesService extends BaseService {
   private modelRoleQuery
   private readonly modelRoleTable
 
+  private currentScope: number
+
   constructor(
     private roleClassName: typeof BaseModel,
     // private permissionClassName: typeof BaseModel,
     private modelPermissionClassName: typeof BaseModel,
     private modelRoleClassName: typeof BaseModel,
-    private map: MorphInterface
+    private map: MorphInterface,
+    private scope: ScopeInterface
   ) {
     super()
     // this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
     // this.permissionTable = this.permissionClassName.table
 
+    this.currentScope = this.scope.get()
+
     this.roleQuery = getRoleModelQuery(this.roleClassName)
     this.roleTable = this.roleClassName.table
+    this.applyScopes(this.roleQuery, this.currentScope)
 
     // this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
     this.modelPermissionTable = this.modelPermissionClassName.table
@@ -151,14 +164,17 @@ export default class RolesService extends BaseService {
   async revokeAll(roles: (string | number)[], model: AclModel) {
     const { slugs, ids } = this.formatListStringNumbers(roles)
 
-    await this.modelRoleQuery
+    const q = this.modelRoleQuery
       .leftJoin(this.roleTable + ' as r', 'r.id', '=', this.modelRoleTable + '.role_id')
       .where('model_type', this.map.getAlias(model))
       .where('model_id', model.getModelId())
       .where((query) => {
         query.whereIn('r.id', ids).orWhereIn('r.slug', slugs)
       })
-      .delete()
+
+    this.applyModelRoleScopes(q, 'r', this.currentScope)
+
+    await q.delete()
 
     return true
   }
@@ -188,5 +204,20 @@ export default class RolesService extends BaseService {
 
   flush(modelType: string, modelId: number) {
     return this.modelRoleQuery.where('model_type', modelType).where('model_id', modelId).delete()
+  }
+
+  private applyScopes(
+    q: ModelQueryBuilderContract<typeof BaseModel, RoleInterface>,
+    scope: number
+  ) {
+    q.where(this.roleTable + '.scope', scope)
+  }
+
+  private applyModelRoleScopes(
+    q: ModelQueryBuilderContract<typeof BaseModel, ModelRoleInterface>,
+    table: string,
+    scope: number
+  ) {
+    q.where(table + '.scope', scope)
   }
 }

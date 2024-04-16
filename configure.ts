@@ -36,4 +36,15 @@ export async function configure(_command: ConfigureCommand) {
   await codemods.updateRcFile((rcFile) => {
     rcFile.addProvider('@holoyan/adonisjs-permissions/role_permission_provider')
   })
+
+  /**
+   * Publish and register middleware
+   */
+  await codemods.makeUsingStub(stubsRoot, 'middlewares/acl_middleware.stub', {})
+
+  await codemods.registerMiddleware('server', [
+    {
+      path: '#middleware/acl_middleware',
+    },
+  ])
 }

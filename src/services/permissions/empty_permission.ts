@@ -1,11 +1,24 @@
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { getPermissionModelQuery } from '../query_helper.js'
+import { ScopeInterface } from '../../types.js'
 
 export default class EmptyPermission {
   private permissionQuery
 
-  constructor(private permissionClassName: typeof BaseModel) {
+  constructor(
+    private permissionClassName: typeof BaseModel,
+    private scope: ScopeInterface
+  ) {
     this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
+  }
+
+  on(scope: number) {
+    this.scope.set(scope)
+    return this
+  }
+
+  getScope() {
+    return this.scope.get()
   }
 
   delete(permission: string) {

@@ -1,15 +1,31 @@
 import { destructTarget } from '../helper.js'
 import ModelService from '../model_service.js'
 import PermissionsService from '../permissions/permissions_service.js'
-import { AclModel, MorphInterface, PermissionInterface, RoleInterface } from '../../types.js'
+import {
+  AclModel,
+  MorphInterface,
+  PermissionInterface,
+  RoleInterface,
+  ScopeInterface,
+} from '../../types.js'
 
 export class RoleHasModelPermissions {
   constructor(
     private role: RoleInterface,
     private permissionService: PermissionsService,
     private modelService: ModelService,
-    private map: MorphInterface
+    private map: MorphInterface,
+    private scope: ScopeInterface
   ) {}
+
+  on(scope: number) {
+    this.scope.set(scope)
+    return this
+  }
+
+  getScope() {
+    return this.scope.get()
+  }
 
   models() {
     return this.modelService.all(this.role.getModelId())
@@ -18,12 +34,6 @@ export class RoleHasModelPermissions {
   modelsFor(modelType: string) {
     return this.modelService.allFor(modelType, this.role.getModelId())
   }
-
-  /**
-   * todo
-   * @param model
-   */
-  // attachTo(model: LucidModel) {}
 
   // permissions related BEGIN
 
@@ -170,6 +180,10 @@ export class RoleHasModelPermissions {
     return this.give(permission, target)
   }
 
+  allow(permission: string, target?: AclModel | Function) {
+    return this.give(permission, target)
+  }
+
   async give(permission: string, target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
 
@@ -197,6 +211,10 @@ export class RoleHasModelPermissions {
   }
 
   assingAll(permissions: string[], target?: AclModel | Function) {
+    return this.giveAll(permissions, target)
+  }
+
+  allowAll(permissions: string[], target?: AclModel | Function) {
     return this.giveAll(permissions, target)
   }
 

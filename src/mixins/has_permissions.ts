@@ -119,10 +119,6 @@ export function hasPermissions() {
         return Acl.model(this as unknown as AclModel).hasAllPermissionsDirect(permissions, target)
       }
 
-      can(permission: string | Permission, target?: AclModel | Function) {
-        return Acl.model(this as unknown as AclModel).can(permission, target)
-      }
-
       canAll(permissions: (string | Permission)[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).canAll(permissions, target)
       }

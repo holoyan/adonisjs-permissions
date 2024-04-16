@@ -4,8 +4,9 @@ import Role from '../src/models/role.js'
 import ModelPermission from '../src/models/model_permission.js'
 import ModelRole from '../src/models/model_role.js'
 import ModelManager from '../src/model_manager.js'
-import { Acl } from '../src/acl.js'
+import { AclManager } from '../src/acl.js'
 import MorphMap from '../src/morph_map.js'
+import { Scope } from '../src/scope.js'
 
 declare module '@adonisjs/core/types' {
   export interface ContainerBindings {
@@ -31,10 +32,11 @@ export default class RolePermissionProvider {
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
+    modelManager.setModel('scope', Scope)
+    AclManager.setModelManager(modelManager)
     const map = await this.app.container.make('morphMap')
     map.set('permissions', Permission)
     map.set('roles', Role)
-    Acl.setMorphMap(map)
+    AclManager.setMorphMap(map)
   }
 }

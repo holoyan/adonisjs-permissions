@@ -8,8 +8,9 @@ import {
   seedDb,
 } from '../../test-helpers/index.js'
 
-import { Acl } from '../../src/acl.js'
+import { Acl, AclManager } from '../../src/acl.js'
 import ModelManager from '../../src/model_manager.js'
+import { Scope } from '../../src/scope.js'
 
 test.group('Has permission | model - permission direct global interaction', (group) => {
   group.setup(async () => {})
@@ -27,8 +28,10 @@ test.group('Has permission | model - permission direct global interaction', (gro
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User })
     const user = await User.first()
     //
@@ -59,8 +62,10 @@ test.group('Has permission | model - permission direct global interaction', (gro
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User })
     const user = await User.first()
     //
@@ -95,8 +100,10 @@ test.group('Has permission | model - permission direct global interaction', (gro
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User })
     const user = await User.first()
     //
@@ -128,8 +135,10 @@ test.group('Has permission | model - permission direct global interaction', (gro
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User })
     const user = await User.first()
     //
@@ -156,8 +165,10 @@ test.group('Has permission | model - permission direct global interaction', (gro
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User })
     const user = await User.first()
     //
@@ -188,8 +199,10 @@ test.group('Has permission | model - permission direct global interaction', (gro
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User })
     const user = await User.first()
     //
@@ -220,8 +233,10 @@ test.group('Has permission | model - permission direct global interaction', (gro
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User })
     const user = await User.first()
     //
@@ -250,8 +265,10 @@ test.group('Has permission | model - permission direct global interaction', (gro
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User })
     const user = await User.first()
     //
@@ -284,8 +301,10 @@ test.group('Has permission | model - permission direct global interaction', (gro
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User })
     const user = await User.first()
     //
@@ -327,8 +346,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -366,8 +387,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -405,8 +428,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -440,8 +465,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -477,8 +504,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -514,8 +543,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
 
@@ -552,8 +583,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -595,8 +628,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -639,8 +674,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -692,8 +729,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -740,8 +779,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -793,8 +834,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -846,8 +889,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -889,8 +934,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -932,8 +979,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
 
@@ -967,8 +1016,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -1007,8 +1058,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
     modelManager.setModel('role', Role)
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
-    Acl.setModelManager(modelManager)
-    Acl.setMorphMap(morphMap)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
     const user = await User.first()
     const post = await Post.first()
@@ -1035,5 +1088,107 @@ test.group('Has permission | model - permission direct resource interaction', (g
       .where('model_id', user.id)
 
     assert.lengthOf(modelPermissions, 2)
+  })
+
+  test('Ability to assign same slug permission from different scopes', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+
+    const scope = new Scope()
+
+    await Permission.create({
+      slug: 'create',
+      scope: scope.default(),
+    })
+
+    const createScope5 = await Permission.create({
+      slug: 'create',
+      scope: 5,
+    })
+
+    await Permission.create({
+      slug: 'edit',
+      scope: 5,
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    await Acl.model(user).on(scope.default()).assignDirectAllPermissions(['create'])
+    await Acl.model(user).on(createScope5.scope).assignDirectAllPermissions(['create', 'edit'])
+
+    const modelPermissions = await ModelPermission.query()
+      .where('model_type', 'users')
+      .where('model_id', user.id)
+
+    const permsOnDefaultScope = await Acl.model(user).on(scope.default()).permissions()
+    const permsOnScope5 = await Acl.model(user).on(createScope5.scope).permissions()
+
+    assert.lengthOf(modelPermissions, 3)
+    assert.lengthOf(permsOnDefaultScope, 1)
+    assert.lengthOf(permsOnScope5, 2)
+  })
+
+  test('Get permissions from the role', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+
+    const admin = await Role.create({
+      slug: 'admin',
+    })
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    await Permission.create({
+      slug: 'delete',
+    })
+
+    await Acl.role(admin).assign('create')
+    await Acl.role(admin).assign('edit')
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    await Acl.model(user).assignRole(admin)
+    await Acl.model(user).allow('delete')
+
+    const permsFromRole = await Acl.model(user).permissions()
+    const rolePerms = await Acl.model(user).rolePermissions()
+
+    assert.lengthOf(permsFromRole, 3)
+    assert.lengthOf(rolePerms, 2)
   })
 })

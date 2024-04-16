@@ -1,4 +1,4 @@
-import { AclModel, MorphInterface, PermissionInterface } from '../../types.js'
+import { AclModel, MorphInterface, PermissionInterface, ScopeInterface } from '../../types.js'
 import { destructTarget } from '../helper.js'
 import ModelService from '../model_service.js'
 import RolesService from '../roles/roles_service.js'
@@ -20,7 +20,8 @@ export default class PermissionHasModelRoles {
     private modelService: ModelService,
     private modelPermissionClassName: typeof BaseModel,
     private roleClassName: typeof BaseModel,
-    private map: MorphInterface
+    private map: MorphInterface,
+    private scope: ScopeInterface
   ) {
     this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
     // this.modelPermissionTable = this.modelPermissionClassName.table
@@ -30,6 +31,15 @@ export default class PermissionHasModelRoles {
 
   models() {
     return this.modelService.allByPermission(this.permission.getModelId())
+  }
+
+  on(scope: number) {
+    this.scope.set(scope)
+    return this
+  }
+
+  getScope() {
+    return this.scope.get()
   }
 
   modelsFor(modelType: string) {

@@ -2,14 +2,20 @@ import { RoleHasModelPermissions } from './services/roles/role_has_model_permiss
 import { ModelHasRolePermissions } from './services/model_has_role_permissions.js'
 import PermissionsService from './services/permissions/permissions_service.js'
 import RolesService from './services/roles/roles_service.js'
-import { AclModel, MorphInterface, PermissionInterface, RoleInterface } from './types.js'
+import {
+  AclModel,
+  MorphInterface,
+  PermissionInterface,
+  RoleInterface,
+  ScopeInterface,
+} from './types.js'
 import PermissionHasModelRoles from './services/permissions/permission_has_model_roles.js'
 import ModelService from './services/model_service.js'
 import ModelManager from './model_manager.js'
 import EmptyPermission from './services/permissions/empty_permission.js'
 import EmptyRoles from './services/roles/empty_roles.js'
 
-export class Acl {
+export class AclManager {
   private static modelManager: ModelManager
 
   private static map: MorphInterface
@@ -22,77 +28,126 @@ export class Acl {
     this.map = map
   }
 
-  static model(model: AclModel): ModelHasRolePermissions {
+  private _scope?: ScopeInterface
+
+  private allowScopeRewriting = true
+
+  constructor(allowScopeRewriting?: boolean) {
+    if (allowScopeRewriting !== undefined) {
+      this.allowScopeRewriting = allowScopeRewriting
+    }
+  }
+
+  model(model: AclModel): ModelHasRolePermissions {
+    const scope = this._scope || this.createNewScope()
     return new ModelHasRolePermissions(
       model,
       new RolesService(
-        this.modelManager.getModel('role'),
-        this.modelManager.getModel('modelPermission'),
-        this.modelManager.getModel('modelRole'),
-        this.map
+        AclManager.modelManager.getModel('role'),
+        AclManager.modelManager.getModel('modelPermission'),
+        AclManager.modelManager.getModel('modelRole'),
+        AclManager.map,
+        scope
       ),
       new PermissionsService(
-        this.modelManager.getModel('permission'),
-        this.modelManager.getModel('role'),
-        this.modelManager.getModel('modelPermission'),
-        this.modelManager.getModel('modelRole'),
-        this.map
+        AclManager.modelManager.getModel('permission'),
+        AclManager.modelManager.getModel('role'),
+        AclManager.modelManager.getModel('modelPermission'),
+        AclManager.modelManager.getModel('modelRole'),
+        AclManager.map,
+        scope
       ),
-      this.map
+      AclManager.map,
+      scope
     )
   }
 
-  static role(role?: RoleInterface) {
+  role(): EmptyRoles
+  role(role: RoleInterface): RoleHasModelPermissions
+  role(role?: RoleInterface): RoleHasModelPermissions | EmptyRoles {
+    const scope = this._scope || this.createNewScope()
+
     if (role) {
       return new RoleHasModelPermissions(
         role,
         new PermissionsService(
-          this.modelManager.getModel('permission'),
-          this.modelManager.getModel('role'),
-          this.modelManager.getModel('modelPermission'),
-          this.modelManager.getModel('modelRole'),
-          this.map
+          AclManager.modelManager.getModel('permission'),
+          AclManager.modelManager.getModel('role'),
+          AclManager.modelManager.getModel('modelPermission'),
+          AclManager.modelManager.getModel('modelRole'),
+          AclManager.map,
+          scope
         ),
         new ModelService(
-          this.modelManager.getModel('modelPermission'),
-          this.modelManager.getModel('modelRole'),
-          this.map
+          AclManager.modelManager.getModel('modelPermission'),
+          AclManager.modelManager.getModel('modelRole'),
+          AclManager.map
         ),
-        this.map
+        AclManager.map,
+        scope
       )
-    } else {
-      return new EmptyRoles(this.modelManager.getModel('role'))
     }
+
+    return new EmptyRoles(AclManager.modelManager.getModel('role'), scope)
   }
 
-  static permission(permission?: PermissionInterface) {
+  permission(): EmptyPermission
+  permission(permission: PermissionInterface): EmptyPermission
+  permission(permission?: PermissionInterface): PermissionHasModelRoles | EmptyPermission {
+    const scope = this._scope || this.createNewScope()
+
     if (permission) {
       return new PermissionHasModelRoles(
         permission,
         new RolesService(
-          this.modelManager.getModel('role'),
-          this.modelManager.getModel('modelPermission'),
-          this.modelManager.getModel('modelRole'),
-          this.map
+          AclManager.modelManager.getModel('role'),
+          AclManager.modelManager.getModel('modelPermission'),
+          AclManager.modelManager.getModel('modelRole'),
+          AclManager.map,
+          scope
         ),
         new PermissionsService(
-          this.modelManager.getModel('permission'),
-          this.modelManager.getModel('role'),
-          this.modelManager.getModel('modelPermission'),
-          this.modelManager.getModel('modelRole'),
-          this.map
+          AclManager.modelManager.getModel('permission'),
+          AclManager.modelManager.getModel('role'),
+          AclManager.modelManager.getModel('modelPermission'),
+          AclManager.modelManager.getModel('modelRole'),
+          AclManager.map,
+          scope
         ),
         new ModelService(
-          this.modelManager.getModel('modelPermission'),
-          this.modelManager.getModel('modelRole'),
-          this.map
+          AclManager.modelManager.getModel('modelPermission'),
+          AclManager.modelManager.getModel('modelRole'),
+          AclManager.map
         ),
-        this.modelManager.getModel('modelPermission'),
-        this.modelManager.getModel('modelRole'),
-        this.map
+        AclManager.modelManager.getModel('modelPermission'),
+        AclManager.modelManager.getModel('modelRole'),
+        AclManager.map,
+        scope
       )
-    } else {
-      return new EmptyPermission(this.modelManager.getModel('permission'))
     }
+
+    return new EmptyPermission(AclManager.modelManager.getModel('permission'), scope)
+  }
+
+  private createNewScope(): ScopeInterface {
+    const ScopeClass = AclManager.modelManager.getModel('scope')
+    return new ScopeClass()
+  }
+
+  scope(scope: ScopeInterface) {
+    if (!this.allowScopeRewriting) {
+      throw new Error(
+        'Scope method call is not available on global Acl object, use AclManager to create new scoped acl object'
+      )
+    }
+
+    this._scope = scope
+    return this
+  }
+
+  getScope() {
+    return this._scope || this.createNewScope()
   }
 }
+
+export const Acl = new AclManager(false)
