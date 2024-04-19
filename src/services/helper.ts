@@ -11,7 +11,7 @@ export function formatList(models: (string | number | any)[]) {
       ids.push(model)
     } else {
       // @ts-ignore
-      ids.push(model.id)
+      ids.push(+model.id)
     }
   }
 
@@ -27,7 +27,7 @@ export function formatListStringNumbers(models: (string | number)[]) {
       slugs.push(model)
     } else {
       // @ts-ignore
-      ids.push(model)
+      ids.push(+model)
     }
   }
 
@@ -45,7 +45,7 @@ export function formatStringNumbers(models: string | number | any) {
       // @ts-ignore
       ids.push(model)
     } else {
-      ids.push(model.id)
+      ids.push(+model.id)
     }
   }
 

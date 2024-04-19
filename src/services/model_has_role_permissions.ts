@@ -299,7 +299,11 @@ export class ModelHasRolePermissions {
   }
 
   allow(permission: string, target?: AclModel | Function) {
-    return this.assignDirectPermission(permission, target)
+    return this.allowAll([permission], target)
+  }
+
+  allowAll(permission: string[], target?: AclModel | Function) {
+    return this.assignDirectAllPermissions(permission, target)
   }
 
   async revokePermission(permission: string, target?: AclModel | Function) {

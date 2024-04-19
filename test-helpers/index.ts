@@ -187,12 +187,11 @@ export async function createTables(db: Database) {
     table.timestamp('created_at').notNullable()
     table.timestamp('updated_at').nullable()
   })
+  await db.connection().schema.createTableIfNotExists('permissions', (table) => {
+    table.bigIncrements('id')
 
-  await db.connection().schema.createTableIfNotExists('roles', (table) => {
-    table.increments('id')
-
-    table.string('slug').index()
-    table.string('title')
+    table.string('slug')
+    table.string('title').nullable()
     table.string('entity_type').defaultTo('*')
     table.bigint('entity_id').unsigned().nullable()
     table.integer('scope').unsigned().defaultTo(0)
@@ -204,12 +203,32 @@ export async function createTables(db: Database) {
     table.timestamp('created_at', { useTz: true })
     table.timestamp('updated_at', { useTz: true })
 
-    table.index(['slug', 'scope'])
+    table.index(['scope', 'slug'])
+    table.index(['entity_type', 'entity_id'])
+  })
+
+  await db.connection().schema.createTableIfNotExists('roles', (table) => {
+    table.bigIncrements('id')
+
+    table.string('slug')
+    table.string('title').nullable()
+    table.string('entity_type').defaultTo('*')
+    table.bigint('entity_id').unsigned().nullable()
+    table.integer('scope').unsigned().defaultTo(0)
+    table.boolean('allowed').defaultTo(true)
+
+    /**
+     * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+     */
+    table.timestamp('created_at', { useTz: true })
+    table.timestamp('updated_at', { useTz: true })
+
+    table.index(['scope', 'slug'])
     table.index(['entity_type', 'entity_id'])
   })
 
   await db.connection().schema.createTableIfNotExists('model_roles', (table) => {
-    table.increments('id')
+    table.bigIncrements('id')
 
     table.string('model_type')
     table.bigint('model_id').unsigned()
@@ -223,31 +242,11 @@ export async function createTables(db: Database) {
 
     table.index(['model_type', 'model_id'])
 
-    // table.foreign('role_id').references('roles.id').onDelete('CASCADE')
-  })
-
-  await db.connection().schema.createTableIfNotExists('permissions', (table) => {
-    table.increments('id')
-
-    table.string('slug').index()
-    table.string('title')
-    table.string('entity_type').defaultTo('*')
-    table.bigint('entity_id').unsigned().nullable()
-    table.integer('scope').unsigned().defaultTo(0)
-    table.boolean('allowed').defaultTo(true)
-
-    /**
-     * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
-     */
-    table.timestamp('created_at', { useTz: true })
-    table.timestamp('updated_at', { useTz: true })
-
-    table.index(['slug', 'scope'])
-    table.index(['entity_type', 'entity_id'])
+    table.foreign('role_id').references('roles.id').onDelete('CASCADE')
   })
 
   await db.connection().schema.createTableIfNotExists('model_permissions', (table) => {
-    table.increments('id')
+    table.bigIncrements('id')
 
     table.string('model_type')
     table.bigint('model_id').unsigned()
@@ -261,7 +260,7 @@ export async function createTables(db: Database) {
 
     table.index(['model_type', 'model_id'])
 
-    // table.foreign('permission_id').references('permissions.id').onDelete('CASCADE')
+    table.foreign('permission_id').references('permissions.id').onDelete('CASCADE')
   })
 
   await db.connection().schema.createTableIfNotExists('products', (table) => {

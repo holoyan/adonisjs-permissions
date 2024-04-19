@@ -12,12 +12,101 @@ import { Acl, AclManager } from '../../src/acl.js'
 import ModelManager from '../../src/model_manager.js'
 import { Scope } from '../../src/scope.js'
 
+test.group('', (group) => {
+  group.setup(async () => {})
+
+  group.teardown(async () => {})
+
+  // group.each.setup(async () => {})
+  group.each.disableTimeout()
+
+  test('Creating permission by acl', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    modelManager.setModel('scope', Scope)
+
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    await seedDb({ User })
+    //
+    const create = await Acl.permission().create({
+      slug: 'create',
+    })
+
+    assert.isTrue(create instanceof Permission)
+  })
+
+  test('Ensure that correct scope can be assigned during create', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    modelManager.setModel('scope', Scope)
+
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    await seedDb({ User })
+    //
+    const create = await Acl.permission().create({
+      slug: 'create',
+    })
+
+    const edit = await Acl.permission().create({
+      slug: 'create',
+      scope: 5,
+    })
+
+    assert.equal(create.scope, 0)
+    assert.equal(edit.scope, 5)
+  })
+
+  test('Ensure that duplicate permissions are ignored', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    modelManager.setModel('scope', Scope)
+
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    await seedDb({ User })
+    //
+    const create = await Acl.permission().create({
+      slug: 'create',
+    })
+
+    const duplicate = await Acl.permission().create({
+      slug: 'create',
+    })
+
+    assert.isTrue(duplicate.id === create.id)
+  })
+})
+
 test.group('Has permission | model - permission direct global interaction', (group) => {
   group.setup(async () => {})
 
   group.teardown(async () => {})
 
-  group.each.setup(async () => {})
+  // group.each.setup(async () => {})
+  group.each.disableTimeout()
 
   test('Ensure model can assign permission', async ({ assert }) => {
     const db = await createDatabase()
@@ -335,6 +424,7 @@ test.group('Has permission | model - permission direct resource interaction', (g
   group.teardown(async () => {})
 
   group.each.setup(async () => {})
+  group.each.disableTimeout()
 
   test('Ensure model can assign permission on a resource', async ({ assert }) => {
     const db = await createDatabase()

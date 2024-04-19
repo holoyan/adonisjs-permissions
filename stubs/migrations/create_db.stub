@@ -3,17 +3,16 @@
     to: app.makePath('database', 'migrations', prefix + '_create_role_permissions_table.ts')
   })
 }}}
-
 import { BaseSchema } from '@adonisjs/lucid/schema'
 import config from "@adonisjs/core/services/config";
 
 export default class extends BaseSchema {
 
   async up() {
-    this.schema.createTable(config.get('permissions.permissionsConfig.tables.roles'), (table) => {
-      table.increments('id')
+    this.schema.createTable(config.get('permissions.permissionsConfig.tables.permissions'), (table) => {
+      table.bigIncrements('id')
 
-      table.string('slug').index()
+      table.string('slug')
       table.string('title').nullable()
       table.string('entity_type').defaultTo('*')
       table.bigint('entity_id').unsigned().nullable()
@@ -26,12 +25,32 @@ export default class extends BaseSchema {
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
 
-      table.unique(['slug', 'scope'])
+      table.index(['slug', 'scope'])
+      table.index(['entity_type', 'entity_id'])
+    })
+
+    this.schema.createTable(config.get('permissions.permissionsConfig.tables.roles'), (table) => {
+      table.bigIncrements('id')
+
+      table.string('slug')
+      table.string('title').nullable()
+      table.string('entity_type').defaultTo('*')
+      table.bigint('entity_id').unsigned().nullable()
+      table.integer('scope').unsigned().defaultTo(0)
+      table.boolean('allowed').defaultTo(true)
+
+      /**
+       * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+       */
+      table.timestamp('created_at', { useTz: true })
+      table.timestamp('updated_at', { useTz: true })
+
+      table.index(['slug', 'scope'])
       table.index(['entity_type', 'entity_id'])
     })
 
     this.schema.createTable(config.get('permissions.permissionsConfig.tables.modelRoles'), (table) => {
-      table.increments('id')
+      table.bigIncrements('id')
 
       table.string('model_type')
       table.bigint('model_id').unsigned()
@@ -48,28 +67,8 @@ export default class extends BaseSchema {
       table.foreign('role_id').references('roles.id').onDelete('CASCADE')
     })
 
-    this.schema.createTable(config.get('permissions.permissionsConfig.tables.permissions'), (table) => {
-      table.increments('id')
-
-      table.string('slug').index()
-      table.string('title').nullable()
-      table.string('entity_type').defaultTo('*')
-      table.bigint('entity_id').unsigned().nullable()
-      table.integer('scope').unsigned().defaultTo('*')
-      table.boolean('allowed').defaultTo(true)
-
-      /**
-       * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
-       */
-      table.timestamp('created_at', { useTz: true })
-      table.timestamp('updated_at', { useTz: true })
-
-      table.unique(['slug', 'scope'])
-      table.index(['entity_type', 'entity_id'])
-    })
-
     this.schema.createTable(config.get('permissions.permissionsConfig.tables.modelPermissions'), (table) => {
-      table.increments('id')
+      table.bigIncrements('id')
 
       table.string('model_type')
       table.bigint('model_id').unsigned()

@@ -1,6 +1,6 @@
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { getPermissionModelQuery } from '../query_helper.js'
-import { ScopeInterface } from '../../types.js'
+import { PermissionInterface, PermissionModel, ScopeInterface } from '../../types.js'
 
 export default class EmptyPermission {
   private permissionQuery
@@ -22,9 +22,23 @@ export default class EmptyPermission {
   }
 
   delete(permission: string) {
-    // get all permissions by slug
-    // if there is permission with allowed false then check if it has `links`
     return this.permissionQuery.where('slug', permission).delete()
+  }
+
+  async create(values: Partial<PermissionInterface>) {
+    if (!values.slug) {
+      throw new Error('The attribute slug is required')
+    }
+
+    const search: Partial<PermissionInterface> = {
+      slug: values.slug,
+      scope: values.scope || this.getScope(),
+    }
+
+    return (await this.permissionClassName.updateOrCreate(
+      search,
+      values
+    )) as unknown as PermissionModel<typeof this.permissionClassName>
   }
 
   query() {

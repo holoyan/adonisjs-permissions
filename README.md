@@ -19,6 +19,7 @@
 - [Basic Usage](#basic-usage)
   - [Creating roles and permissions](#creating-roles-and-permissions)
   - [Assigning permissions to the roles (Globally)](#assigning-permissions-to-the-roles-globally)
+  - [Creating permission on a fly](#creating-permission-on-a-fly)
   - [Assigning permissions and roles to the users (models)](#assigning-permissions-and-roles-to-the-users-models)
   - [Multi-model support](#multi-model-support)
   - [Getting all roles for a user](#getting-all-roles-for-a-user)
@@ -39,7 +40,8 @@
   - [containsPermission v hasPermission](#containspermission-v-haspermission)
   - [Scopes or Multi-tenancy](#scopes-or-multi-tenancy)
     - [The Scope middleware](#the-scope-middleware) 
-    - [Default Scope](#default-scope-tenant) 
+    - [Default Scope](#default-scope-tenant)
+- [Cheat sheet](#cheat-sheet)
 - [Todo](#todo)
 - [Test](#test)
 - [License](#license)
@@ -172,10 +174,15 @@ On this section, we will explore basic role permission methods.
 
 Let's manually create `create,update,read,delete` permissions, as well as `admin,manager` roles
 
+> Look also [Creating permissions on a fly](#creating-permissions-on-a-fly) section
+
 ```typescript
 
 import { Permission } from '@holoyan/adonisjs-permissions'
 import { Role } from '@holoyan/adonisjs-permissions'
+import {Acl} from "@holoyan/adonisjs-permissions";
+
+
 
 
 // create permissions
@@ -188,12 +195,14 @@ const update = await Permission.create({
   slug:'update',
 })
 
-const read = await Permission.create({
-  slug:'read',
+// or create using Acl (recomended way)
+const read = await Acl.permission().create({
+  slug: 'read',
 })
 
-const delete = await Permission.create({
-  slug:'delete',
+
+const delete = await Acl.permission().create({
+  slug: 'delete',
 })
 
 // create roles
@@ -202,8 +211,9 @@ const admin = await Role.create({
   title:'Cool title for Admin', // optional
 })
 
-const manager = await Role.create({
-  slug:'manager',
+// or create using Acl (recomended way)
+const manager = await Acl.role().create({
+  slug: 'manager',
 })
 
 ```
@@ -228,13 +238,15 @@ await Acl.role(admin).giveAll(['read', 'delete'])
 
 ```
 
+### Creating permissions on a fly
+
 In case you are assigning a permission that is not already available, `Acl` will create new permission behind the scenes and assign them.
 
 ```typescript
 
-// uploadFile permissions not available
+// uploadFile permission not available
 await Acl.role(admin).allow('uploadFile')
-// uploadFile permission created and assigned
+// 'uploadFile' permission created and assigned
 
 ```
 
@@ -265,7 +277,7 @@ import {Acl} from "@holoyan/adonisjs-permissions";
 
 // create and assign a new permission
 Acl.model(user1).assignDirectPermission('upload-file-slug')
-// or use allow method
+// or use allow() method
 Acl.model(user1).allow('permissionSlug')
 ```
 
@@ -920,6 +932,11 @@ export default class PostController {
 ### Default scope (Tenant)
 
 > Default Scope value is equal to 0 (zero)
+
+
+## Cheat sheet
+
+Coming soon
 
 
 ## TODO

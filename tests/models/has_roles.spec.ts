@@ -12,12 +12,107 @@ import { Acl, AclManager } from '../../src/acl.js'
 import ModelManager from '../../src/model_manager.js'
 import { Scope } from '../../src/scope.js'
 
+test.group('', (group) => {
+  group.setup(async () => {})
+
+  group.teardown(async () => {})
+
+  // group.each.setup(async () => {})
+  group.each.disableTimeout()
+
+  test('Creating role by acl', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    modelManager.setModel('scope', Scope)
+
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    await seedDb({ User })
+    //
+    const admin = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    assert.isTrue(admin instanceof Role)
+  })
+
+  test('Ensure that correct scope can be assigned to the role during create', async ({
+    assert,
+  }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    modelManager.setModel('scope', Scope)
+
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    await seedDb({ User })
+    //
+    const admin = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    const admin2 = await Acl.role().create({
+      slug: 'admin',
+      scope: 5,
+    })
+
+    assert.equal(admin.scope, 0)
+    assert.equal(admin2.scope, 5)
+
+    const roles = await Role.all()
+
+    assert.lengthOf(roles, 2)
+  })
+
+  test('Ensure that duplicate roles are ignored', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    modelManager.setModel('scope', Scope)
+
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    await seedDb({ User })
+    //
+    const admin = await Acl.role().create({
+      slug: 'create',
+    })
+
+    const duplicate = await Acl.role().create({
+      slug: 'create',
+    })
+
+    assert.isTrue(admin.id === duplicate.id)
+  })
+})
+
 test.group('Has role | model - role interaction', (group) => {
   group.setup(async () => {})
 
   group.teardown(async () => {})
 
   group.each.setup(async () => {})
+  group.each.disableTimeout()
 
   test('Ensure model can assign role by model', async ({ assert }) => {
     const db = await createDatabase()

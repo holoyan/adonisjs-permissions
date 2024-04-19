@@ -169,7 +169,12 @@ export default class RolesService extends BaseService {
       .where('model_type', this.map.getAlias(model))
       .where('model_id', model.getModelId())
       .where((query) => {
-        query.whereIn('r.id', ids).orWhereIn('r.slug', slugs)
+        if (slugs.length) {
+          query.orWhereIn('r.slug', slugs)
+        }
+        if (ids.length) {
+          query.orWhereIn('r.id', ids)
+        }
       })
 
     this.applyModelRoleScopes(q, 'r', this.currentScope)
