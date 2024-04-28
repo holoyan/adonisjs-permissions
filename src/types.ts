@@ -3,9 +3,11 @@ import { DateTime } from 'luxon'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { Scope } from './scope.js'
 
-export interface AclModelInterface {
-  getModelId(): number
+export interface AclModelInterface<T extends string | number = number> {
+  getModelId(): T
 }
+
+export interface AclUUIDModelInterface extends AclModelInterface<string> {}
 
 export interface PermissionInterface extends AclModelInterface {
   id: number
@@ -53,7 +55,7 @@ export interface ModelRoleInterface extends AclModelInterface {
 
   modelType: string
 
-  modelId: number | null
+  modelId: number | string | null
 
   createdAt: DateTime
 
@@ -67,7 +69,7 @@ export interface ModelPermissionInterface extends AclModelInterface {
 
   modelType: string
 
-  modelId: number
+  modelId: number | string | null
 
   createdAt: DateTime
 

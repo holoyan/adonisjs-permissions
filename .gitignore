@@ -7,8 +7,10 @@ coverage
 *.sublime-project
 *.sublime-workspace
 *.log
+*.tgz
 build
 dist
 yarn.lock
 shrinkwrap.yaml
 package-lock.json
+sample

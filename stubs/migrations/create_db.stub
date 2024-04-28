@@ -5,8 +5,17 @@
 }}}
 import { BaseSchema } from '@adonisjs/lucid/schema'
 import config from "@adonisjs/core/services/config";
+import { Knex } from 'knex'
 
 export default class extends BaseSchema {
+
+  protected modelId(table: Knex.CreateTableBuilder) {
+    if (config.get('permissions.permissionsConfig.tables.uuid')) {
+      table.uuid('model_id')
+    } else {
+      table.bigint('model_id').unsigned()
+    }
+  }
 
   async up() {
     this.schema.createTable(config.get('permissions.permissionsConfig.tables.permissions'), (table) => {
@@ -53,7 +62,7 @@ export default class extends BaseSchema {
       table.bigIncrements('id')
 
       table.string('model_type')
-      table.bigint('model_id').unsigned()
+      this.modelId(table)
       table.bigInteger('role_id').unsigned()
 
       /**
@@ -71,7 +80,7 @@ export default class extends BaseSchema {
       table.bigIncrements('id')
 
       table.string('model_type')
-      table.bigint('model_id').unsigned()
+      this.modelId(table)
       table.bigInteger('permission_id').unsigned()
 
       /**
