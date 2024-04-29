@@ -28,11 +28,11 @@ export class RoleHasModelPermissions {
   }
 
   models() {
-    return this.modelService.all(this.role.getModelId())
+    return this.modelService.all(+this.role.getModelId())
   }
 
   modelsFor(modelType: string) {
-    return this.modelService.allFor(modelType, this.role.getModelId())
+    return this.modelService.allFor(modelType, +this.role.getModelId())
   }
 
   // permissions related BEGIN

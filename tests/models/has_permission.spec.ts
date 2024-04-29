@@ -4,6 +4,7 @@ import {
   createDatabase,
   createTables,
   defineModels,
+  makeId,
   morphMap,
   seedDb,
 } from '../../test-helpers/index.js'
@@ -799,7 +800,7 @@ test.group('Has permission | model - permission direct resource interaction', (g
 
     // create new post
 
-    const post2 = await Post.create({})
+    const post2 = await Post.create({ id: makeId(32) })
 
     const hasResourcePermission = await Acl.model(user).hasPermission('delete', post)
     const hasGlobalPermission = await Acl.model(user).hasPermission('delete')

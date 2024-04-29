@@ -1,17 +1,18 @@
 import { AclModel, AclModelInterface, MorphInterface } from '../types.js'
+import { BaseModel } from '@adonisjs/lucid/orm'
 
 export function formatList(models: (string | number | any)[]) {
   let slugs: string[] = []
   let ids: number[] = []
 
   for (let model of models) {
-    if (typeof model === 'string') {
+    if (model instanceof BaseModel) {
+      // @ts-ignore
+      slugs.push(model.slug)
+    } else if (typeof model === 'string' && Number.isNaN(+model)) {
       slugs.push(model)
     } else if (typeof model === 'number') {
       ids.push(model)
-    } else {
-      // @ts-ignore
-      ids.push(+model.id)
     }
   }
 
@@ -27,7 +28,7 @@ export function formatListStringNumbers(models: (string | number)[]) {
       slugs.push(model)
     } else {
       // @ts-ignore
-      ids.push(+model)
+      ids.push(model)
     }
   }
 
@@ -45,7 +46,7 @@ export function formatStringNumbers(models: string | number | any) {
       // @ts-ignore
       ids.push(model)
     } else {
-      ids.push(+model.id)
+      ids.push(model.id)
     }
   }
 

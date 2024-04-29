@@ -50,13 +50,13 @@ export default class ModelService extends BaseService {
       .where('mr.model_type', modelType)
   }
 
-  allByPermission(permissionId: number) {
+  allByPermission(permissionId: string) {
     return this.modelPermissionQuery
       .where('permission_id', permissionId)
       .groupBy(['model_type', 'model_id'])
   }
 
-  async allByPermissionFor(modelType: string, permissionId: number) {
+  async allByPermissionFor(modelType: string, permissionId: string) {
     const modelClass = this.map.get(modelType)
     return modelClass
       .query()

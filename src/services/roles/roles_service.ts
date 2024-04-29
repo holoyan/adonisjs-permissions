@@ -55,31 +55,34 @@ export default class RolesService extends BaseService {
     this.modelRoleTable = this.modelRoleClassName.table
   }
 
-  private modelRolesQuery(modelType: string, modelId: number) {
+  private modelRolesQuery(modelType: string, modelId: string) {
     return this.roleQuery
       .leftJoin(this.modelRoleTable + ' as mr', 'mr.role_id', '=', this.roleTable + '.id')
       .where('mr.model_type', modelType)
       .where('mr.model_id', modelId)
   }
 
-  all(modelType: string, modelId: number) {
+  all(modelType: string, modelId: string) {
     return this.modelRolesQuery(modelType, modelId)
       .distinct(this.roleTable + '.id')
       .select(this.roleTable + '.*')
   }
 
-  has(modelType: string, modelId: number, role: string | RoleInterface): Promise<boolean> {
+  has(modelType: string, modelId: string, role: string | RoleInterface): Promise<boolean> {
     return this.hasAll(modelType, modelId, [role])
   }
 
   async hasAll(
     modelType: string,
-    modelId: number,
+    modelId: string,
     roles: (string | RoleInterface)[]
   ): Promise<boolean> {
     const rolesQuery = this.modelRolesQuery(modelType, modelId)
 
     let { slugs, ids } = this.formatList(roles)
+    // console.log('<----------------------------')
+    // console.log(slugs)
+    // console.log('---------------------------->')
     if (slugs.length) {
       rolesQuery.whereIn(this.roleTable + '.slug', slugs)
     }
@@ -89,14 +92,17 @@ export default class RolesService extends BaseService {
     }
 
     const r = await rolesQuery.count('* as total')
-
+    // const q = await rolesQuery.toQuery()
+    // const all = await rolesQuery
+    // console.log(q)
+    // console.log(all)
     // @ts-ignore
     return +r[0].$extras.total === roles.length
   }
 
   async hasAny(
     modelType: string,
-    modelId: number,
+    modelId: string,
     roles: (string | RoleInterface)[]
   ): Promise<boolean> {
     // if is string then we are going to check against slug
@@ -118,11 +124,11 @@ export default class RolesService extends BaseService {
     return +r[0].$extras.total > 0
   }
 
-  assign(role: string | RoleInterface, modelType: string, modelId: number) {
+  assign(role: string | RoleInterface, modelType: string, modelId: string) {
     return this.assignAll([role], modelType, modelId)
   }
 
-  async assignAll(roles: (string | RoleInterface)[], modelType: string, modelId: number) {
+  async assignAll(roles: (string | RoleInterface)[], modelType: string, modelId: string) {
     const rs = await this.extractRoleModel(roles)
 
     if (!rs.length) {
@@ -135,9 +141,9 @@ export default class RolesService extends BaseService {
       .whereIn('role_id', roleIds)
       .where('model_type', modelType)
       .where('model_id', modelId)
-      .select('id')
+      .select('role_id')
 
-    const modelRoleIds = modelRoles.map((modelRole) => modelRole.id)
+    const modelRoleIds = modelRoles.map((modelRole) => modelRole.roleId)
 
     roleIds = roleIds.filter((roleId) => {
       return !modelRoleIds.includes(roleId)
@@ -207,7 +213,7 @@ export default class RolesService extends BaseService {
       .where('mp.model_type', modelType)
   }
 
-  flush(modelType: string, modelId: number) {
+  flush(modelType: string, modelId: string) {
     return this.modelRoleQuery.where('model_type', modelType).where('model_id', modelId).delete()
   }
 
