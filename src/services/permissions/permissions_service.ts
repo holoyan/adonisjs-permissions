@@ -1,6 +1,7 @@
 import { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 
 import {
+  ModelIdType,
   ModelPermissionInterface,
   ModelPermissionsQuery,
   MorphInterface,
@@ -57,7 +58,7 @@ export default class PermissionsService extends BaseService {
   /**
    * return all permissions, including forbidden
    */
-  async all(modelType: string, modelId: number, includeForbiddings: boolean = false) {
+  async all(modelType: string, modelId: ModelIdType, includeForbiddings: boolean = false) {
     return this.modelPermissionQueryBuilder({
       modelType,
       modelId,
@@ -71,7 +72,7 @@ export default class PermissionsService extends BaseService {
   /**
    * return only global assigned permissions, through role or direct
    */
-  async global(modelType: string, modelId: number, includeForbiddings: boolean = false) {
+  async global(modelType: string, modelId: ModelIdType, includeForbiddings: boolean = false) {
     return this.modelPermissionQueryBuilder({
       modelType,
       modelId,
@@ -87,7 +88,7 @@ export default class PermissionsService extends BaseService {
   /**
    * get all permissions which is assigned to concrete resource
    */
-  async onResource(modelType: string, modelId: number, includeForbiddings: boolean = false) {
+  async onResource(modelType: string, modelId: ModelIdType, includeForbiddings: boolean = false) {
     return this.modelPermissionQueryBuilder({
       modelType,
       modelId,
@@ -102,7 +103,7 @@ export default class PermissionsService extends BaseService {
   /**
    * all direct permissions
    */
-  direct(modelType: string, modelId: number, includeForbiddings: boolean = false) {
+  direct(modelType: string, modelId: ModelIdType, includeForbiddings: boolean = false) {
     return this.modelPermissionQueryBuilder({
       modelType,
       modelId,
@@ -113,7 +114,7 @@ export default class PermissionsService extends BaseService {
       .select(this.permissionTable + '.*')
   }
 
-  async throughRoles(modelType: string, modelId: number, includeForbiddings: boolean = false) {
+  async throughRoles(modelType: string, modelId: ModelIdType, includeForbiddings: boolean = false) {
     return this.modelPermissionQueryBuilder({
       modelType,
       modelId,
@@ -124,7 +125,7 @@ export default class PermissionsService extends BaseService {
       .select(this.permissionTable + '.*')
   }
 
-  directGlobal(modelType: string, modelId: number, includeForbiddings: boolean = false) {
+  directGlobal(modelType: string, modelId: ModelIdType, includeForbiddings: boolean = false) {
     return this.modelPermissionQueryBuilder({
       modelType,
       modelId,
@@ -139,7 +140,7 @@ export default class PermissionsService extends BaseService {
   /**
    * return direct and resource assigned permissions
    */
-  directResource(modelType: string, modelId: number, includeForbiddings: boolean = false) {
+  directResource(modelType: string, modelId: ModelIdType, includeForbiddings: boolean = false) {
     return this.modelPermissionQueryBuilder({
       modelType,
       modelId,
@@ -161,10 +162,10 @@ export default class PermissionsService extends BaseService {
    */
   async hasAnyDirect(
     modelType: string,
-    modelId: number,
-    permissions: (string | PermissionInterface)[],
+    modelId: ModelIdType,
+    permissions: string[],
     entityType: string | null,
-    entityId: number | null
+    entityId: ModelIdType | null
   ) {
     const { slugs, ids } = this.formatList(permissions)
 
@@ -188,10 +189,10 @@ export default class PermissionsService extends BaseService {
   }
   async hasAllDirect(
     modelType: string,
-    modelId: number,
-    permissions: (string | PermissionInterface)[],
+    modelId: ModelIdType,
+    permissions: string[],
     entityType: string | null,
-    entityId: number | null
+    entityId: ModelIdType | null
   ) {
     const { slugs, ids } = this.formatList(permissions)
 
@@ -219,10 +220,10 @@ export default class PermissionsService extends BaseService {
    */
   async hasAll(
     modelType: string,
-    modelId: number,
-    permissions: (string | PermissionInterface)[],
+    modelId: ModelIdType,
+    permissions: string[],
     entityType: string | null,
-    entityId: number | null
+    entityId: ModelIdType | null
   ) {
     const { slugs, ids } = this.formatList(permissions)
 
@@ -250,10 +251,10 @@ export default class PermissionsService extends BaseService {
    */
   async hasAny(
     modelType: string,
-    modelId: number,
-    permission: (string | PermissionInterface)[],
+    modelId: ModelIdType,
+    permission: string[],
     entityType: string | null,
-    entityId: number | null
+    entityId: ModelIdType | null
   ) {
     const { slugs, ids } = this.formatList(permission)
 
@@ -279,11 +280,7 @@ export default class PermissionsService extends BaseService {
   /**
    * has all permissions
    */
-  async containsAll(
-    modelType: string,
-    modelId: number,
-    permission: (string | PermissionInterface)[]
-  ) {
+  async containsAll(modelType: string, modelId: ModelIdType, permission: string[]) {
     const { slugs, ids } = this.formatList(permission)
 
     const q = this.modelPermissionQueryBuilder({
@@ -302,11 +299,7 @@ export default class PermissionsService extends BaseService {
   /**
    * has any of permissions
    */
-  async containsAny(
-    modelType: string,
-    modelId: number,
-    permission: (string | PermissionInterface)[]
-  ) {
+  async containsAny(modelType: string, modelId: ModelIdType, permission: string[]) {
     const { slugs, ids } = this.formatList(permission)
 
     const q = this.modelPermissionQueryBuilder({
@@ -326,11 +319,7 @@ export default class PermissionsService extends BaseService {
   /**
    * has all permissions
    */
-  async containsAllDirect(
-    modelType: string,
-    modelId: number,
-    permission: (string | PermissionInterface)[]
-  ) {
+  async containsAllDirect(modelType: string, modelId: ModelIdType, permission: string[]) {
     const { slugs, ids } = this.formatList(permission)
 
     const q = this.modelPermissionQueryBuilder({
@@ -349,11 +338,7 @@ export default class PermissionsService extends BaseService {
   /**
    * has any of permissions
    */
-  async containsAnyDirect(
-    modelType: string,
-    modelId: number,
-    permission: (string | PermissionInterface)[]
-  ) {
+  async containsAnyDirect(modelType: string, modelId: ModelIdType, permission: string[]) {
     const { slugs, ids } = this.formatList(permission)
 
     const q = this.modelPermissionQueryBuilder({
@@ -375,10 +360,10 @@ export default class PermissionsService extends BaseService {
    */
   forbidden(
     modelType: string,
-    modelId: number,
-    permission: string | PermissionInterface,
+    modelId: ModelIdType,
+    permission: string,
     entityType: string | null,
-    entityId: number | null
+    entityId: ModelIdType | null
   ) {
     return !this.hasAny(modelType, modelId, [permission], entityType, entityId)
   }
@@ -388,10 +373,10 @@ export default class PermissionsService extends BaseService {
    */
   async giveAll(
     modelType: string,
-    modelId: number,
+    modelId: ModelIdType,
     slugs: string[],
     entityType: string | null,
-    entityId: number | null,
+    entityId: ModelIdType | null,
     allowed: boolean
   ) {
     // if entityType is not null then we need to assign permission for specific entity
@@ -425,12 +410,12 @@ export default class PermissionsService extends BaseService {
 
     // first check if there are assigned or not
     const alreadyAssigned = await this.modelPermissionQuery
-      .whereIn('id', permissionIds)
+      .whereIn('permission_id', permissionIds)
       .where('model_type', modelType)
       .where('model_id', modelId)
-      .select('id')
+      .select('permission_id')
 
-    const alreadyAssignedIds = alreadyAssigned.map((item) => item.id)
+    const alreadyAssignedIds = alreadyAssigned.map((item) => item.permissionId)
 
     permissionIds = permissionIds.filter((item) => {
       return !alreadyAssignedIds.includes(item)
@@ -447,10 +432,10 @@ export default class PermissionsService extends BaseService {
 
   revokeAll(
     modelType: string,
-    modelId: number,
+    modelId: ModelIdType,
     permissions: string[],
     entityType: string | null,
-    entityId: number | null
+    entityId: ModelIdType | null
   ) {
     const q = this.modelPermissionQuery
       .leftJoin(
@@ -477,7 +462,7 @@ export default class PermissionsService extends BaseService {
     return q.delete()
   }
 
-  flush(modelType: string, modelId: number) {
+  flush(modelType: string, modelId: ModelIdType) {
     return this.modelPermissionQuery
       .where(this.modelPermissionTable + '.model_type', modelType)
       .where(this.modelPermissionTable + '.model_id', modelId)
@@ -487,7 +472,7 @@ export default class PermissionsService extends BaseService {
   /**
    * sync permissions, remove everything outside of the list
    */
-  async sync(modelType: string, modelId: number, permissionId: string[]) {
+  async sync(modelType: string, modelId: ModelIdType, permissionId: string[]) {
     await this.modelPermissionQuery
       .where('model_type', modelType)
       .where('model_id', modelId)
@@ -501,10 +486,10 @@ export default class PermissionsService extends BaseService {
    */
   async forbid(
     modelType: string,
-    modelId: number,
+    modelId: ModelIdType,
     permissionSlug: string,
     entityType: string | null,
-    entityId: number | null
+    entityId: ModelIdType | null
   ) {
     return this.forbidAll(modelType, modelId, [permissionSlug], entityType, entityId)
   }
@@ -514,10 +499,10 @@ export default class PermissionsService extends BaseService {
    */
   async forbidAll(
     modelType: string,
-    modelId: number,
+    modelId: ModelIdType,
     permissionsSlug: string[],
     entityType: string | null,
-    entityId: number | null
+    entityId: ModelIdType | null
   ) {
     return this.giveAll(modelType, modelId, permissionsSlug, entityType, entityId, false)
   }
@@ -527,10 +512,10 @@ export default class PermissionsService extends BaseService {
    */
   async unforbidAll(
     modelType: string,
-    modelId: number,
+    modelId: ModelIdType,
     permissionsSlug: string[],
     entityType: string | null,
-    entityId: number | null
+    entityId: ModelIdType | null
   ) {
     const q = this.modelPermissionQuery
       .leftJoin(
@@ -585,6 +570,7 @@ export default class PermissionsService extends BaseService {
         })
         if (conditions.throughRoles) {
           q.whereRaw('mr.role_id=mp.model_id').where('mp.model_type', 'roles')
+          // q.whereRaw('CAST(mr.role_id AS CHAR)=mp.model_id').where('mp.model_type', 'roles')
         } else {
           q.where((subQuery) => {
             subQuery
@@ -593,6 +579,9 @@ export default class PermissionsService extends BaseService {
               })
               .orWhere((query) => {
                 query.whereRaw('mr.role_id=mp.model_id').where('mp.model_type', 'roles')
+                // query
+                //   .whereRaw('CAST(mr.role_id AS CHAR)=mp.model_id')
+                //   .where('mp.model_type', 'roles')
               })
           })
         }
@@ -670,7 +659,7 @@ export default class PermissionsService extends BaseService {
   findAssignableEntity(
     permission: string[],
     entityClass: string | null,
-    entityId: number | null,
+    entityId: ModelIdType | null,
     allowed: boolean
   ) {
     const q = this.permissionQuery.whereIn('slug', permission).where('allowed', allowed)
@@ -693,7 +682,7 @@ export default class PermissionsService extends BaseService {
     table: string,
     q: ModelQueryBuilderContract<typeof BaseModel, PermissionInterface>,
     entityType: string | null,
-    entityId: number | null
+    entityId: ModelIdType | null
   ) {
     if (entityType) {
       q.where((query) => {

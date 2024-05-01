@@ -4,11 +4,11 @@ import { BaseModel } from '@adonisjs/lucid/orm'
 import { Scope } from './scope.js'
 
 export interface AclModelInterface {
-  getModelId(): number
+  getModelId(): ModelIdType
 }
 
 export interface PermissionInterface extends AclModelInterface {
-  id: number
+  id: ModelIdType
 
   slug: string
 
@@ -16,7 +16,7 @@ export interface PermissionInterface extends AclModelInterface {
 
   entityType: string
 
-  entityId: number | null
+  entityId: string | null
 
   allowed: boolean
 
@@ -27,7 +27,7 @@ export interface PermissionInterface extends AclModelInterface {
   updatedAt: DateTime
 }
 export interface RoleInterface extends AclModelInterface {
-  id: number
+  id: ModelIdType
 
   slug: string
 
@@ -35,7 +35,7 @@ export interface RoleInterface extends AclModelInterface {
 
   entityType: string
 
-  entityId: number | null
+  entityId: string | null
 
   scope: number
 
@@ -46,28 +46,28 @@ export interface RoleInterface extends AclModelInterface {
   updatedAt: DateTime
 }
 
-export interface ModelRoleInterface extends AclModelInterface {
+export interface ModelRoleInterface {
   id: number
 
-  roleId: number
+  roleId: ModelIdType
 
   modelType: string
 
-  modelId: number | null
+  modelId: ModelIdType
 
   createdAt: DateTime
 
   updatedAt: DateTime
 }
 
-export interface ModelPermissionInterface extends AclModelInterface {
+export interface ModelPermissionInterface {
   id: number
 
-  permissionId: number
+  permissionId: ModelIdType
 
   modelType: string
 
-  modelId: number
+  modelId: ModelIdType
 
   createdAt: DateTime
 
@@ -75,6 +75,8 @@ export interface ModelPermissionInterface extends AclModelInterface {
 }
 
 export type AclModel = InstanceType<LucidModel> & AclModelInterface
+
+export type ModelIdType = string | number
 
 export type PermissionModel<T extends new (...args: any[]) => any> = InstanceType<T> &
   PermissionInterface
@@ -86,12 +88,12 @@ export type ModelRoleModel<T extends new (...args: any[]) => any> = InstanceType
 
 export interface AclModelQuery {
   modelType: string
-  modelId: number
+  modelId: ModelIdType
 }
 
 type Entity = {
   type: string | null
-  id: number | null
+  id: ModelIdType | null
 }
 
 export interface ModelPermissionsQuery extends AclModelQuery {
@@ -122,6 +124,7 @@ export interface ModelManagerInterface {
 export interface Permissions {
   tables: Object
   morphMaps: Object
+  uuidSupport: boolean
 }
 
 export interface ScopeInterface {

@@ -1,19 +1,29 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
 import config from '@adonisjs/core/services/config'
-import { AclModelInterface } from '../types.js'
+import { ModelIdType, RoleInterface } from '../types.js'
+import { v4 as uuidv4 } from 'uuid'
 
-export default class Role extends BaseModel implements AclModelInterface {
+export default class Role extends BaseModel implements RoleInterface {
   static get table() {
     return config.get('permissions.permissionsConfig.tables.roles') as string
   }
 
-  getModelId(): number {
+  static get selfAssignPrimaryKey() {
+    return config.get('permissions.permissionsConfig.uuidSupport') as boolean
+  }
+
+  @beforeCreate()
+  static assignUuid(role: Role) {
+    role.id = uuidv4()
+  }
+
+  getModelId(): ModelIdType {
     return this.id
   }
 
   @column({ isPrimary: true })
-  declare id: number
+  declare id: string
 
   @column()
   declare slug: string
@@ -25,7 +35,7 @@ export default class Role extends BaseModel implements AclModelInterface {
   declare entityType: string
 
   @column()
-  declare entityId: number | null
+  declare entityId: string | null
 
   @column()
   declare scope: number

@@ -67,15 +67,16 @@ export default class PermissionHasModelRoles {
     return r.length > 0
   }
 
-  async attachToRole(role: string | number, target?: AclModel | Function) {
-    if (typeof role === 'string') {
+  async attachToRole(role: string, target?: AclModel | Function) {
+    // if isNan that we assume that role slug is passed, because role id is number
+    if (Number.isNaN(+role)) {
       const r = await this.roleQuery.where('slug', role).first()
 
       if (!r) {
         throw new Error('Role not found')
       }
 
-      role = r.id
+      role = String(r.id)
     }
     const entity = await destructTarget(this.map, target)
     return this.permissionService.giveAll(

@@ -1,10 +1,4 @@
-import {
-  AclModel,
-  MorphInterface,
-  PermissionInterface,
-  RoleInterface,
-  ScopeInterface,
-} from '../types.js'
+import { AclModel, MorphInterface, ScopeInterface } from '../types.js'
 import PermissionsService from './permissions/permissions_service.js'
 import RolesService from './roles/roles_service.js'
 import { destructTarget, formatList } from './helper.js'
@@ -33,38 +27,38 @@ export class ModelHasRolePermissions {
     return this.roleService.all(this.map.getAlias(this.model), this.model.getModelId())
   }
 
-  hasRole(role: string | RoleInterface) {
+  hasRole(role: string) {
     return this.roleService.has(this.map.getAlias(this.model), this.model.getModelId(), role)
   }
 
-  hasAllRoles(...roles: (string | RoleInterface)[]) {
+  hasAllRoles(...roles: string[]) {
     return this.roleService.hasAll(this.map.getAlias(this.model), this.model.getModelId(), roles)
   }
 
-  hasAnyRole(...roles: (string | RoleInterface)[]) {
+  hasAnyRole(...roles: string[]) {
     return this.roleService.hasAny(this.map.getAlias(this.model), this.model.getModelId(), roles)
   }
 
-  assignRole(role: string | RoleInterface) {
+  assignRole(role: string) {
     return this.roleService.assign(role, this.map.getAlias(this.model), this.model.getModelId())
   }
 
-  assign(role: string | RoleInterface) {
+  assign(role: string) {
     return this.assignRole(role)
   }
 
-  assignAllRoles(...roles: (string | RoleInterface)[]) {
+  assignAllRoles(...roles: string[]) {
     return this.roleService.assignAll(roles, this.map.getAlias(this.model), this.model.getModelId())
   }
 
-  revokeRole(role: string | number | RoleInterface) {
+  revokeRole(role: string) {
     return this.revokeAllRoles(role)
   }
 
-  revokeAllRoles(...roles: (string | number | RoleInterface)[]) {
-    const { slugs, ids } = formatList(roles)
+  revokeAllRoles(...roles: string[]) {
+    const { slugs } = formatList(roles)
 
-    return this.roleService.revokeAll([...slugs, ...ids], this.model)
+    return this.roleService.revokeAll(slugs, this.model)
   }
 
   flushRoles() {
@@ -131,7 +125,7 @@ export class ModelHasRolePermissions {
     )
   }
 
-  async containsPermission(permission: string | PermissionInterface) {
+  async containsPermission(permission: string) {
     const result = await this.permissionsService.containsAny(
       this.map.getAlias(this.model),
       this.model.getModelId(),
@@ -141,11 +135,11 @@ export class ModelHasRolePermissions {
     return result
   }
 
-  async contains(permission: string | PermissionInterface) {
+  async contains(permission: string) {
     return this.containsPermission(permission)
   }
 
-  async containsAllPermissions(permissions: (string | PermissionInterface)[]) {
+  async containsAllPermissions(permissions: string[]) {
     const result = await this.permissionsService.containsAll(
       this.map.getAlias(this.model),
       this.model.getModelId(),
@@ -155,7 +149,7 @@ export class ModelHasRolePermissions {
     return result
   }
 
-  async containsAnyPermission(permissions: (string | PermissionInterface)[]) {
+  async containsAnyPermission(permissions: string[]) {
     const result = await this.permissionsService.containsAny(
       this.map.getAlias(this.model),
       this.model.getModelId(),
@@ -165,7 +159,7 @@ export class ModelHasRolePermissions {
     return result
   }
 
-  async containsDirectPermission(permission: string | PermissionInterface) {
+  async containsDirectPermission(permission: string) {
     const result = await this.permissionsService.containsAnyDirect(
       this.map.getAlias(this.model),
       this.model.getModelId(),
@@ -175,7 +169,7 @@ export class ModelHasRolePermissions {
     return result
   }
 
-  containsAllPermissionsDirectly(permissions: (string | PermissionInterface)[]) {
+  containsAllPermissionsDirectly(permissions: string[]) {
     return this.permissionsService.containsAllDirect(
       this.map.getAlias(this.model),
       this.model.getModelId(),
@@ -183,7 +177,7 @@ export class ModelHasRolePermissions {
     )
   }
 
-  async containsAnyPermissionDirectly(permissions: (string | PermissionInterface)[]) {
+  async containsAnyPermissionDirectly(permissions: string[]) {
     const result = await this.permissionsService.containsAnyDirect(
       this.map.getAlias(this.model),
       this.model.getModelId(),
@@ -193,14 +187,11 @@ export class ModelHasRolePermissions {
     return result
   }
 
-  async hasPermission(permission: string | PermissionInterface, target?: AclModel | Function) {
+  async hasPermission(permission: string, target?: AclModel | Function) {
     return this.hasAnyPermission([permission], target)
   }
 
-  async hasAllPermissions(
-    permissions: (string | PermissionInterface)[],
-    target?: AclModel | Function
-  ) {
+  async hasAllPermissions(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
     return await this.permissionsService.hasAll(
       this.map.getAlias(this.model),
@@ -211,10 +202,7 @@ export class ModelHasRolePermissions {
     )
   }
 
-  async hasAnyPermission(
-    permissions: (string | PermissionInterface)[],
-    target?: AclModel | Function
-  ) {
+  async hasAnyPermission(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
     return await this.permissionsService.hasAny(
       this.map.getAlias(this.model),
@@ -225,10 +213,7 @@ export class ModelHasRolePermissions {
     )
   }
 
-  async hasAnyDirectPermission(
-    permissions: (string | PermissionInterface)[],
-    target?: AclModel | Function
-  ) {
+  async hasAnyDirectPermission(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
     return await this.permissionsService.hasAnyDirect(
       this.map.getAlias(this.model),
@@ -239,17 +224,11 @@ export class ModelHasRolePermissions {
     )
   }
 
-  async hasDirectPermission(
-    permission: string | PermissionInterface,
-    target?: AclModel | Function
-  ) {
+  async hasDirectPermission(permission: string, target?: AclModel | Function) {
     return this.hasAnyDirectPermission([permission], target)
   }
 
-  async hasAllPermissionsDirect(
-    permissions: (string | PermissionInterface)[],
-    target?: AclModel | Function
-  ) {
+  async hasAllPermissionsDirect(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
     return await this.permissionsService.hasAllDirect(
       this.map.getAlias(this.model),
@@ -260,15 +239,15 @@ export class ModelHasRolePermissions {
     )
   }
 
-  can(permission: string | PermissionInterface, target?: AclModel | Function) {
+  can(permission: string, target?: AclModel | Function) {
     return this.hasPermission(permission, target)
   }
 
-  canAll(permissions: (string | PermissionInterface)[], target?: AclModel | Function) {
+  canAll(permissions: string[], target?: AclModel | Function) {
     return this.hasAllPermissions(permissions, target)
   }
 
-  canAny(permissions: (string | PermissionInterface)[], target?: AclModel | Function) {
+  canAny(permissions: string[], target?: AclModel | Function) {
     return this.hasAnyPermission(permissions, target)
   }
 
@@ -371,7 +350,7 @@ export class ModelHasRolePermissions {
     return this.unforbidAll([permission], target)
   }
 
-  // detachPermission(permission: string | PermissionInterface) {
+  // detachPermission(permission: string) {
   //   // detach direct permission
   //   // detach from role if exists
 

@@ -1,13 +1,7 @@
 import { destructTarget } from '../helper.js'
 import ModelService from '../model_service.js'
 import PermissionsService from '../permissions/permissions_service.js'
-import {
-  AclModel,
-  MorphInterface,
-  PermissionInterface,
-  RoleInterface,
-  ScopeInterface,
-} from '../../types.js'
+import { AclModel, MorphInterface, RoleInterface, ScopeInterface } from '../../types.js'
 
 export class RoleHasModelPermissions {
   constructor(
@@ -28,11 +22,11 @@ export class RoleHasModelPermissions {
   }
 
   models() {
-    return this.modelService.all(this.role.getModelId())
+    return this.modelService.all(+this.role.getModelId())
   }
 
   modelsFor(modelType: string) {
-    return this.modelService.allFor(modelType, this.role.getModelId())
+    return this.modelService.allFor(modelType, +this.role.getModelId())
   }
 
   // permissions related BEGIN
@@ -53,7 +47,7 @@ export class RoleHasModelPermissions {
     )
   }
 
-  async containsPermission(permission: string | PermissionInterface) {
+  async containsPermission(permission: string) {
     const result = await this.permissionService.containsAny(
       this.map.getAlias(this.role),
       this.role.getModelId(),
@@ -68,7 +62,7 @@ export class RoleHasModelPermissions {
    * @param permissions
    * @returns
    */
-  async containsAllPermissions(permissions: (string | PermissionInterface)[]) {
+  async containsAllPermissions(permissions: string[]) {
     const result = await this.permissionService.containsAll(
       this.map.getAlias(this.role),
       this.role.getModelId(),
@@ -83,7 +77,7 @@ export class RoleHasModelPermissions {
    * @param permissions
    * @returns
    */
-  async containsAnyPermissions(permissions: (string | PermissionInterface)[]) {
+  async containsAnyPermissions(permissions: string[]) {
     const result = await this.permissionService.containsAny(
       this.map.getAlias(this.role),
       this.role.getModelId(),
@@ -93,7 +87,7 @@ export class RoleHasModelPermissions {
     return result
   }
 
-  async hasPermission(permission: string | PermissionInterface, target?: AclModel | Function) {
+  async hasPermission(permission: string, target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
     const result = await this.permissionService.hasAny(
       this.map.getAlias(this.role),
@@ -109,12 +103,10 @@ export class RoleHasModelPermissions {
   /**
    *
    * @param permissions
+   * @param target
    * @returns
    */
-  async hasAllPermissions(
-    permissions: (string | PermissionInterface)[],
-    target?: AclModel | Function
-  ) {
+  async hasAllPermissions(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
     const result = await this.permissionService.hasAll(
       this.map.getAlias(this.role),
@@ -130,12 +122,10 @@ export class RoleHasModelPermissions {
   /**
    *
    * @param permissions
+   * @param target
    * @returns
    */
-  async hasAnyPermissions(
-    permissions: (string | PermissionInterface)[],
-    target?: AclModel | Function
-  ) {
+  async hasAnyPermissions(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
     const result = await this.permissionService.hasAny(
       this.map.getAlias(this.role),
@@ -153,19 +143,19 @@ export class RoleHasModelPermissions {
    * @param permission
    * @returns
    */
-  can(permission: string | PermissionInterface) {
+  can(permission: string) {
     return this.hasPermission(permission)
   }
 
-  canAll(permissions: (string | PermissionInterface)[]) {
+  canAll(permissions: string[]) {
     return this.hasAllPermissions(permissions)
   }
 
-  canAny(permissions: (string | PermissionInterface)[]) {
+  canAny(permissions: string[]) {
     return this.hasAnyPermissions(permissions)
   }
 
-  async forbidden(permission: string | PermissionInterface, target?: AclModel | Function) {
+  async forbidden(permission: string, target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
     return this.permissionService.forbidden(
       this.map.getAlias(this.role),

@@ -1,19 +1,29 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { v4 as uuidv4 } from 'uuid'
+import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
 import config from '@adonisjs/core/services/config'
-import { PermissionInterface } from '../types.js'
+import { ModelIdType, PermissionInterface } from '../types.js'
 
 export default class Permission extends BaseModel implements PermissionInterface {
   static get table() {
     return config.get('permissions.permissionsConfig.tables.permissions') as string
   }
 
-  getModelId(): number {
+  static get selfAssignPrimaryKey() {
+    return config.get('permissions.permissionsConfig.uuidSupport') as boolean
+  }
+
+  @beforeCreate()
+  static assignUuid(permission: Permission) {
+    permission.id = uuidv4()
+  }
+
+  getModelId(): ModelIdType {
     return this.id
   }
 
   @column({ isPrimary: true })
-  declare id: number
+  declare id: string
 
   @column()
   declare slug: string
@@ -25,7 +35,7 @@ export default class Permission extends BaseModel implements PermissionInterface
   declare entityType: string
 
   @column()
-  declare entityId: number | null
+  declare entityId: string | null
 
   @column()
   declare allowed: boolean

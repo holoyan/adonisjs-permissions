@@ -114,41 +114,6 @@ test.group('Has role | model - role interaction', (group) => {
   group.each.setup(async () => {})
   group.each.disableTimeout()
 
-  test('Ensure model can assign role by model', async ({ assert }) => {
-    const db = await createDatabase()
-    await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
-    await seedDb({ User, Post, Product })
-    const user = await User.first()
-    // create role
-    const role = await Role.create({
-      slug: 'admin',
-    })
-
-    if (!user) {
-      throw new Error('User not found')
-    }
-    await Acl.model(user).assignRole(role)
-
-    const modelRole = await ModelRole.query()
-      .where('model_type', 'users')
-      .where('model_id', user.id)
-      .where('role_id', role.id)
-      .first()
-
-    assert.isTrue(modelRole !== null)
-  })
-
   test('Ensure model can assign multiple roles at once', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
@@ -166,7 +131,7 @@ test.group('Has role | model - role interaction', (group) => {
     await seedDb({ User, Post, Product })
     const user = await User.first()
     // create role
-    const admin = await Role.create({
+    await Role.create({
       slug: 'admin',
     })
 
@@ -181,7 +146,7 @@ test.group('Has role | model - role interaction', (group) => {
     if (!user) {
       throw new Error('User not found')
     }
-    await Acl.model(user).assignAllRoles(admin, 'manager', client)
+    await Acl.model(user).assignAllRoles('admin', 'manager', client.slug)
 
     const modelRoles = await ModelRole.query()
       .where('model_type', 'users')
@@ -250,7 +215,7 @@ test.group('Has role | model - role interaction', (group) => {
     if (!user) {
       throw new Error('User not found')
     }
-    await Acl.model(user).assignRole(role)
+    await Acl.model(user).assignRole(role.slug)
     const userRoles = await Acl.model(user).roles()
 
     assert.lengthOf(userRoles, 1)
@@ -281,10 +246,10 @@ test.group('Has role | model - role interaction', (group) => {
     if (!user) {
       throw new Error('User not found')
     }
-    await Acl.model(user).assignRole(role)
+    await Acl.model(user).assignRole(role.slug)
 
     const hasRoleBySlug = await Acl.model(user).hasRole('admin')
-    const hasRoleByModel = await Acl.model(user).hasRole(role)
+    const hasRoleByModel = await Acl.model(user).hasRole(role.slug)
 
     assert.isTrue(hasRoleBySlug)
     assert.isTrue(hasRoleByModel)
@@ -322,11 +287,11 @@ test.group('Has role | model - role interaction', (group) => {
     if (!user) {
       throw new Error('User not found')
     }
-    await Acl.model(user).assignRole(admin)
-    await Acl.model(user).assignRole(manager)
-    await Acl.model(user).assignRole(client)
+    await Acl.model(user).assignRole(admin.slug)
+    await Acl.model(user).assignRole(manager.slug)
+    await Acl.model(user).assignRole(client.slug)
 
-    const hasAllRoles = await Acl.model(user).hasAllRoles(admin, manager, client)
+    const hasAllRoles = await Acl.model(user).hasAllRoles(admin.slug, manager.slug, client.slug)
 
     assert.isTrue(hasAllRoles)
   })
@@ -363,11 +328,11 @@ test.group('Has role | model - role interaction', (group) => {
     if (!user) {
       throw new Error('User not found')
     }
-    await Acl.model(user).assignRole(admin)
+    await Acl.model(user).assignRole(admin.slug)
     // await Acl.model(user).assignRole(manager) // do no assigne manager
-    await Acl.model(user).assignRole(client)
+    await Acl.model(user).assignRole(client.slug)
 
-    const hasAllRoles = await Acl.model(user).hasAllRoles(admin, manager, client)
+    const hasAllRoles = await Acl.model(user).hasAllRoles(admin.slug, manager.slug, client.slug)
 
     assert.isFalse(hasAllRoles)
   })
@@ -404,11 +369,11 @@ test.group('Has role | model - role interaction', (group) => {
     if (!user) {
       throw new Error('User not found')
     }
-    await Acl.model(user).assignRole(admin)
+    await Acl.model(user).assignRole(admin.slug)
     // await Acl.model(user).assignRole(manager) // do no assigne manager
-    await Acl.model(user).assignRole(client)
+    await Acl.model(user).assignRole(client.slug)
 
-    const hasAllRoles = await Acl.model(user).hasAnyRole(admin, manager)
+    const hasAllRoles = await Acl.model(user).hasAnyRole(admin.slug, manager.slug)
 
     assert.isTrue(hasAllRoles)
   })
@@ -444,7 +409,7 @@ test.group('Has role | model - role interaction', (group) => {
     // await Acl.model(user).assignRole(admin)
     // await Acl.model(user).assignRole(manager) // do no assigne manager
 
-    const hasAllRoles = await Acl.model(user).hasAnyRole(admin, manager)
+    const hasAllRoles = await Acl.model(user).hasAnyRole(admin.slug, manager.slug)
 
     assert.isFalse(hasAllRoles)
   })
@@ -474,10 +439,10 @@ test.group('Has role | model - role interaction', (group) => {
       throw new Error('User not found')
     }
 
-    await Acl.model(user).assignRole(admin)
+    await Acl.model(user).assignRole(admin.slug)
 
-    await Acl.model(user).revokeRole(admin)
-    const hasRole = await Acl.model(user).hasRole(admin)
+    await Acl.model(user).revokeRole(admin.slug)
+    const hasRole = await Acl.model(user).hasRole(admin.slug)
     const roles = await Acl.model(user).roles()
 
     assert.isFalse(hasRole)
@@ -513,10 +478,10 @@ test.group('Has role | model - role interaction', (group) => {
       throw new Error('User not found')
     }
 
-    await Acl.model(user).assignRole(admin)
-    await Acl.model(user).assignRole(manager)
+    await Acl.model(user).assignRole(admin.slug)
+    await Acl.model(user).assignRole(manager.slug)
 
-    await Acl.model(user).revokeAllRoles(admin, manager)
+    await Acl.model(user).revokeAllRoles(admin.slug, manager.slug)
     const roles = await Acl.model(user).roles()
 
     assert.lengthOf(roles, 0)
@@ -550,8 +515,8 @@ test.group('Has role | model - role interaction', (group) => {
       throw new Error('User not found')
     }
 
-    await Acl.model(user).assignRole(admin)
-    await Acl.model(user).assignRole(manager)
+    await Acl.model(user).assignRole(admin.slug)
+    await Acl.model(user).assignRole(manager.slug)
     await Acl.model(user).flushRoles()
     const roles = await Acl.model(user).roles()
 
@@ -583,10 +548,10 @@ test.group('Has role | model - role interaction', (group) => {
       throw new Error('User not found')
     }
 
-    await Acl.model(user).assignRole(admin)
-    await Acl.model(user).assignRole(admin)
-    await Acl.model(user).assignRole(admin)
-    await Acl.model(user).assignRole(admin)
+    await Acl.model(user).assignRole(admin.slug)
+    await Acl.model(user).assignRole(admin.slug)
+    await Acl.model(user).assignRole(admin.slug)
+    await Acl.model(user).assignRole(admin.slug)
 
     const modelRoles = await ModelRole.query()
       .where('model_type', 'users')
