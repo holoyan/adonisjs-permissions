@@ -4,11 +4,11 @@ import { BaseModel } from '@adonisjs/lucid/orm'
 import { Scope } from './scope.js'
 
 export interface AclModelInterface {
-  getModelId(): string
+  getModelId(): ModelIdType
 }
 
 export interface PermissionInterface extends AclModelInterface {
-  id: string
+  id: ModelIdType
 
   slug: string
 
@@ -27,7 +27,7 @@ export interface PermissionInterface extends AclModelInterface {
   updatedAt: DateTime
 }
 export interface RoleInterface extends AclModelInterface {
-  id: string
+  id: ModelIdType
 
   slug: string
 
@@ -49,11 +49,11 @@ export interface RoleInterface extends AclModelInterface {
 export interface ModelRoleInterface {
   id: number
 
-  roleId: string
+  roleId: ModelIdType
 
   modelType: string
 
-  modelId: string
+  modelId: ModelIdType
 
   createdAt: DateTime
 
@@ -63,11 +63,11 @@ export interface ModelRoleInterface {
 export interface ModelPermissionInterface {
   id: number
 
-  permissionId: string
+  permissionId: ModelIdType
 
   modelType: string
 
-  modelId: string
+  modelId: ModelIdType
 
   createdAt: DateTime
 
@@ -75,6 +75,8 @@ export interface ModelPermissionInterface {
 }
 
 export type AclModel = InstanceType<LucidModel> & AclModelInterface
+
+export type ModelIdType = string | number
 
 export type PermissionModel<T extends new (...args: any[]) => any> = InstanceType<T> &
   PermissionInterface
@@ -86,12 +88,12 @@ export type ModelRoleModel<T extends new (...args: any[]) => any> = InstanceType
 
 export interface AclModelQuery {
   modelType: string
-  modelId: string
+  modelId: ModelIdType
 }
 
 type Entity = {
   type: string | null
-  id: string | null
+  id: ModelIdType | null
 }
 
 export interface ModelPermissionsQuery extends AclModelQuery {
@@ -122,6 +124,7 @@ export interface ModelManagerInterface {
 export interface Permissions {
   tables: Object
   morphMaps: Object
+  uuidSupport: boolean
 }
 
 export interface ScopeInterface {

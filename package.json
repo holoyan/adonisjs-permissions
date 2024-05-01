@@ -71,7 +71,9 @@
   "peerDependencies": {
     "@adonisjs/core": "^6.2.0",
     "@adonisjs/lucid": "^20.1.0",
-    "luxon": "^3.4.4"
+    "luxon": "^3.4.4",
+    "uuid": "^9.0.1",
+    "@types/uuid": "^9.0.8"
   },
   "publishConfig": {
     "access": "public",

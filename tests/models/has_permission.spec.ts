@@ -7,6 +7,7 @@ import {
   makeId,
   morphMap,
   seedDb,
+  wantsUUID,
 } from '../../test-helpers/index.js'
 
 import { Acl, AclManager } from '../../src/acl.js'
@@ -800,7 +801,7 @@ test.group('Has permission | model - permission direct resource interaction', (g
 
     // create new post
 
-    const post2 = await Post.create({ id: makeId(32) })
+    const post2 = await Post.create(wantsUUID() ? { id: makeId() } : {})
 
     const hasResourcePermission = await Acl.model(user).hasPermission('delete', post)
     const hasGlobalPermission = await Acl.model(user).hasPermission('delete')
@@ -1273,7 +1274,7 @@ test.group('Has permission | model - permission direct resource interaction', (g
       throw new Error('User not found')
     }
 
-    await Acl.model(user).assignRole(admin)
+    await Acl.model(user).assignRole(admin.slug)
     await Acl.model(user).allow('delete')
 
     const permsFromRole = await Acl.model(user).permissions()

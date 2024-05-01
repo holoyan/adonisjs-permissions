@@ -4,18 +4,17 @@
   })
 }}}
 import { BaseSchema } from '@adonisjs/lucid/schema'
-import config from "@adonisjs/core/services/config";
+import config from '@adonisjs/core/services/config'
 
 export default class extends BaseSchema {
-
   async up() {
-    this.schema.createTable(config.get('permissions.permissionsConfig.tables.permissions'), (table) => {
-      table.bigIncrements('id')
+    this.schema.createTable('permissions', (table) => {
+      this.primaryKey(table, 'id')
 
       table.string('slug')
       table.string('title').nullable()
       table.string('entity_type').defaultTo('*')
-      table.bigint('entity_id').unsigned().nullable()
+      this.modelId(table, 'entity_id').nullable()
       table.integer('scope').unsigned().defaultTo(0)
       table.boolean('allowed').defaultTo(true)
 
@@ -25,17 +24,17 @@ export default class extends BaseSchema {
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
 
-      table.index(['slug', 'scope'])
+      table.index(['scope', 'slug'])
       table.index(['entity_type', 'entity_id'])
     })
 
-    this.schema.createTable(config.get('permissions.permissionsConfig.tables.roles'), (table) => {
-      table.bigIncrements('id')
+    this.schema.createTable('roles', (table) => {
+      this.primaryKey(table, 'id')
 
       table.string('slug')
       table.string('title').nullable()
       table.string('entity_type').defaultTo('*')
-      table.bigint('entity_id').unsigned().nullable()
+      this.modelId(table, 'entity_id').nullable()
       table.integer('scope').unsigned().defaultTo(0)
       table.boolean('allowed').defaultTo(true)
 
@@ -45,16 +44,16 @@ export default class extends BaseSchema {
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
 
-      table.index(['slug', 'scope'])
+      table.index(['scope', 'slug'])
       table.index(['entity_type', 'entity_id'])
     })
 
-    this.schema.createTable(config.get('permissions.permissionsConfig.tables.modelRoles'), (table) => {
+    this.schema.createTable('model_roles', (table) => {
       table.bigIncrements('id')
 
       table.string('model_type')
-      table.bigint('model_id').unsigned()
-      table.bigInteger('role_id').unsigned()
+      this.modelId(table, 'model_id')
+      this.modelId(table, 'role_id')
 
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
@@ -67,12 +66,12 @@ export default class extends BaseSchema {
       table.foreign('role_id').references('roles.id').onDelete('CASCADE')
     })
 
-    this.schema.createTable(config.get('permissions.permissionsConfig.tables.modelPermissions'), (table) => {
+    this.schema.createTable('model_permissions', (table) => {
       table.bigIncrements('id')
 
       table.string('model_type')
-      table.bigint('model_id').unsigned()
-      table.bigInteger('permission_id').unsigned()
+      this.modelId(table, 'model_id')
+      this.modelId(table, 'permission_id')
 
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
@@ -84,7 +83,6 @@ export default class extends BaseSchema {
 
       table.foreign('permission_id').references('permissions.id').onDelete('CASCADE')
     })
-
   }
 
   async down() {
@@ -93,4 +91,17 @@ export default class extends BaseSchema {
     this.schema.dropTable(config.get('permissions.permissionsConfig.tables.modelPermissions'))
     this.schema.dropTable(config.get('permissions.permissionsConfig.tables.permissions'))
   }
+
+  private primaryKey(table: any, columnName: string) {
+    return config.get('permissions.permissionsConfig.uuidSupport')
+      ? table.string(columnName).primary()
+      : table.bigIncrements(columnName)
+  }
+
+  private modelId(table: any, columnName: string) {
+    return config.get('permissions.permissionsConfig.uuidSupport')
+      ? table.string(columnName)
+      : table.bigint(columnName).unsigned()
+  }
 }
+

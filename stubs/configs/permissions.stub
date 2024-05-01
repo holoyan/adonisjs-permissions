@@ -3,7 +3,6 @@
     to: app.configPath('permissions.ts')
   })
 }}}
-
 import { Permissions } from '@holoyan/adonisjs-permissions/types'
 
 export const permissionsConfig: Permissions = {
@@ -17,4 +16,6 @@ export const permissionsConfig: Permissions = {
     roles: 'roles',
     permissions: 'permissions',
   },
+  uuidSupport: false,
 }
+

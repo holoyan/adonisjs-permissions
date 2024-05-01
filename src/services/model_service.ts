@@ -1,7 +1,7 @@
 import BaseService from './base_service.js'
 import { getModelPermissionModelQuery, getModelRoleModelQuery } from './query_helper.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
-import { MorphInterface } from '../types.js'
+import { ModelIdType, MorphInterface } from '../types.js'
 
 export default class ModelService extends BaseService {
   // private permissionQuery
@@ -50,13 +50,13 @@ export default class ModelService extends BaseService {
       .where('mr.model_type', modelType)
   }
 
-  allByPermission(permissionId: string) {
+  allByPermission(permissionId: ModelIdType) {
     return this.modelPermissionQuery
       .where('permission_id', permissionId)
       .groupBy(['model_type', 'model_id'])
   }
 
-  async allByPermissionFor(modelType: string, permissionId: string) {
+  async allByPermissionFor(modelType: string, permissionId: ModelIdType) {
     const modelClass = this.map.get(modelType)
     return modelClass
       .query()

@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import config from '@adonisjs/core/services/config'
-import { ModelPermissionInterface } from '../types.js'
+import { ModelIdType, ModelPermissionInterface } from '../types.js'
 
 export default class ModelPermission extends BaseModel implements ModelPermissionInterface {
   static get table() {
@@ -11,13 +11,13 @@ export default class ModelPermission extends BaseModel implements ModelPermissio
   declare id: number
 
   @column()
-  declare permissionId: number
+  declare permissionId: ModelIdType
 
   @column()
   declare modelType: string
 
   @column()
-  declare modelId: string
+  declare modelId: ModelIdType
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

@@ -12,6 +12,7 @@ import fs from 'node:fs'
 import { DateTime } from 'luxon'
 import {
   AclModelInterface,
+  ModelIdType,
   ModelPermissionInterface,
   ModelRoleInterface,
   MorphInterface,
@@ -191,13 +192,14 @@ export async function createTables(db: Database) {
     table.timestamp('created_at').notNullable()
     table.timestamp('updated_at').nullable()
   })
+
   await db.connection().schema.createTableIfNotExists('permissions', (table) => {
-    table.string('id').primary()
+    PrimaryKey(table, 'id')
 
     table.string('slug')
     table.string('title').nullable()
     table.string('entity_type').defaultTo('*')
-    table.string('entity_id').nullable()
+    modelId(table, 'entity_id').nullable()
     table.integer('scope').unsigned().defaultTo(0)
     table.boolean('allowed').defaultTo(true)
 
@@ -212,12 +214,12 @@ export async function createTables(db: Database) {
   })
 
   await db.connection().schema.createTableIfNotExists('roles', (table) => {
-    table.string('id').primary()
+    PrimaryKey(table, 'id')
 
     table.string('slug')
     table.string('title').nullable()
     table.string('entity_type').defaultTo('*')
-    table.string('entity_id').nullable()
+    modelId(table, 'entity_id').nullable()
     table.integer('scope').unsigned().defaultTo(0)
     table.boolean('allowed').defaultTo(true)
 
@@ -235,8 +237,8 @@ export async function createTables(db: Database) {
     table.bigIncrements('id')
 
     table.string('model_type')
-    table.string('model_id')
-    table.string('role_id')
+    modelId(table, 'model_id')
+    modelId(table, 'role_id')
 
     /**
      * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
@@ -253,8 +255,8 @@ export async function createTables(db: Database) {
     table.bigIncrements('id')
 
     table.string('model_type')
-    table.string('model_id')
-    table.string('permission_id')
+    modelId(table, 'model_id')
+    modelId(table, 'permission_id')
 
     /**
      * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
@@ -278,7 +280,7 @@ export async function createTables(db: Database) {
   })
 
   await db.connection().schema.createTableIfNotExists('posts', (table) => {
-    table.string('id').primary()
+    PrimaryKey(table, 'id')
 
     /**
      * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
@@ -286,6 +288,17 @@ export async function createTables(db: Database) {
     table.timestamp('created_at', { useTz: true })
     table.timestamp('updated_at', { useTz: true })
   })
+}
+function PrimaryKey(table: any, columnName: string) {
+  return wantsUUID() ? table.string(columnName).primary() : table.bigIncrements(columnName)
+}
+
+function modelId(table: any, columnName: string) {
+  return wantsUUID() ? table.string(columnName) : table.bigint(columnName).unsigned()
+}
+
+export function wantsUUID() {
+  return process.env.UUID_SUPPORT === 'true'
 }
 
 export async function defineModels() {
@@ -307,11 +320,15 @@ export async function defineModels() {
 
   @MorphMapDecorator('roles')
   class Role extends BaseModel implements RoleInterface {
-    static selfAssignPrimaryKey = true
+    static get selfAssignPrimaryKey() {
+      return wantsUUID()
+    }
 
     @beforeCreate()
     static assignUuid(role: Role) {
-      role.id = uuidv4()
+      if (wantsUUID()) {
+        role.id = uuidv4()
+      }
     }
 
     getModelId(): string {
@@ -348,18 +365,22 @@ export async function defineModels() {
 
   @MorphMapDecorator('permissions')
   class Permission extends BaseModel implements PermissionInterface {
-    static selfAssignPrimaryKey = true
+    static get selfAssignPrimaryKey() {
+      return wantsUUID()
+    }
 
     @beforeCreate()
     static assignUuid(permission: Permission) {
-      permission.id = uuidv4()
+      if (wantsUUID()) {
+        permission.id = uuidv4()
+      }
     }
     getModelId(): string {
       return String(this.id)
     }
 
     @column({ isPrimary: true })
-    declare id: string
+    declare id: ModelIdType
 
     @column()
     declare slug: string
@@ -391,13 +412,13 @@ export async function defineModels() {
     declare id: number
 
     @column()
-    declare roleId: number
+    declare roleId: ModelIdType
 
     @column()
     declare modelType: string
 
     @column()
-    declare modelId: string
+    declare modelId: ModelIdType
 
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime
@@ -411,13 +432,13 @@ export async function defineModels() {
     declare id: number
 
     @column()
-    declare permissionId: number
+    declare permissionId: ModelIdType
 
     @column()
     declare modelType: string
 
     @column()
-    declare modelId: string
+    declare modelId: ModelIdType
 
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime
@@ -514,9 +535,12 @@ export function getPermissions(count: number) {
  */
 export function getPosts(count: number) {
   return [...new Array(count)].map(() => {
-    return {
-      id: makeId(32),
+    if (wantsUUID()) {
+      return {
+        id: uuidv4(),
+      }
     }
+    return {}
   })
 }
 
@@ -529,14 +553,6 @@ export function getProduts(count: number) {
   })
 }
 
-export function makeId(length: number) {
-  let result = ''
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  const charactersLength = characters.length
-  let counter = 0
-  while (counter < length) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength))
-    counter += 1
-  }
-  return result
+export function makeId() {
+  return uuidv4()
 }

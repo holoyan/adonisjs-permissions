@@ -31,7 +31,7 @@
   - [Middleware](#middleware)
   - [Removing (revoking) roles and permissions from the model](#removing-revokingdetach-roles-and-permissions-from-the-model)
 - [Digging deeper](#digging-deeper)
-  - [Restricting a permission to a model (On a resource)](#restricting-a-permission-to-a-model-on-a-resource)
+  - [Restricting a permission on a resource)](#restricting-a-permission-on-a-resource)
   - [Forbidding permissions](#forbidding-permissions)
   - [Forbidding permissions on a resource](#forbidding-permissions-on-a-resource)
   - [Checking for forbidden permissions](#checking-for-forbidden-permissions)
@@ -117,7 +117,7 @@ export default class Admin extends BaseModel implements AclModelInterface {
 
 @MorphMap('posts')
 export default class Post extends BaseModel implements AclModelInterface {
-  getModelId(): number {
+  getModelId(): number { // use `string` return type if your model has uuid/string primary keys 
     return this.id
   }
 
@@ -125,6 +125,12 @@ export default class Post extends BaseModel implements AclModelInterface {
 }
 
 ```
+
+## Release Notes
+
+Version: >= 'v0.7.11'
+* Add UUID Support
+* Drop role,permission assign by model or id, only by `slug` can be assigned (This is done to support UUID)
 
 ## Mixins
 
@@ -164,7 +170,9 @@ await user.allow('edit') // give edit permission
 Currently supported databases: `postgres`, `mysql`, `mssql`
 
 ### UUID support
-No uuid support *yet*, check [todo](#todo) list for more details
+from `v0.7.11` UUID support available, all you need to do change `uuidSupport` value to `true` in `config/permissions.ts` file, then run the migration and don't forget to change return type for the `getModelId()` method 
+
+check [todo](#todo) list for more details
 
 ## Basic Usage
 
@@ -181,8 +189,6 @@ Let's manually create `create,update,read,delete` permissions, as well as `admin
 import { Permission } from '@holoyan/adonisjs-permissions'
 import { Role } from '@holoyan/adonisjs-permissions'
 import {Acl} from "@holoyan/adonisjs-permissions";
-
-
 
 
 // create permissions
@@ -261,12 +267,12 @@ import User from "#models/user";
 
 const user1 = await User.query().where(condition1).first()
 // give manager role to the user1
-await Acl.model(user1).assignRole(manager)
+await Acl.model(user1).assignRole('manager')
 // or just use assign() method, they are alias
-// await Acl.model(user1).assign(manager)
+// await Acl.model(user1).assign('manager')
 
 const user2 = await User.query().where(condition2).first()
-await Acl.model(user2).assignRole(admin)
+await Acl.model(user2).assign(admin)
 
 ```
 Or we can give permissions directly to users without having any role
@@ -287,9 +293,9 @@ We are not limited to using only the User model. If you have a multi-auth system
 
 
 ```typescript
-await Acl.model(user).assignRole(manager)
+await Acl.model(user).assignRole('manager')
 
-await Acl.model(admin).assignRole(admin)
+await Acl.model(admin).assignRole('admin')
 
 ```
 
@@ -318,7 +324,7 @@ const roles = await Acl.role(role).permissions()
 const roles = await Acl.model(user).permissions()
 ```
 
-### Getting users (models) from the permission
+### Getting models from the permission
 
 ```typescript
 
@@ -465,7 +471,7 @@ export default class AclMiddleware {
 
 ### Removing (revoking/detach) roles and permissions from the model
 
-To remove(detach) role from the user we can use `revoke` method
+To revoke(detach) role from the user we can use `revoke` method
 
 ```typescript
 
@@ -477,7 +483,7 @@ await Acl.model(user).flushRoles()
 
 ```
 
-Removing permissions from the user
+Revoking permissions from the user
 
 ```typescript
 await Acl.model(user).revokePermission('update')
@@ -515,7 +521,7 @@ await Acl.role(role).flushPermissions()
 
 ### Deleting roles and permissions (Important!)
 
-> Important! use Acl to delete roles and permissions, under the hood Acl does some checking
+> Recommended! use Acl to delete roles and permissions instead of directly making queries on the Role,Permission model, under the hood Acl does some checking
 
 ```typescript
 
@@ -531,9 +537,9 @@ To see in dept usage of this methods check [next section](#digging-deeper)
 
 In the [previous](#basic-usage) section, we looked at basic examples and usage. Most of the time, basic usage will probably be enough for your project. However, there is much more we can do with `Acl`.
 
-### Restricting a permission to a model (On a resource)
+### Restricting a permission on a resource
 
-Sometimes you might want to restrict a permission to a specific model type. Simply pass the model as a second argument:
+Sometimes you might want to restrict a permission on a specific model(resource). Simply pass the model as a second argument:
 
 ```typescript
 import Product from "#models/product";
@@ -647,15 +653,15 @@ Good news!, we can do that
 await Acl.role(manager).giveAll(['create','update','read','delete'])
 
 // assigning to the users
-await Acl.model(user1).assign(manager)
+await Acl.model(user1).assign('manager')
 
-await Acl.model(user3).assign(manager)
+await Acl.model(user3).assign('manager')
 await Acl.model(user3).forbid('delete')
 
-await Acl.model(user1).hasRole(manager) // true
+await Acl.model(user1).hasRole('manager') // true
 await Acl.model(user1).can('delete') // true
 
-await Acl.model(user3).hasRole(manager) // true
+await Acl.model(user3).hasRole('manager') // true
 await Acl.model(user3).can('delete') // false
 
 await Acl.model(user3).contains('delete') // true
@@ -680,7 +686,7 @@ In [previous](#forbidding-permissions) section we saw how to forbid certain perm
 
 ```typescript
 
-await Acl.model(user3).assignRole(manager)
+await Acl.model(user3).assignRole('manager')
 await Acl.model(user3).forbid('delete')
 
 await Acl.model(user3).forbidden('delete') // true
@@ -700,7 +706,7 @@ await Acl.model(user).forbidden('edit', post7) // false becouse 'edit' action fo
 
 ```typescript
 
-await Acl.model(user3).assignRole(manager)
+await Acl.model(user3).assignRole('manager')
 await Acl.model(user3).forbid('delete')
 
 await Acl.model(user3).forbidden('delete') // true
@@ -715,7 +721,7 @@ await Acl.model(user3).can('delete') // true
 Same behaviour applies with roles
 
 ```typescript
-await Acl.role(role).assignRole(manager)
+await Acl.role(role).assignRole('manager')
 await Acl.role(role).forbid('delete')
 
 await Acl.role(role).forbidden('delete') // true
@@ -942,7 +948,7 @@ Coming soon
 ## TODO
 
 - [X] Scopes (Multitenancy)
-- [ ] UUID support
+- [X] UUID support
 - [ ] Events
 - [ ] More test coverage
 - [ ] Caching

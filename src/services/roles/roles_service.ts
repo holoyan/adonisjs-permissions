@@ -1,5 +1,6 @@
 import {
   AclModel,
+  ModelIdType,
   ModelRoleInterface,
   MorphInterface,
   RoleInterface,
@@ -55,34 +56,28 @@ export default class RolesService extends BaseService {
     this.modelRoleTable = this.modelRoleClassName.table
   }
 
-  private modelRolesQuery(modelType: string, modelId: string) {
+  private modelRolesQuery(modelType: string, modelId: ModelIdType) {
     return this.roleQuery
       .leftJoin(this.modelRoleTable + ' as mr', 'mr.role_id', '=', this.roleTable + '.id')
       .where('mr.model_type', modelType)
       .where('mr.model_id', modelId)
   }
 
-  all(modelType: string, modelId: string) {
+  all(modelType: string, modelId: ModelIdType) {
     return this.modelRolesQuery(modelType, modelId)
       .distinct(this.roleTable + '.id')
       .select(this.roleTable + '.*')
   }
 
-  has(modelType: string, modelId: string, role: string | RoleInterface): Promise<boolean> {
+  has(modelType: string, modelId: ModelIdType, role: string): Promise<boolean> {
     return this.hasAll(modelType, modelId, [role])
   }
 
-  async hasAll(
-    modelType: string,
-    modelId: string,
-    roles: (string | RoleInterface)[]
-  ): Promise<boolean> {
+  async hasAll(modelType: string, modelId: ModelIdType, roles: string[]): Promise<boolean> {
     const rolesQuery = this.modelRolesQuery(modelType, modelId)
 
     let { slugs, ids } = this.formatList(roles)
-    // console.log('<----------------------------')
-    // console.log(slugs)
-    // console.log('---------------------------->')
+
     if (slugs.length) {
       rolesQuery.whereIn(this.roleTable + '.slug', slugs)
     }
@@ -100,11 +95,7 @@ export default class RolesService extends BaseService {
     return +r[0].$extras.total === roles.length
   }
 
-  async hasAny(
-    modelType: string,
-    modelId: string,
-    roles: (string | RoleInterface)[]
-  ): Promise<boolean> {
+  async hasAny(modelType: string, modelId: ModelIdType, roles: string[]): Promise<boolean> {
     // if is string then we are going to check against slug
     // map roles
     const rolesQuery = this.modelRolesQuery(modelType, modelId)
@@ -124,11 +115,11 @@ export default class RolesService extends BaseService {
     return +r[0].$extras.total > 0
   }
 
-  assign(role: string | RoleInterface, modelType: string, modelId: string) {
+  assign(role: string, modelType: string, modelId: ModelIdType) {
     return this.assignAll([role], modelType, modelId)
   }
 
-  async assignAll(roles: (string | RoleInterface)[], modelType: string, modelId: string) {
+  async assignAll(roles: string[], modelType: string, modelId: ModelIdType) {
     const rs = await this.extractRoleModel(roles)
 
     if (!rs.length) {
@@ -163,11 +154,11 @@ export default class RolesService extends BaseService {
     return true
   }
 
-  async revoke(role: string | number, model: AclModel) {
+  async revoke(role: string, model: AclModel) {
     return this.revokeAll([role], model)
   }
 
-  async revokeAll(roles: (string | number)[], model: AclModel) {
+  async revokeAll(roles: string[], model: AclModel) {
     const { slugs, ids } = this.formatListStringNumbers(roles)
 
     const q = this.modelRoleQuery
@@ -190,21 +181,8 @@ export default class RolesService extends BaseService {
     return true
   }
 
-  private async extractRoleModel(roles: (string | RoleInterface)[]) {
-    const slugs = []
-    const oldRoles = []
-
-    for (const role of roles) {
-      if (typeof role === 'string') {
-        slugs.push(role)
-      } else {
-        oldRoles.push(role)
-      }
-    }
-
-    const newRoles = await this.roleQuery.whereIn('slug', slugs)
-
-    return [...newRoles, ...oldRoles]
+  private async extractRoleModel(roles: string[]) {
+    return this.roleQuery.whereIn('slug', roles)
   }
 
   roleModelPermissionQuery(modelType: string) {
@@ -213,7 +191,7 @@ export default class RolesService extends BaseService {
       .where('mp.model_type', modelType)
   }
 
-  flush(modelType: string, modelId: string) {
+  flush(modelType: string, modelId: ModelIdType) {
     return this.modelRoleQuery.where('model_type', modelType).where('model_id', modelId).delete()
   }
 

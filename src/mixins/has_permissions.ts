@@ -1,13 +1,12 @@
 import type { NormalizeConstructor } from '@adonisjs/core/types/helpers'
-import Permission from '../models/permission.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { Acl } from '../acl.js'
-import { AclModel, AclModelInterface, RoleInterface } from '../types.js'
+import { AclModel, AclModelInterface } from '../types.js'
 
 export function hasPermissions() {
   return <Model extends NormalizeConstructor<typeof BaseModel>>(superclass: Model) => {
     class HasPermissionsMixin extends superclass implements AclModelInterface {
-      getModelId(): number {
+      getModelId(): string {
         throw new Error(
           'method getModelId must be implemented in target model, which will return key for current object'
         )
@@ -17,27 +16,27 @@ export function hasPermissions() {
         return Acl.model(this as unknown as AclModel).roles()
       }
 
-      hasRole(role: string | RoleInterface) {
+      hasRole(role: string) {
         return Acl.model(this as unknown as AclModel).hasRole(role)
       }
 
-      hasAllRoles(...roles: (string | RoleInterface)[]) {
+      hasAllRoles(...roles: string[]) {
         return Acl.model(this as unknown as AclModel).hasAllRoles(...roles)
       }
 
-      hasAnyRole(...roles: (string | RoleInterface)[]) {
+      hasAnyRole(...roles: string[]) {
         return Acl.model(this as unknown as AclModel).hasAnyRole(...roles)
       }
 
-      assignRole(role: string | RoleInterface) {
+      assignRole(role: string) {
         return Acl.model(this as unknown as AclModel).assignRole(role)
       }
 
-      revokeRole(role: string | number | RoleInterface) {
+      revokeRole(role: string) {
         return Acl.model(this as unknown as AclModel).revokeRole(role)
       }
 
-      revokeAllRoles(...roles: (string | number | RoleInterface)[]) {
+      revokeAllRoles(...roles: string[]) {
         return Acl.model(this as unknown as AclModel).revokeAllRoles(...roles)
       }
 
@@ -65,65 +64,59 @@ export function hasPermissions() {
         return Acl.model(this as unknown as AclModel).directResourcePermissions(includeForbiddings)
       }
 
-      async containsPermission(permission: string | Permission) {
+      async containsPermission(permission: string) {
         return Acl.model(this as unknown as AclModel).containsPermission(permission)
       }
 
-      async containsAllPermissions(permissions: (string | Permission)[]) {
+      async containsAllPermissions(permissions: string[]) {
         return Acl.model(this as unknown as AclModel).containsAllPermissions(permissions)
       }
 
-      async containsAnyPermission(permissions: (string | Permission)[]) {
+      async containsAnyPermission(permissions: string[]) {
         return Acl.model(this as unknown as AclModel).containsAnyPermission(permissions)
       }
 
-      async containsDirectPermission(permission: string | Permission) {
+      async containsDirectPermission(permission: string) {
         return Acl.model(this as unknown as AclModel).containsDirectPermission(permission)
       }
 
-      async containsAllPermissionsDirectly(permissions: (string | Permission)[]) {
+      async containsAllPermissionsDirectly(permissions: string[]) {
         return Acl.model(this as unknown as AclModel).containsAllPermissionsDirectly(permissions)
       }
 
-      async containsAnyPermissionDirectly(permissions: (string | Permission)[]) {
+      async containsAnyPermissionDirectly(permissions: string[]) {
         return Acl.model(this as unknown as AclModel).containsAnyPermissionDirectly(permissions)
       }
 
-      async hasPermission(permission: string | Permission, target?: AclModel | Function) {
+      async hasPermission(permission: string, target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasPermission(permission, target)
       }
 
-      async hasAllPermissions(permissions: (string | Permission)[], target?: AclModel | Function) {
+      async hasAllPermissions(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasAllPermissions(permissions, target)
       }
 
-      async hasAnyPermission(permissions: (string | Permission)[], target?: AclModel | Function) {
+      async hasAnyPermission(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasAnyPermission(permissions, target)
       }
 
-      async hasAnyDirectPermission(
-        permissions: (string | Permission)[],
-        target?: AclModel | Function
-      ) {
+      async hasAnyDirectPermission(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasAnyDirectPermission(permissions, target)
       }
 
-      async hasDirectPermission(permission: string | Permission, target?: AclModel | Function) {
+      async hasDirectPermission(permission: string, target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasDirectPermission(permission, target)
       }
 
-      async hasAllPermissionsDirect(
-        permissions: (string | Permission)[],
-        target?: AclModel | Function
-      ) {
+      async hasAllPermissionsDirect(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasAllPermissionsDirect(permissions, target)
       }
 
-      canAll(permissions: (string | Permission)[], target?: AclModel | Function) {
+      canAll(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).canAll(permissions, target)
       }
 
-      canAny(permissions: (string | Permission)[], target?: AclModel | Function) {
+      canAny(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).canAny(permissions, target)
       }
 
