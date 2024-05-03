@@ -1,11 +1,11 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
-import config from '@adonisjs/core/services/config'
 import { ModelIdType, ModelRoleInterface } from '../types.js'
+import app from '@adonisjs/core/services/app'
 
 export default class ModelRole extends BaseModel implements ModelRoleInterface {
   static get table() {
-    return config.get('permissions.permissionsConfig.tables.modelRoles') as string
+    return app.config.get('permissions.permissionsConfig.tables.modelRoles') as string
   }
 
   @column({ isPrimary: true })
