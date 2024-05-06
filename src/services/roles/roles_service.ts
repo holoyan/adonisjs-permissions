@@ -29,8 +29,6 @@ export default class RolesService extends BaseService {
   private modelRoleQuery
   private readonly modelRoleTable
 
-  private currentScope: number
-
   constructor(
     private roleClassName: typeof BaseModel,
     // private permissionClassName: typeof BaseModel,
@@ -43,11 +41,9 @@ export default class RolesService extends BaseService {
     // this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
     // this.permissionTable = this.permissionClassName.table
 
-    this.currentScope = this.scope.get()
-
     this.roleQuery = getRoleModelQuery(this.roleClassName)
     this.roleTable = this.roleClassName.table
-    this.applyScopes(this.roleQuery, this.currentScope)
+    this.applyScopes(this.roleQuery)
 
     // this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
     this.modelPermissionTable = this.modelPermissionClassName.table
@@ -174,7 +170,7 @@ export default class RolesService extends BaseService {
         }
       })
 
-    this.applyModelRoleScopes(q, 'r', this.currentScope)
+    this.applyModelRoleScopes(q, 'r')
 
     await q.delete()
 
@@ -195,18 +191,14 @@ export default class RolesService extends BaseService {
     return this.modelRoleQuery.where('model_type', modelType).where('model_id', modelId).delete()
   }
 
-  private applyScopes(
-    q: ModelQueryBuilderContract<typeof BaseModel, RoleInterface>,
-    scope: number
-  ) {
-    q.where(this.roleTable + '.scope', scope)
+  private applyScopes(q: ModelQueryBuilderContract<typeof BaseModel, RoleInterface>) {
+    this.scope.applyWhere(q, this.roleTable)
   }
 
   private applyModelRoleScopes(
     q: ModelQueryBuilderContract<typeof BaseModel, ModelRoleInterface>,
-    table: string,
-    scope: number
+    table: string
   ) {
-    q.where(table + '.scope', scope)
+    this.scope.applyWhere(q, table)
   }
 }

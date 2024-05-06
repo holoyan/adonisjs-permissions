@@ -1219,15 +1219,15 @@ test.group('Has permission | model - permission direct resource interaction', (g
       throw new Error('User not found')
     }
 
-    await Acl.model(user).on(scope.default()).assignDirectAllPermissions(['create'])
-    await Acl.model(user).on(createScope5.scope).assignDirectAllPermissions(['create', 'edit'])
+    await Acl.model(user).assignDirectAllPermissions(['create'])
+    await Acl.model(user).on(createScope5.scope!).assignDirectAllPermissions(['create', 'edit'])
 
     const modelPermissions = await ModelPermission.query()
       .where('model_type', 'users')
       .where('model_id', user.id)
 
-    const permsOnDefaultScope = await Acl.model(user).on(scope.default()).permissions()
-    const permsOnScope5 = await Acl.model(user).on(createScope5.scope).permissions()
+    const permsOnDefaultScope = await Acl.model(user).permissions()
+    const permsOnScope5 = await Acl.model(user).on(createScope5.scope!).permissions()
 
     assert.lengthOf(modelPermissions, 3)
     assert.lengthOf(permsOnDefaultScope, 1)

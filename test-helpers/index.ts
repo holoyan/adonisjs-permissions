@@ -351,7 +351,7 @@ export async function defineModels() {
     declare entityId: string | null
 
     @column()
-    declare scope: number
+    declare scope: ModelIdType | null
 
     @column()
     declare allowed: boolean
@@ -398,7 +398,7 @@ export async function defineModels() {
     declare allowed: boolean
 
     @column()
-    declare scope: number
+    declare scope: ModelIdType | null
 
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime
