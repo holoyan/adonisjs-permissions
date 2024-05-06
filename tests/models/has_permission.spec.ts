@@ -6,6 +6,7 @@ import {
   defineModels,
   makeId,
   morphMap,
+  randomScope,
   seedDb,
   wantsUUID,
 } from '../../test-helpers/index.js'
@@ -13,6 +14,12 @@ import {
 import { Acl, AclManager } from '../../src/acl.js'
 import ModelManager from '../../src/model_manager.js'
 import { Scope } from '../../src/scope.js'
+
+async function wait() {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 5000)
+  })
+}
 
 test.group('', (group) => {
   group.setup(async () => {})
@@ -64,14 +71,14 @@ test.group('', (group) => {
     const create = await Acl.permission().create({
       slug: 'create',
     })
-
+    const editScope = randomScope()
     const edit = await Acl.permission().create({
       slug: 'create',
-      scope: 5,
+      scope: editScope,
     })
 
-    assert.equal(create.scope, 0)
-    assert.equal(edit.scope, 5)
+    assert.equal(create.scope, null)
+    assert.equal(edit.scope, editScope)
   })
 
   test('Ensure that duplicate permissions are ignored', async ({ assert }) => {
@@ -1204,15 +1211,15 @@ test.group('Has permission | model - permission direct resource interaction', (g
       slug: 'create',
       scope: scope.default(),
     })
-
+    const scope5 = randomScope()
     const createScope5 = await Permission.create({
       slug: 'create',
-      scope: 5,
+      scope: scope5,
     })
 
     await Permission.create({
       slug: 'edit',
-      scope: 5,
+      scope: scope5,
     })
 
     if (!user) {
@@ -1228,6 +1235,8 @@ test.group('Has permission | model - permission direct resource interaction', (g
 
     const permsOnDefaultScope = await Acl.model(user).on(scope.default()).permissions()
     const permsOnScope5 = await Acl.model(user).on(createScope5.scope).permissions()
+
+    // await wait()
 
     assert.lengthOf(modelPermissions, 3)
     assert.lengthOf(permsOnDefaultScope, 1)

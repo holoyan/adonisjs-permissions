@@ -4,7 +4,7 @@ import {
   ModelRoleInterface,
   MorphInterface,
   RoleInterface,
-  ScopeInterface,
+  ScopeInterface, ScopeType,
 } from '../../types.js'
 import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
@@ -29,7 +29,7 @@ export default class RolesService extends BaseService {
   private modelRoleQuery
   private readonly modelRoleTable
 
-  private currentScope: number
+  private currentScope: ScopeType
 
   constructor(
     private roleClassName: typeof BaseModel,
@@ -197,16 +197,24 @@ export default class RolesService extends BaseService {
 
   private applyScopes(
     q: ModelQueryBuilderContract<typeof BaseModel, RoleInterface>,
-    scope: number
+    scope: ScopeType
   ) {
-    q.where(this.roleTable + '.scope', scope)
+    if (scope) {
+      q.where(this.roleTable + '.scope', scope)
+    } else {
+      q.whereNull(this.roleTable + '.scope')
+    }
   }
 
   private applyModelRoleScopes(
     q: ModelQueryBuilderContract<typeof BaseModel, ModelRoleInterface>,
     table: string,
-    scope: number
+    scope: ScopeType
   ) {
-    q.where(table + '.scope', scope)
+    if (scope) {
+      q.where(table + '.scope', scope)
+    } else {
+      q.whereNull(table + '.scope')
+    }
   }
 }

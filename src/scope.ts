@@ -22,6 +22,8 @@ export class Scope implements ScopeInterface {
   applyWhere(query: ChainableContract, table: string) {
     if (this.#currentScope) {
       query.where(table + '.scope', this.#currentScope)
+    } else {
+      query.whereNull(table + '.scope')
     }
   }
 }

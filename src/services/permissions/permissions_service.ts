@@ -701,13 +701,13 @@ export default class PermissionsService extends BaseService {
   }
 
   private applyScopes(q: ModelQueryBuilderContract<typeof BaseModel, PermissionInterface>) {
-    q.where(this.permissionTable + '.scope', this.scope.get())
+    this.scope.applyWhere(q, this.permissionTable)
   }
 
   private applyModelPermissionScopes(
     q: ModelQueryBuilderContract<typeof BaseModel, ModelPermissionInterface>,
     table: string
   ) {
-    q.where(table + '.scope', this.scope.get())
+    this.scope.applyWhere(q, table)
   }
 }

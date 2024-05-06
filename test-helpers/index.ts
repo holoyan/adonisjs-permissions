@@ -187,7 +187,7 @@ export async function createTables(db: Database) {
   })
 
   await db.connection().schema.createTableIfNotExists('users', (table) => {
-    table.increments('id').notNullable()
+    PrimaryKey(table, 'id')
 
     table.timestamp('created_at').notNullable()
     table.timestamp('updated_at').nullable()
@@ -200,7 +200,7 @@ export async function createTables(db: Database) {
     table.string('title').nullable()
     table.string('entity_type').defaultTo('*')
     modelId(table, 'entity_id').nullable()
-    table.integer('scope').unsigned().defaultTo(0)
+    modelId(table, 'scope').nullable()
     table.boolean('allowed').defaultTo(true)
 
     /**
@@ -220,7 +220,7 @@ export async function createTables(db: Database) {
     table.string('title').nullable()
     table.string('entity_type').defaultTo('*')
     modelId(table, 'entity_id').nullable()
-    table.integer('scope').unsigned().defaultTo(0)
+    modelId(table, 'scope').nullable()
     table.boolean('allowed').defaultTo(true)
 
     /**
@@ -270,7 +270,7 @@ export async function createTables(db: Database) {
   })
 
   await db.connection().schema.createTableIfNotExists('products', (table) => {
-    table.increments('id')
+    PrimaryKey(table, 'id')
 
     /**
      * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
@@ -290,11 +290,11 @@ export async function createTables(db: Database) {
   })
 }
 function PrimaryKey(table: any, columnName: string) {
-  return wantsUUID() ? table.string(columnName).primary() : table.bigIncrements(columnName)
+  return wantsUUID() ? table.uuid(columnName).primary() : table.bigIncrements(columnName)
 }
 
 function modelId(table: any, columnName: string) {
-  return wantsUUID() ? table.string(columnName) : table.bigint(columnName).unsigned()
+  return wantsUUID() ? table.uuid(columnName) : table.bigint(columnName).unsigned()
 }
 
 export function wantsUUID() {
@@ -304,8 +304,19 @@ export function wantsUUID() {
 export async function defineModels() {
   @MorphMapDecorator('users')
   class User extends BaseModel implements AclModelInterface {
+    static get selfAssignPrimaryKey() {
+      return wantsUUID()
+    }
+
+    @beforeCreate()
+    static assignUuid(model: User) {
+      if (wantsUUID()) {
+        model.id = uuidv4()
+      }
+    }
+
     @column({ isPrimary: true })
-    declare id: number
+    declare id: number | string
 
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime
@@ -351,7 +362,7 @@ export async function defineModels() {
     declare entityId: string | null
 
     @column()
-    declare scope: number
+    declare scope: number | string | null
 
     @column()
     declare allowed: boolean
@@ -398,7 +409,7 @@ export async function defineModels() {
     declare allowed: boolean
 
     @column()
-    declare scope: number
+    declare scope: number | string | null
 
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime
@@ -449,8 +460,19 @@ export async function defineModels() {
 
   @MorphMapDecorator('products')
   class Product extends BaseModel implements AclModelInterface {
+    static get selfAssignPrimaryKey() {
+      return wantsUUID()
+    }
+
+    @beforeCreate()
+    static assignUuid(model: User) {
+      if (wantsUUID()) {
+        model.id = uuidv4()
+      }
+    }
+
     @column({ isPrimary: true })
-    declare id: number
+    declare id: number | string
 
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime
@@ -465,8 +487,19 @@ export async function defineModels() {
 
   @MorphMapDecorator('posts')
   class Post extends BaseModel implements AclModelInterface {
+    static get selfAssignPrimaryKey() {
+      return wantsUUID()
+    }
+
+    @beforeCreate()
+    static assignUuid(model: User) {
+      if (wantsUUID()) {
+        model.id = uuidv4()
+      }
+    }
+
     @column({ isPrimary: true })
-    declare id: string
+    declare id: number | string
 
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime
@@ -555,4 +588,8 @@ export function getProduts(count: number) {
 
 export function makeId() {
   return uuidv4()
+}
+
+export function randomScope() {
+  return wantsUUID() ? makeId() : Math.floor(Math.random() * 11)
 }

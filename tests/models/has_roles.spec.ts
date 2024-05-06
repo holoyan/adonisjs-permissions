@@ -6,7 +6,9 @@ import {
   defineModels,
   morphMap,
   seedDb,
+  wantsUUID,
 } from '../../test-helpers/index.js'
+import { v4 as uuidv4 } from 'uuid'
 
 import { Acl, AclManager } from '../../src/acl.js'
 import ModelManager from '../../src/model_manager.js'
@@ -64,14 +66,14 @@ test.group('', (group) => {
     const admin = await Acl.role().create({
       slug: 'admin',
     })
-
+    const admin2Scope = wantsUUID() ? uuidv4() : 5
     const admin2 = await Acl.role().create({
       slug: 'admin',
-      scope: 5,
+      scope: admin2Scope,
     })
 
-    assert.equal(admin.scope, 0)
-    assert.equal(admin2.scope, 5)
+    assert.equal(admin.scope, null)
+    assert.equal(admin2.scope, admin2Scope)
 
     const roles = await Role.all()
 
