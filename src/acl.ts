@@ -39,7 +39,7 @@ export class AclManager {
   }
 
   model(model: AclModel): ModelHasRolePermissions {
-    const scope = this._scope || this.createNewScope()
+    const scope = this.getScope()
     return new ModelHasRolePermissions(
       model,
       new RolesService(
@@ -65,7 +65,7 @@ export class AclManager {
   role(): EmptyRoles
   role(role: RoleInterface): RoleHasModelPermissions
   role(role?: RoleInterface): RoleHasModelPermissions | EmptyRoles {
-    const scope = this._scope || this.createNewScope()
+    const scope = this.getScope()
 
     if (role) {
       return new RoleHasModelPermissions(
@@ -94,7 +94,7 @@ export class AclManager {
   permission(): EmptyPermission
   permission(permission: PermissionInterface): EmptyPermission
   permission(permission?: PermissionInterface): PermissionHasModelRoles | EmptyPermission {
-    const scope = this._scope || this.createNewScope()
+    const scope = this.getScope()
 
     if (permission) {
       return new PermissionHasModelRoles(

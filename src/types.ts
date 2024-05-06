@@ -20,7 +20,7 @@ export interface PermissionInterface extends AclModelInterface {
 
   allowed: boolean
 
-  scope: number
+  scope: ModelIdType | null
 
   createdAt: DateTime
 
@@ -37,7 +37,7 @@ export interface RoleInterface extends AclModelInterface {
 
   entityId: string | null
 
-  scope: number
+  scope: ModelIdType | null
 
   allowed: boolean
 
@@ -128,9 +128,9 @@ export interface Permissions {
 }
 
 export interface ScopeInterface {
-  set(scope: number): ScopeInterface
-  get(): number
-  default(): number
+  set(scope: string | number): ScopeInterface
+  get(): number | string | null
+  default(): number | string | null
 }
 
 export interface ModelManagerBindings {
