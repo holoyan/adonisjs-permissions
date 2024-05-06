@@ -2,6 +2,7 @@ import { LucidModel } from '@adonisjs/lucid/types/model'
 import { DateTime } from 'luxon'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { Scope } from './scope.js'
+import { ChainableContract } from '@adonisjs/lucid/types/querybuilder'
 
 export interface AclModelInterface {
   getModelId(): ModelIdType
@@ -128,9 +129,10 @@ export interface Permissions {
 }
 
 export interface ScopeInterface {
-  set(scope: number): ScopeInterface
-  get(): number
-  default(): number
+  set(scope: ModelIdType): ScopeInterface
+  get(): ModelIdType | null
+  default(): ModelIdType | null
+  applyWhere(query: ChainableContract, table: string): void
 }
 
 export interface ModelManagerBindings {

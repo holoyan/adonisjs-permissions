@@ -1,20 +1,27 @@
-import { ScopeInterface } from './types.js'
+import { ModelIdType, ScopeInterface } from './types.js'
+import { ChainableContract } from '@adonisjs/lucid/types/querybuilder'
 
-const DEFAULT_SCOPE = 0
+const DEFAULT_SCOPE = null
 
 export class Scope implements ScopeInterface {
-  private currentScope = DEFAULT_SCOPE
+  #currentScope: ModelIdType | null = DEFAULT_SCOPE
 
-  set(scope: number) {
-    this.currentScope = scope
+  set(scope: ModelIdType) {
+    this.#currentScope = scope
     return this
   }
 
   get() {
-    return this.currentScope
+    return this.#currentScope
   }
 
   default() {
     return DEFAULT_SCOPE
+  }
+
+  applyWhere(query: ChainableContract, table: string) {
+    if (this.#currentScope) {
+      query.where(table + '.scope', this.#currentScope)
+    }
   }
 }
