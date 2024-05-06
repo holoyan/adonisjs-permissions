@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
 import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
-import { ModelIdType, RoleInterface } from '../types.js'
+import { ModelIdType, RoleInterface, ScopeType } from '../types.js'
 import { v4 as uuidv4 } from 'uuid'
 import app from '@adonisjs/core/services/app'
 
@@ -38,7 +38,7 @@ export default class Role extends BaseModel implements RoleInterface {
   declare entityId: string | null
 
   @column()
-  declare scope: number
+  declare scope: ScopeType
 
   @column()
   declare allowed: boolean

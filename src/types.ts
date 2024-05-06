@@ -21,7 +21,7 @@ export interface PermissionInterface extends AclModelInterface {
 
   allowed: boolean
 
-  scope: number
+  scope: ScopeType
 
   createdAt: DateTime
 
@@ -38,7 +38,7 @@ export interface RoleInterface extends AclModelInterface {
 
   entityId: string | null
 
-  scope: number
+  scope: ScopeType
 
   allowed: boolean
 
@@ -78,6 +78,8 @@ export interface ModelPermissionInterface {
 export type AclModel = InstanceType<LucidModel> & AclModelInterface
 
 export type ModelIdType = string | number
+
+export type ScopeType = ModelIdType | null
 
 export type PermissionModel<T extends new (...args: any[]) => any> = InstanceType<T> &
   PermissionInterface
@@ -129,9 +131,9 @@ export interface Permissions {
 }
 
 export interface ScopeInterface {
-  set(scope: ModelIdType): ScopeInterface
-  get(): ModelIdType | null
-  default(): ModelIdType | null
+  set(scope: ScopeType): ScopeInterface
+  get(): ScopeType
+  default(): ScopeType
   applyWhere(query: ChainableContract, table: string): void
 }
 

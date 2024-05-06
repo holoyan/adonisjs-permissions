@@ -1,12 +1,12 @@
-import { ModelIdType, ScopeInterface } from './types.js'
+import { ScopeInterface, ScopeType } from './types.js'
 import { ChainableContract } from '@adonisjs/lucid/types/querybuilder'
 
 const DEFAULT_SCOPE = null
 
 export class Scope implements ScopeInterface {
-  #currentScope: ModelIdType | null = DEFAULT_SCOPE
+  #currentScope: ScopeType = DEFAULT_SCOPE
 
-  set(scope: ModelIdType) {
+  set(scope: ScopeType) {
     this.#currentScope = scope
     return this
   }

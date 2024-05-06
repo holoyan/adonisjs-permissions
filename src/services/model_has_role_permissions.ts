@@ -1,4 +1,4 @@
-import { AclModel, MorphInterface, ScopeInterface } from '../types.js'
+import { AclModel, MorphInterface, ScopeInterface, ScopeType } from '../types.js'
 import PermissionsService from './permissions/permissions_service.js'
 import RolesService from './roles/roles_service.js'
 import { destructTarget, formatList } from './helper.js'
@@ -12,7 +12,7 @@ export class ModelHasRolePermissions {
     private scope: ScopeInterface
   ) {}
 
-  on(scope: number) {
+  on(scope: ScopeType) {
     this.scope.set(scope)
     return this
   }

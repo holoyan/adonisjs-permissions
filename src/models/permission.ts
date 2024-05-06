@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import { v4 as uuidv4 } from 'uuid'
 import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
-import { ModelIdType, PermissionInterface } from '../types.js'
+import { ModelIdType, PermissionInterface, ScopeType } from '../types.js'
 import app from '@adonisjs/core/services/app'
 
 export default class Permission extends BaseModel implements PermissionInterface {
@@ -41,7 +41,7 @@ export default class Permission extends BaseModel implements PermissionInterface
   declare allowed: boolean
 
   @column()
-  declare scope: number
+  declare scope: ScopeType
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
