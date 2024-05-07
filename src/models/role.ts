@@ -15,7 +15,9 @@ export default class Role extends BaseModel implements RoleInterface {
 
   @beforeCreate()
   static assignUuid(role: Role) {
-    role.id = uuidv4()
+    if (app.config.get('permissions.permissionsConfig.uuidSupport')) {
+      role.id = uuidv4()
+    }
   }
 
   getModelId(): ModelIdType {
@@ -38,7 +40,7 @@ export default class Role extends BaseModel implements RoleInterface {
   declare entityId: string | null
 
   @column()
-  declare scope: number
+  declare scope: string
 
   @column()
   declare allowed: boolean

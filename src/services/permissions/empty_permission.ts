@@ -12,7 +12,7 @@ export default class EmptyPermission {
     this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
   }
 
-  on(scope: number) {
+  on(scope: string) {
     this.scope.set(scope)
     return this
   }

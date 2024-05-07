@@ -29,7 +29,7 @@ export default class RolesService extends BaseService {
   private modelRoleQuery
   private readonly modelRoleTable
 
-  private currentScope: number
+  private currentScope: string
 
   constructor(
     private roleClassName: typeof BaseModel,
@@ -197,7 +197,7 @@ export default class RolesService extends BaseService {
 
   private applyScopes(
     q: ModelQueryBuilderContract<typeof BaseModel, RoleInterface>,
-    scope: number
+    scope: string
   ) {
     q.where(this.roleTable + '.scope', scope)
   }
@@ -205,7 +205,7 @@ export default class RolesService extends BaseService {
   private applyModelRoleScopes(
     q: ModelQueryBuilderContract<typeof BaseModel, ModelRoleInterface>,
     table: string,
-    scope: number
+    scope: string
   ) {
     q.where(table + '.scope', scope)
   }

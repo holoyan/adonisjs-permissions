@@ -33,7 +33,7 @@ export default class PermissionHasModelRoles {
     return this.modelService.allByPermission(this.permission.getModelId())
   }
 
-  on(scope: number) {
+  on(scope: string) {
     this.scope.set(scope)
     return this
   }

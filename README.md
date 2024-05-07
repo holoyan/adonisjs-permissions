@@ -732,10 +732,10 @@ await Acl.role(role).contains('delete') // true
 
 ### Global vs resource permissions (Important!)
 
-> Important! Action performed globally will affect on a resource models
+> Important! Actions performed globally will affect on a resource models
 
-It is very important to understood difference between global and resource permissions and their scope.
-Look at this way, if there is no `entity` model then actions will be performed **globally**, otherwise **on resource**
+It is very important to understand difference between global and resource permissions and their scope.
+Look at this way, if there is no `entity` model, then actions will be performed **globally**, otherwise **on resource**
 
 ```
 
@@ -838,7 +838,8 @@ await Acl.model(user).containsPermission('read') // true
 Acl fully supports multi-tenant apps, allowing you to seamlessly integrate  roles and permissions for all tenants within the same app.
 
 ```typescript
-console.log(user.project_id > 0) // true  - lets say user.project_id is not equal to zero
+
+// lets say all users have organization_id attribute
 
 await Acl.model(user).on(user.project_id).allow('edit')
 await Acl.model(user).on(user.project_id).allow('delete')
@@ -848,7 +849,7 @@ await Acl.model(user).on(user.project_id).hasPermission('edit') // true
 await Acl.model(user).on(user.project_id).hasPermission('delete') // true
 
 // checking without scope
-await Acl.model(user).hasPermission('edit') // false - by default scope is equal to 0
+await Acl.model(user).hasPermission('edit') // false - by default scope is equal to 'default'
 
 
 ```
@@ -890,7 +891,7 @@ export default class PostController {
 }
 
 ```
-> Important! If you are using `AclScopeMiddleware` and want to have scope functional per-request then use `acl` from the `ctx` instead of using global `Acl` object, otherwise changes inside `AclScopeMiddleware` will not make effect
+> Important! If you are using `AclScopeMiddleware` and want to have scope functional per-request then use `acl` from the `ctx` instead of using global `Acl` (NOTE: lower case) object, otherwise changes inside `AclScopeMiddleware` will not make effect
 
 Let's see in example
 
@@ -901,7 +902,7 @@ Let's see in example
 export default class AclScopeMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
     const scope = new Scope()
-    scope.set(5) // set scope value to 5 for current request
+    scope.set('dashboard') // set scope value to 'dashboard' for current request
     ctx.acl = new AclManager().scope(scope)
     /**
      * Call next method in the pipeline and return its output
@@ -918,26 +919,51 @@ import {Acl} from "@holoyan/adonisjs-permissions";
 export default class PostController {
   async show({acl}: HttpContext){
     const scope = acl.getScope() 
-    console.log(scope.get()) // 5
+    console.log(scope.get()) // 'dashboard'
     // global object
-    console.log(Acl.getScope()) // 0
+    console.log(Acl.getScope()) // 'default'
     
-    acl.scope(7)// update and set new scope
-    // for current request it will be 7
-    console.log(acl.getScope()) // 7
+    acl.scope('dashboard_1')// update and set new scope
+    // for current request it will be 'dashboard_1'
+    console.log(acl.getScope()) // 'dashboard_1'
 
-    Acl.scope(7) // Throws error
-    // you can't update scope on global object, only runtime
+    Acl.scope('dashboard_2') // Throws error
+    // check next for the details
     await Acl.model(user).on(8).permissions() // get permissions for user on scope 8    
   }
 }
 
 ```
 
+> Important! By default, you can't update scope on global object, it will throw an error, because by updating global `Acl` scope it will rewrite for an entire application and this will lead to unexpected behavior BUT if you still want to do that then you can do it by passing `forceUpdate` param
+
+```typescript
+
+// global object
+import {Acl} from "@holoyan/adonisjs-permissions";
+
+
+Acl.scope('dashboard_2') // Throws error
+
+// you can force update
+let forceUpdate = true;
+Acl.scope('dashboard_2', forceUpdate) 
+
+// concurent requests will override each other
+
+// request 1 
+Acl.scope('scope_1', forceUpdate)
+// other code - long process
+
+// request 2 - simultaneously
+Acl.scope('scope_2', forceUpdate) // will override request 1 scope 
+
+```
+
 
 ### Default scope (Tenant)
 
-> Default Scope value is equal to 0 (zero)
+> Default Scope value is equal to 'default'
 
 
 ## Cheat sheet

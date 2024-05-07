@@ -12,7 +12,7 @@ export class RoleHasModelPermissions {
     private scope: ScopeInterface
   ) {}
 
-  on(scope: number) {
+  on(scope: string) {
     this.scope.set(scope)
     return this
   }

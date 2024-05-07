@@ -67,11 +67,11 @@ test.group('', (group) => {
 
     const admin2 = await Acl.role().create({
       slug: 'admin',
-      scope: 5,
+      scope: '5',
     })
 
-    assert.equal(admin.scope, 0)
-    assert.equal(admin2.scope, 5)
+    assert.equal(admin.scope, Scope.defaultScope)
+    assert.equal(admin2.scope, '5')
 
     const roles = await Role.all()
 
