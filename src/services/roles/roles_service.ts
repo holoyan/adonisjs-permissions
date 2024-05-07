@@ -4,7 +4,8 @@ import {
   ModelRoleInterface,
   MorphInterface,
   RoleInterface,
-  ScopeInterface, ScopeType,
+  ScopeInterface,
+  ScopeType,
 } from '../../types.js'
 import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'

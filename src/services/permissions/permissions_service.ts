@@ -271,9 +271,7 @@ export default class PermissionsService extends BaseService {
     })
 
     this.applyTargetRestriction(this.permissionTable, q, entityType, entityId)
-
-    const r = await q.distinct(this.permissionTable + '.id').select(this.permissionTable + '.id')
-
+    const r = await q.distinct(this.permissionTable + '.id')
     return r.length > 0
   }
 
@@ -595,7 +593,15 @@ export default class PermissionsService extends BaseService {
           .leftJoin(this.modelPermissionTable + ' as mp2', 'mp2.permission_id', '=', 'p2.id')
           .where('p2.allowed', false)
           .whereRaw('p2.slug=' + this.permissionTable + '.slug')
-          .whereRaw('p2.scope=' + this.permissionTable + '.scope')
+          .if(
+            this.scope.get() === null,
+            (builder) => {
+              builder.whereNull('p2.scope')
+            },
+            (builder) => {
+              builder.whereRaw('p2.scope=' + this.permissionTable + '.scope')
+            }
+          )
           .select('p2.slug')
           .groupBy('p2.slug')
         if (conditions.entity) {

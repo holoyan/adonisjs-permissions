@@ -15,12 +15,6 @@ import { Acl, AclManager } from '../../src/acl.js'
 import ModelManager from '../../src/model_manager.js'
 import { Scope } from '../../src/scope.js'
 
-async function wait() {
-  return new Promise((resolve) => {
-    setTimeout(resolve, 5000)
-  })
-}
-
 test.group('', (group) => {
   group.setup(async () => {})
 
