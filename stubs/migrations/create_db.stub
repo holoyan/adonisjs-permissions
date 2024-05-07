@@ -15,7 +15,7 @@ export default class extends BaseSchema {
       table.string('title').nullable()
       table.string('entity_type').defaultTo('*')
       this.modelId(table, 'entity_id').nullable()
-      table.integer('scope').unsigned().defaultTo(0)
+      table.string('scope').defaultTo('default')
       table.boolean('allowed').defaultTo(true)
 
       /**
@@ -35,7 +35,7 @@ export default class extends BaseSchema {
       table.string('title').nullable()
       table.string('entity_type').defaultTo('*')
       this.modelId(table, 'entity_id').nullable()
-      table.integer('scope').unsigned().defaultTo(0)
+      table.string('scope').defaultTo('default')
       table.boolean('allowed').defaultTo(true)
 
       /**

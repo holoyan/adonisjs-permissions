@@ -11,7 +11,7 @@ export default class EmptyRoles {
     this.roleQuery = getRoleModelQuery(this.roleClassName)
   }
 
-  on(scope: number) {
+  on(scope: string) {
     this.scope.set(scope)
     return this
   }

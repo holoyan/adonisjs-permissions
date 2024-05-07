@@ -67,11 +67,11 @@ test.group('', (group) => {
 
     const edit = await Acl.permission().create({
       slug: 'create',
-      scope: 5,
+      scope: '5',
     })
 
-    assert.equal(create.scope, 0)
-    assert.equal(edit.scope, 5)
+    assert.equal(create.scope, Scope.defaultScope)
+    assert.equal(edit.scope, '5')
   })
 
   test('Ensure that duplicate permissions are ignored', async ({ assert }) => {
@@ -1207,12 +1207,12 @@ test.group('Has permission | model - permission direct resource interaction', (g
 
     const createScope5 = await Permission.create({
       slug: 'create',
-      scope: 5,
+      scope: '5',
     })
 
     await Permission.create({
       slug: 'edit',
-      scope: 5,
+      scope: '5',
     })
 
     if (!user) {

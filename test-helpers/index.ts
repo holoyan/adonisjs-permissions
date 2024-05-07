@@ -200,7 +200,7 @@ export async function createTables(db: Database) {
     table.string('title').nullable()
     table.string('entity_type').defaultTo('*')
     modelId(table, 'entity_id').nullable()
-    table.integer('scope').unsigned().defaultTo(0)
+    table.string('scope').defaultTo('default')
     table.boolean('allowed').defaultTo(true)
 
     /**
@@ -220,7 +220,7 @@ export async function createTables(db: Database) {
     table.string('title').nullable()
     table.string('entity_type').defaultTo('*')
     modelId(table, 'entity_id').nullable()
-    table.integer('scope').unsigned().defaultTo(0)
+    table.string('scope').defaultTo('default')
     table.boolean('allowed').defaultTo(true)
 
     /**
@@ -351,7 +351,7 @@ export async function defineModels() {
     declare entityId: string | null
 
     @column()
-    declare scope: number
+    declare scope: string
 
     @column()
     declare allowed: boolean
@@ -398,7 +398,7 @@ export async function defineModels() {
     declare allowed: boolean
 
     @column()
-    declare scope: number
+    declare scope: string
 
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime

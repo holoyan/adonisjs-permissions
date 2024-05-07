@@ -1,11 +1,19 @@
 import { ScopeInterface } from './types.js'
 
-const DEFAULT_SCOPE = 0
-
 export class Scope implements ScopeInterface {
-  private currentScope = DEFAULT_SCOPE
+  private currentScope
 
-  set(scope: number) {
+  constructor(scope?: string) {
+    if (!scope) {
+      scope = Scope.defaultScope
+    }
+
+    this.currentScope = scope
+  }
+
+  static defaultScope = 'default'
+
+  set(scope: string) {
     this.currentScope = scope
     return this
   }
@@ -15,6 +23,6 @@ export class Scope implements ScopeInterface {
   }
 
   default() {
-    return DEFAULT_SCOPE
+    return Scope.defaultScope
   }
 }

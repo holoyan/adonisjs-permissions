@@ -15,7 +15,9 @@ export default class Permission extends BaseModel implements PermissionInterface
 
   @beforeCreate()
   static assignUuid(permission: Permission) {
-    permission.id = uuidv4()
+    if (app.config.get('permissions.permissionsConfig.uuidSupport')) {
+      permission.id = uuidv4()
+    }
   }
 
   getModelId(): ModelIdType {
@@ -41,7 +43,7 @@ export default class Permission extends BaseModel implements PermissionInterface
   declare allowed: boolean
 
   @column()
-  declare scope: number
+  declare scope: string
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
