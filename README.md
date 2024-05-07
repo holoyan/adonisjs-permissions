@@ -128,9 +128,9 @@ export default class Post extends BaseModel implements AclModelInterface {
 
 ## Release Notes
 
-Version: >= 'v0.7.11'
-* Add UUID Support
-* Drop role,permission assign by model or id, only by `slug` can be assigned (This is done to support UUID)
+Version: >= 'v0.7.14'
+* Add UUID/string Support for scopes
+* Fix permission,role create error for non UUID models
 
 ## Mixins
 
