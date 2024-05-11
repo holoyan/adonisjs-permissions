@@ -395,6 +395,7 @@ export default class PermissionsService extends BaseService {
           entityType: entityType || '*',
           entityId,
           allowed,
+          scope: this.scope.get(),
         })
       } else {
         permissionIds.push(found.id)
