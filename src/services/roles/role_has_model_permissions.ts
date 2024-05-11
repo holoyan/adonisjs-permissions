@@ -200,7 +200,7 @@ export class RoleHasModelPermissions {
     )
   }
 
-  assingAll(permissions: string[], target?: AclModel | Function) {
+  assignAll(permissions: string[], target?: AclModel | Function) {
     return this.giveAll(permissions, target)
   }
 

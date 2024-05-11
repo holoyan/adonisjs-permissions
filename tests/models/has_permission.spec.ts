@@ -1283,4 +1283,33 @@ test.group('Has permission | model - permission direct resource interaction', (g
     assert.lengthOf(permsFromRole, 3)
     assert.lengthOf(rolePerms, 2)
   })
+
+  test('Assign non existing permissions to the role on different then fefault scope', async ({
+    assert,
+  }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User, Post, Product })
+
+    const admin = await Acl.role().create({
+      slug: 'admin',
+      scope: 'group',
+    })
+
+    await Acl.role(admin).on('group').assignAll(['create', 'edit'])
+
+    const perms = await Acl.role(admin).on('group').permissions()
+    assert.lengthOf(perms, 2)
+  })
 })
