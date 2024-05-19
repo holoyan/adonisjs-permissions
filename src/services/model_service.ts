@@ -1,15 +1,9 @@
 import BaseService from './base_service.js'
 import { getModelPermissionModelQuery, getModelRoleModelQuery } from './query_helper.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
-import { ModelIdType, MorphInterface } from '../types.js'
+import { ModelIdType, MorphInterface, OptionsInterface } from '../types.js'
 
 export default class ModelService extends BaseService {
-  // private permissionQuery
-  // private readonly permissionTable
-
-  // private roleQuery
-  // private readonly roleTable
-
   private modelPermissionQuery
   private readonly modelPermissionTable
 
@@ -17,23 +11,20 @@ export default class ModelService extends BaseService {
   private readonly modelRoleTable
 
   constructor(
-    // private roleClassName: typeof BaseModel,
-    // private permissionClassName: typeof BaseModel,
+    protected options: OptionsInterface,
     private modelPermissionClassName: typeof BaseModel,
     private modelRoleClassName: typeof BaseModel,
     private map: MorphInterface
   ) {
-    super()
-    // this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
-    // this.permissionTable = this.permissionClassName.table
+    super(options)
 
-    // this.roleQuery = getRoleModelQuery(this.roleClassName)
-    // this.roleTable = this.roleClassName.table
-
-    this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
+    this.modelPermissionQuery = getModelPermissionModelQuery(
+      this.modelPermissionClassName,
+      this.getQueryOptions()
+    )
     this.modelPermissionTable = this.modelPermissionClassName.table
 
-    this.modelRoleQuery = getModelRoleModelQuery(this.modelRoleClassName)
+    this.modelRoleQuery = getModelRoleModelQuery(this.modelRoleClassName, this.getQueryOptions())
     this.modelRoleTable = this.modelRoleClassName.table
   }
 

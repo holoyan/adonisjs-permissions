@@ -41,6 +41,7 @@
   - [Scopes or Multi-tenancy](#scopes-or-multi-tenancy)
     - [The Scope middleware](#the-scope-middleware) 
     - [Default Scope](#default-scope-tenant)
+  - [Transactions](#transactions)
 - [Cheat sheet](#cheat-sheet)
 - [Todo](#todo)
 - [Test](#test)
@@ -963,6 +964,24 @@ Acl.scope('scope_2', forceUpdate) // will override request 1 scope
 ### Default scope (Tenant)
 
 > Default Scope value is equal to 'default'
+
+### Transactions
+
+In case you want to use `Acl` inside the transaction then you can pass `options` directly to query method.
+
+```typescript
+
+import {Acl} from '@holoyan/adonisjs-permissions'
+
+const trx = await db.transaction()
+
+await Acl.model(user).withQueryOptions({ client: trx }).allow('delete')
+
+// you other code
+
+await trx.commit()
+
+```
 
 
 ## Cheat sheet

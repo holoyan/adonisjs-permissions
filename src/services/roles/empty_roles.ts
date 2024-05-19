@@ -1,23 +1,21 @@
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { getRoleModelQuery } from '../query_helper.js'
-import { RoleInterface, RoleModel, ScopeInterface } from '../../types.js'
+import { MorphInterface, OptionsInterface, RoleInterface, RoleModel } from '../../types.js'
+import BaseAdapter from '../base_adapter.js'
+import ModelManager from '../../model_manager.js'
 
-export default class EmptyRoles {
+export default class EmptyRoles extends BaseAdapter {
   private roleQuery
+
+  protected roleClassName: typeof BaseModel
   constructor(
-    private roleClassName: typeof BaseModel,
-    private scope: ScopeInterface
+    protected manager: ModelManager,
+    protected map: MorphInterface,
+    protected options: OptionsInterface
   ) {
+    super(manager, map, options)
+    this.roleClassName = manager.getModel('role')
     this.roleQuery = getRoleModelQuery(this.roleClassName)
-  }
-
-  on(scope: string) {
-    this.scope.set(scope)
-    return this
-  }
-
-  getScope() {
-    return this.scope.get()
   }
 
   delete(role: string) {

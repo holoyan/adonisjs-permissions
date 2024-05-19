@@ -1,32 +1,62 @@
-import { AclModel, MorphInterface, PermissionInterface, ScopeInterface } from '../../types.js'
+import { AclModel, MorphInterface, OptionsInterface, PermissionInterface } from '../../types.js'
 import { destructTarget } from '../helper.js'
 import ModelService from '../model_service.js'
-import RolesService from '../roles/roles_service.js'
-import PermissionsService from './permissions_service.js'
+import RoleService from '../roles/roles_service.js'
+import PermissionService from './permissions_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { getModelPermissionModelQuery, getRoleModelQuery } from '../query_helper.js'
+import BaseAdapter from '../base_adapter.js'
+import ModelManager from '../../model_manager.js'
+import RolesService from '../roles/roles_service.js'
 
-export default class PermissionHasModelRoles {
+export default class PermissionHasModelRoles extends BaseAdapter {
   private modelPermissionQuery
+
+  protected modelPermissionClassName: typeof BaseModel
+  protected roleClassName: typeof BaseModel
+
+  protected roleService: RoleService
+
+  protected permissionService: PermissionService
+
+  protected modelService: ModelService
   // private readonly modelPermissionTable
 
   private roleQuery
   private readonly roleTable
 
   constructor(
-    private permission: PermissionInterface,
-    private roleService: RolesService,
-    private permissionService: PermissionsService,
-    private modelService: ModelService,
-    private modelPermissionClassName: typeof BaseModel,
-    private roleClassName: typeof BaseModel,
-    private map: MorphInterface,
-    private scope: ScopeInterface
+    protected manager: ModelManager,
+    protected map: MorphInterface,
+    protected options: OptionsInterface,
+    private permission: PermissionInterface
   ) {
+    super(manager, map, options)
+
+    this.modelPermissionClassName = manager.getModel('modelPermission')
+    this.roleClassName = manager.getModel('role')
+
     this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
     // this.modelPermissionTable = this.modelPermissionClassName.table
     this.roleQuery = getRoleModelQuery(this.roleClassName)
     this.roleTable = this.roleClassName.table
+
+    const role = manager.getModel('role')
+    const modelPermission = manager.getModel('modelPermission')
+    const modelRole = manager.getModel('modelRole')
+
+    this.roleService = new RolesService(this.options, role, modelPermission, modelRole, map)
+
+    this.permissionService = new PermissionService(
+      this.options,
+      manager.getModel('permission'),
+      role,
+      modelPermission,
+      modelRole,
+      map
+    )
+
+    this.modelService = new ModelService(this.options, modelPermission, modelRole, map)
   }
 
   models() {

@@ -1,24 +1,36 @@
 import { destructTarget } from '../helper.js'
 import ModelService from '../model_service.js'
-import PermissionsService from '../permissions/permissions_service.js'
-import { AclModel, MorphInterface, RoleInterface, ScopeInterface } from '../../types.js'
+import PermissionService from '../permissions/permissions_service.js'
+import { AclModel, MorphInterface, OptionsInterface, RoleInterface } from '../../types.js'
+import BaseAdapter from '../base_adapter.js'
+import ModelManager from '../../model_manager.js'
 
-export class RoleHasModelPermissions {
+export class RoleHasModelPermissions extends BaseAdapter {
+  protected modelService: ModelService
+
+  protected permissionService: PermissionService
   constructor(
-    private role: RoleInterface,
-    private permissionService: PermissionsService,
-    private modelService: ModelService,
-    private map: MorphInterface,
-    private scope: ScopeInterface
-  ) {}
+    protected manager: ModelManager,
+    protected map: MorphInterface,
+    protected options: OptionsInterface,
+    private role: RoleInterface
+  ) {
+    super(manager, map, options)
 
-  on(scope: string) {
-    this.scope.set(scope)
-    return this
-  }
+    const roleClass = manager.getModel('role')
+    const modelPermission = manager.getModel('modelPermission')
+    const modelRole = manager.getModel('modelRole')
+    const permission = manager.getModel('permission')
 
-  getScope() {
-    return this.scope.get()
+    this.modelService = new ModelService(this.options, modelPermission, modelRole, map)
+    this.permissionService = new PermissionService(
+      this.options,
+      permission,
+      roleClass,
+      modelPermission,
+      modelRole,
+      map
+    )
   }
 
   models() {
