@@ -428,6 +428,10 @@ test.group('Has permission | model - permission direct resource interaction', (g
   group.each.setup(async () => {})
   group.each.disableTimeout()
 
+  // group.tap((t) => {
+  //   t.pin()
+  // })
+
   test('Ensure model can assign permission on a resource', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
@@ -1284,7 +1288,7 @@ test.group('Has permission | model - permission direct resource interaction', (g
     assert.lengthOf(rolePerms, 2)
   })
 
-  test('Assign non existing permissions to the role on different then fefault scope', async ({
+  test('Assign non existing permissions to the role on different then default scope', async ({
     assert,
   }) => {
     const db = await createDatabase()
@@ -1311,5 +1315,178 @@ test.group('Has permission | model - permission direct resource interaction', (g
 
     const perms = await Acl.role(admin).on('group').permissions()
     assert.lengthOf(perms, 2)
+  })
+
+  test('Give and rollback permissions', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+
+    const admin = await Role.create({
+      slug: 'admin',
+    })
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    await Permission.create({
+      slug: 'delete',
+    })
+
+    const trx = await db.transaction()
+
+    await Acl.role(admin).withQueryOptions({ client: trx }).assign('create')
+    await Acl.role(admin).withQueryOptions({ client: trx }).assign('edit')
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    await Acl.model(user).withQueryOptions({ client: trx }).assignRole(admin.slug)
+    await Acl.model(user).withQueryOptions({ client: trx }).allow('delete')
+
+    await trx.rollback()
+
+    const permsFromRole = await Acl.model(user).permissions()
+    const rolePerms = await Acl.model(user).rolePermissions()
+    const roles = await Acl.model(user).roles()
+
+    assert.lengthOf(permsFromRole, 0)
+    assert.lengthOf(rolePerms, 0)
+    assert.lengthOf(roles, 0)
+  })
+
+  test('Give permissions and commit transaction', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+
+    const admin = await Role.create({
+      slug: 'admin',
+    })
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    await Permission.create({
+      slug: 'delete',
+    })
+
+    const trx = await db.transaction()
+
+    await Acl.role(admin).withQueryOptions({ client: trx }).assign('create')
+    await Acl.role(admin).withQueryOptions({ client: trx }).assign('edit')
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    await Acl.model(user).withQueryOptions({ client: trx }).assignRole(admin.slug)
+    await Acl.model(user).withQueryOptions({ client: trx }).allow('delete')
+
+    await trx.commit()
+
+    const permsFromRole = await Acl.model(user).permissions()
+    const rolePerms = await Acl.model(user).rolePermissions()
+    const roles = await Acl.model(user).roles()
+    const directPerms = await Acl.model(user).directPermissions()
+
+    assert.lengthOf(permsFromRole, 3)
+    assert.lengthOf(rolePerms, 2)
+    assert.lengthOf(roles, 1)
+    assert.lengthOf(directPerms, 1)
+  })
+
+  test('Revoke permissions and rollback transaction', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+
+    const admin = await Role.create({
+      slug: 'admin',
+    })
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    await Permission.create({
+      slug: 'delete',
+    })
+
+    await Acl.role(admin).assign('create')
+    await Acl.role(admin).assign('edit')
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+    await Acl.model(user).assign('admin')
+
+    const trx = await db.transaction()
+
+    await Acl.role(admin).withQueryOptions({ client: trx }).revoke('create')
+    await Acl.role(admin).withQueryOptions({ client: trx }).revoke('edit')
+
+    await trx.rollback()
+
+    const permsFromRole = await Acl.model(user).permissions()
+    const rolePerms = await Acl.model(user).rolePermissions()
+    const roles = await Acl.model(user).roles()
+    const directPerms = await Acl.model(user).directPermissions()
+
+    assert.lengthOf(permsFromRole, 2)
+    assert.lengthOf(rolePerms, 2)
+    assert.lengthOf(roles, 1)
+    assert.lengthOf(directPerms, 0)
   })
 })

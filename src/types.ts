@@ -1,4 +1,4 @@
-import { LucidModel } from '@adonisjs/lucid/types/model'
+import { LucidModel, ModelAdapterOptions } from '@adonisjs/lucid/types/model'
 import { DateTime } from 'luxon'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { Scope } from './scope.js'
@@ -121,6 +121,8 @@ export interface ModelManagerInterface {
   [key: string]: any
 }
 
+export interface OptionsInterface extends ModelManagerInterface {}
+
 export interface Permissions {
   tables: Object
   morphMaps: Object
@@ -139,6 +141,7 @@ export interface ModelManagerBindings {
   permission: typeof BaseModel
   modelRole: typeof BaseModel
   modelPermission: typeof BaseModel
+  queryClient: ModelAdapterOptions
 }
 
 export interface AclMiddlewareOptions {

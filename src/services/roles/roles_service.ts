@@ -3,8 +3,8 @@ import {
   ModelIdType,
   ModelRoleInterface,
   MorphInterface,
+  OptionsInterface,
   RoleInterface,
-  ScopeInterface,
 } from '../../types.js'
 import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
@@ -17,42 +17,26 @@ import {
 import { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 
 export default class RolesService extends BaseService {
-  // private permissionQuery
-  // private readonly permissionTable
-
-  private roleQuery
   private readonly roleTable
 
   // private modelPermissionQuery
   private readonly modelPermissionTable
 
-  private modelRoleQuery
   private readonly modelRoleTable
 
-  private currentScope: string
-
   constructor(
-    private roleClassName: typeof BaseModel,
+    protected options: OptionsInterface,
+    protected roleClassName: typeof BaseModel,
     // private permissionClassName: typeof BaseModel,
-    private modelPermissionClassName: typeof BaseModel,
-    private modelRoleClassName: typeof BaseModel,
-    private map: MorphInterface,
-    private scope: ScopeInterface
+    protected modelPermissionClassName: typeof BaseModel,
+    protected modelRoleClassName: typeof BaseModel,
+    protected map: MorphInterface
   ) {
-    super()
-    // this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
-    // this.permissionTable = this.permissionClassName.table
-
-    this.currentScope = this.scope.get()
-
-    this.roleQuery = getRoleModelQuery(this.roleClassName)
+    super(options)
     this.roleTable = this.roleClassName.table
-    this.applyScopes(this.roleQuery, this.currentScope)
 
-    // this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
     this.modelPermissionTable = this.modelPermissionClassName.table
 
-    this.modelRoleQuery = getModelRoleModelQuery(this.modelRoleClassName)
     this.modelRoleTable = this.modelRoleClassName.table
   }
 
@@ -61,6 +45,17 @@ export default class RolesService extends BaseService {
       .leftJoin(this.modelRoleTable + ' as mr', 'mr.role_id', '=', this.roleTable + '.id')
       .where('mr.model_type', modelType)
       .where('mr.model_id', modelId)
+  }
+
+  private get roleQuery() {
+    const q = getRoleModelQuery(this.roleClassName, this.getQueryOptions())
+    this.applyScopes(q, this.scope)
+
+    return q
+  }
+
+  private get modelRoleQuery() {
+    return getModelRoleModelQuery(this.modelRoleClassName, this.getQueryOptions())
   }
 
   all(modelType: string, modelId: ModelIdType) {
@@ -87,10 +82,6 @@ export default class RolesService extends BaseService {
     }
 
     const r = await rolesQuery.count('* as total')
-    // const q = await rolesQuery.toQuery()
-    // const all = await rolesQuery
-    // console.log(q)
-    // console.log(all)
     // @ts-ignore
     return +r[0].$extras.total === roles.length
   }
@@ -149,7 +140,7 @@ export default class RolesService extends BaseService {
       })
     }
 
-    await this.modelRoleClassName.createMany(data)
+    await this.modelRoleClassName.createMany(data, this.getQueryOptions())
 
     return true
   }
@@ -174,8 +165,7 @@ export default class RolesService extends BaseService {
         }
       })
 
-    this.applyModelRoleScopes(q, 'r', this.currentScope)
-
+    this.applyModelRoleScopes(q, 'r', this.scope)
     await q.delete()
 
     return true

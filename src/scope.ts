@@ -3,6 +3,8 @@ import { ScopeInterface } from './types.js'
 export class Scope implements ScopeInterface {
   private currentScope
 
+  static defaultScope = 'default'
+
   constructor(scope?: string) {
     if (!scope) {
       scope = Scope.defaultScope
@@ -10,8 +12,6 @@ export class Scope implements ScopeInterface {
 
     this.currentScope = scope
   }
-
-  static defaultScope = 'default'
 
   set(scope: string) {
     this.currentScope = scope

@@ -113,6 +113,9 @@ test.group('Has role | model - role interaction', (group) => {
 
   group.each.setup(async () => {})
   group.each.disableTimeout()
+  // group.tap((t) => {
+  //   t.pin()
+  // })
 
   test('Ensure model can assign multiple roles at once', async ({ assert }) => {
     const db = await createDatabase()
@@ -559,5 +562,88 @@ test.group('Has role | model - role interaction', (group) => {
       .where('role_id', admin.id)
 
     assert.lengthOf(modelRoles, 1)
+  })
+
+  test('Assign role on other then default scope', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+    // create role
+    await Role.create({
+      slug: 'admin',
+      scope: 'other',
+    })
+
+    await Role.create({
+      slug: 'manager',
+      scope: 'other',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+    await Acl.model(user).on('other').assignAllRoles('admin', 'manager')
+
+    const modelRoles = await ModelRole.query()
+      .where('model_type', 'users')
+      .where('model_id', user.id)
+      .count('* as total')
+
+    const defRoles = await Acl.model(user).roles()
+    const roles = await Acl.model(user).on('other').roles()
+
+    assert.lengthOf(roles, 2)
+    assert.lengthOf(defRoles, 0)
+    assert.isTrue(+modelRoles[0].$extras.total === 2)
+  })
+
+  test('Revoke role on other then default scope', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+    // create role
+    await Role.create({
+      slug: 'admin',
+      scope: 'other',
+    })
+
+    await Role.create({
+      slug: 'manager',
+      scope: 'other',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+    await Acl.model(user).on('other').assignAllRoles('admin', 'manager')
+
+    await Acl.model(user).on('other').revokeAllRoles('admin', 'manager')
+
+    const roles = await Acl.model(user).on('other').roles()
+    assert.lengthOf(roles, 0)
   })
 })

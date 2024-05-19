@@ -5,54 +5,46 @@ import {
   ModelPermissionInterface,
   ModelPermissionsQuery,
   MorphInterface,
+  OptionsInterface,
   PermissionInterface,
   PermissionModel,
-  ScopeInterface,
 } from '../../types.js'
 import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { getModelPermissionModelQuery, getPermissionModelQuery } from '../query_helper.js'
 
 export default class PermissionsService extends BaseService {
-  // private permissionQuery
   private readonly permissionTable
 
-  // private roleQuery
-  // private readonly roleTable
-
-  private modelPermissionQuery
   private readonly modelPermissionTable
 
-  // private modelRoleQuery
   private readonly modelRoleTable
 
   constructor(
-    private permissionClassName: typeof BaseModel,
-    private roleClassName: typeof BaseModel,
-    private modelPermissionClassName: typeof BaseModel,
-    private modelRoleClassName: typeof BaseModel,
-    private map: MorphInterface,
-    private scope: ScopeInterface
+    protected options: OptionsInterface,
+    protected permissionClassName: typeof BaseModel,
+    protected roleClassName: typeof BaseModel,
+    protected modelPermissionClassName: typeof BaseModel,
+    protected modelRoleClassName: typeof BaseModel,
+    protected map: MorphInterface
   ) {
-    super()
-    // this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
+    super(options)
     this.permissionTable = this.permissionClassName.table
 
-    // this.roleQuery = getRoleModelQuery(this.roleClassName)
-    // this.roleTable = this.roleClassName.table
-
-    this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
     this.modelPermissionTable = this.modelPermissionClassName.table
 
-    // this.modelRoleQuery = getModelRoleModelQuery(this.modelRoleClassName)
     this.modelRoleTable = this.modelRoleClassName.table
   }
 
   private get permissionQuery() {
-    const q = getPermissionModelQuery(this.permissionClassName)
+    const q = getPermissionModelQuery(this.permissionClassName, this.getQueryOptions())
     this.applyScopes(q)
 
     return q
+  }
+
+  private get modelPermissionQuery() {
+    return getModelPermissionModelQuery(this.modelPermissionClassName, this.getQueryOptions())
   }
 
   /**
@@ -395,7 +387,7 @@ export default class PermissionsService extends BaseService {
           entityType: entityType || '*',
           entityId,
           allowed,
-          scope: this.scope.get(),
+          scope: this.scope,
         })
       } else {
         permissionIds.push(found.id)
@@ -404,7 +396,8 @@ export default class PermissionsService extends BaseService {
 
     if (createManyData.length) {
       const newPermissions = (await this.permissionClassName.createMany(
-        createManyData
+        createManyData,
+        this.getQueryOptions()
       )) as unknown as PermissionModel<typeof this.permissionClassName>[]
       newPermissions.map((i) => permissionIds.push(i.id))
     }
@@ -428,7 +421,7 @@ export default class PermissionsService extends BaseService {
       permissionId: i,
     }))
 
-    return this.modelPermissionClassName.createMany(modelPermissionMany)
+    return this.modelPermissionClassName.createMany(modelPermissionMany, this.getQueryOptions())
   }
 
   revokeAll(
@@ -702,13 +695,13 @@ export default class PermissionsService extends BaseService {
   }
 
   private applyScopes(q: ModelQueryBuilderContract<typeof BaseModel, PermissionInterface>) {
-    q.where(this.permissionTable + '.scope', this.scope.get())
+    q.where(this.permissionTable + '.scope', this.scope)
   }
 
   private applyModelPermissionScopes(
     q: ModelQueryBuilderContract<typeof BaseModel, ModelPermissionInterface>,
     table: string
   ) {
-    q.where(table + '.scope', this.scope.get())
+    q.where(table + '.scope', this.scope)
   }
 }
