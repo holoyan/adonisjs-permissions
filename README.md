@@ -129,8 +129,8 @@ export default class Post extends BaseModel implements AclModelInterface {
 
 ## Release Notes
 
-Version: >= 'v0.7.15'
-* Fix: Wrong default scope during runtime permission create
+Version: >= 'v0.8.18'
+* Fix: Overwriting global scope
 
 ## Mixins
 
@@ -868,7 +868,7 @@ export default class AclScopeMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
     const scope = new Scope()
     scope.set(auth.user.account_id)
-    ctx.acl = new AclManager().scope(scope)
+    ctx.acl = new AclManager(true).scope(scope)
     /**
      * Call next method in the pipeline and return its output
      */

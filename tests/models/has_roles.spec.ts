@@ -646,4 +646,37 @@ test.group('Has role | model - role interaction', (group) => {
     const roles = await Acl.model(user).on('other').roles()
     assert.lengthOf(roles, 0)
   })
+
+  test('Overwrite global middleware scope', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User, Post, Product })
+
+    const scope = new Scope()
+    const acl = new AclManager(true).scope(scope)
+
+    const user = await User.first()
+    // create role
+    await Role.create({
+      slug: 'admin',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+    await acl.model(user).assignRole('admin')
+    const roles = await acl.model(user).roles()
+    assert.equal(roles.length, 1)
+    assert.equal(roles[0].slug, 'admin')
+  })
 })
