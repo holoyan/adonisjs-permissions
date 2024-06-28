@@ -113,7 +113,7 @@ export class AclManager {
 
     this.withOptions(
       {
-        scope,
+        scope: scope.get(),
       },
       forceUpdate
     )

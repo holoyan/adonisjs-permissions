@@ -171,7 +171,7 @@ export default class RolesService extends BaseService {
     return true
   }
 
-  private async extractRoleModel(roles: string[]) {
+  private extractRoleModel(roles: string[]) {
     return this.roleQuery.whereIn('slug', roles)
   }
 
