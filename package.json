@@ -1,7 +1,7 @@
 {
   "name": "@holoyan/adonisjs-permissions",
   "description": "Adonisjs roles and permissions system",
-  "version": "0.8.18",
+  "version": "1.0.0",
   "engines": {
     "node": ">=18.16.0"
   },
@@ -43,7 +43,7 @@
     "@adonisjs/assembler": "^7.0.0",
     "@adonisjs/core": "^6.2.0",
     "@adonisjs/eslint-config": "^1.2.1",
-    "@adonisjs/lucid": "^20.1.0",
+    "@adonisjs/lucid": "^21.0.0",
     "@adonisjs/prettier-config": "^1.2.1",
     "@adonisjs/tsconfig": "^1.2.1",
     "@japa/assert": "^2.1.0",
@@ -70,7 +70,7 @@
   },
   "peerDependencies": {
     "@adonisjs/core": "^6.2.0",
-    "@adonisjs/lucid": "^20.1.0",
+    "@adonisjs/lucid": "^21.0.0",
     "luxon": "^3.4.4",
     "uuid": "^9.0.1",
     "@types/uuid": "^9.0.8"

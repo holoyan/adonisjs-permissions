@@ -1,6 +1,8 @@
 # Role permissions system for AdonisJS V6+
 
-## Beta version
+Checkout other AdonisJS packages
+
+- [AdonisJs activity log](https://github.com/holoyan/adonisjs-activitylog)
 
 [//]: # ([![test]&#40;https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml/badge.svg&#41;]&#40;https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml&#41;)
 [![license](https://poser.pugx.org/silber/bouncer/license.svg)](https://github.com/holoyan/adonisjs-permissions/blob/master/LICENSE.md)
@@ -45,6 +47,7 @@
 - [Cheat sheet](#cheat-sheet)
 - [Todo](#todo)
 - [Test](#test)
+- [Version Map](#version-map)
 - [License](#license)
 </p></details>
 
@@ -1001,6 +1004,16 @@ Coming soon
 ## Test
 
     npm run test
+
+
+## Version Map
+
+
+| AdonisJS Lucid version | Package version |
+|------------------------|-----------------|
+| v20.x                  | 0.8.x           |
+| v21.x                  | 1.x             |
+
 
 
 ## License
