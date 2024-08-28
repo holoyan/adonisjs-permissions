@@ -15,7 +15,7 @@ export default class UserScopeMiddleware {
   //@ts-ignore
   async handle(ctx: HttpContext, next: NextFn) {
     const scope = new Scope()
-    ctx.acl = new AclManager().scope(scope)
+    ctx.acl = new AclManager(true).scope(scope)
     /**
      * Call next method in the pipeline and return its output
      */
