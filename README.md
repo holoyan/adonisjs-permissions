@@ -1,7 +1,5 @@
 # Role permissions system for AdonisJS V6+
 
-## Beta version
-
 [//]: # ([![test]&#40;https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml/badge.svg&#41;]&#40;https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml&#41;)
 [![license](https://poser.pugx.org/silber/bouncer/license.svg)](https://github.com/holoyan/adonisjs-permissions/blob/master/LICENSE.md)
 
@@ -74,7 +72,7 @@ To be able to use the full power of Acl, you should have a clear understanding o
 
 ## Installation
     
-    npm i @holoyan/adonisjs-permissions
+    npm i @holoyan/adonisjs-permissions@0.8.19
 
 
 Next publish config files
