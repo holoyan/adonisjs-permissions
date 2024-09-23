@@ -1490,3 +1490,76 @@ test.group('Has permission | model - permission direct resource interaction', (g
     assert.lengthOf(directPerms, 0)
   })
 })
+
+test.group('hasPermissions mixin', (group) => {
+  group.setup(async () => {})
+
+  group.teardown(async () => {})
+
+  group.each.setup(async () => {})
+  group.each.disableTimeout()
+
+  // group.tap((t) => {
+  //   t.pin()
+  // })
+
+  test('allow permission', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User })
+    const user = await User.first()
+    //
+    await Permission.create({
+      slug: 'create',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    await user.allow('create')
+    const has = await Acl.model(user).hasPermission('create')
+
+    assert.isTrue(has)
+  })
+
+  test('check permission', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User })
+    const user = await User.first()
+    //
+    await Permission.create({
+      slug: 'create',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    await user.allow('create')
+    const has = await user.hasPermission('create')
+
+    assert.isTrue(has)
+  })
+})

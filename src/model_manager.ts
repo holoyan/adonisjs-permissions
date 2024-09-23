@@ -21,6 +21,6 @@ export default class ModelManager {
       return this.models[key]
     }
 
-    throw new Error('Model not defined')
+    throw new Error('Model not defined for key: ' + key)
   }
 }

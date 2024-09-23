@@ -1,12 +1,12 @@
 import type { NormalizeConstructor } from '@adonisjs/core/types/helpers'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { Acl } from '../acl.js'
-import { AclModel, AclModelInterface } from '../types.js'
+import { AclModel, AclModelInterface, ModelIdType } from '../types.js'
 
 export function hasPermissions() {
   return <Model extends NormalizeConstructor<typeof BaseModel>>(superclass: Model) => {
     class HasPermissionsMixin extends superclass implements AclModelInterface {
-      getModelId(): string {
+      getModelId(): ModelIdType {
         throw new Error(
           'method getModelId must be implemented in target model, which will return key for current object'
         )
