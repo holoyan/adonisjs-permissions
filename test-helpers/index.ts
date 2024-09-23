@@ -7,6 +7,8 @@ import { Encryption } from '@adonisjs/core/encryption'
 import { AppFactory } from '@adonisjs/core/factories/app'
 import { LoggerFactory } from '@adonisjs/core/factories/logger'
 import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
+import { compose } from '@adonisjs/core/helpers'
+
 import { join } from 'node:path'
 import fs from 'node:fs'
 import { DateTime } from 'luxon'
@@ -23,6 +25,7 @@ import {
 import { ApplicationService } from '@adonisjs/core/types'
 import { Chance } from 'chance'
 import { v4 as uuidv4 } from 'uuid'
+import { hasPermissions } from '../src/mixins/has_permissions.js'
 
 export const encryption: Encryption = new EncryptionFactory().create()
 configDotenv()
@@ -303,7 +306,7 @@ export function wantsUUID() {
 
 export async function defineModels() {
   @MorphMapDecorator('users')
-  class User extends BaseModel implements AclModelInterface {
+  class User extends compose(BaseModel, hasPermissions()) implements AclModelInterface {
     @column({ isPrimary: true })
     declare id: number
 
