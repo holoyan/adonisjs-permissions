@@ -1561,5 +1561,5 @@ test.group('hasPermissions mixin', (group) => {
     const has = await user.hasPermission('create')
 
     assert.isTrue(has)
-  }).pin()
+  })
 })
