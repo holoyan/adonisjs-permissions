@@ -132,8 +132,8 @@ export default class Post extends BaseModel implements AclModelInterface {
 
 ## Release Notes
 
-Version: >= v1.0.2
-* Update: Mixin getModelId method return type
+Version: >= v1.0.3
+* Update: UUID version to ^10.0.0
 
 ## Mixins
 
