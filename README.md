@@ -7,6 +7,11 @@ Checkout other AdonisJS packages
 [//]: # ([![test]&#40;https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml/badge.svg&#41;]&#40;https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml&#41;)
 [![license](https://poser.pugx.org/silber/bouncer/license.svg)](https://github.com/holoyan/adonisjs-permissions/blob/master/LICENSE.md)
 
+## How can you support me?
+
+- It's simple, just star this repository, that is enough to keep me motivated to maintain this package.
+
+
 ## Table of Contents
 
 <details><summary>Click to expand</summary><p>
@@ -989,7 +994,144 @@ await trx.commit()
 
 ## Cheat sheet
 
-Coming soon
+Model methods
+```typescript 
+// getting model roles
+await Acl.model(user).roles()
+
+// Checking the current model's roles
+await Acl.model(user).hasRole('role_slug')
+await Acl.model(user).hasAllRoles('role_slug1', 'role_slug2')
+await Acl.model(user).hasAnyRole('role_slug1', 'role_slug2')
+
+// assigning roles
+await Acl.model(user).assignRole('role_slug')
+await Acl.model(user).assign('role_slug') // alias for assignRole()
+await Acl.model(user).assignAllRoles('role_slug1', 'role_slug2')
+
+// revoking roles
+await Acl.model(user).revokeRole('role_slug')
+await Acl.model(user).revokeAllRoles('role_slug1', 'role_slug2')
+await Acl.model(user).flushRoles() // remove all roles
+
+// syncing roles
+await Acl.model(user).syncRoles(['role_slug1', 'role_slug2']) // remove all roles and assign new
+await Acl.model(user).syncRolesWithoutDetaching(['role_slug1', 'role_slug2') // assign new roles without removing old
+
+
+// getting model permissions
+
+await Acl.model(user).permissions()
+await Acl.model(user).globalPermissions() // get list of global permissions
+await Acl.mode(user).onResourcePermissions() // get list of on resrouce permissions
+await Acl.model(user).directPermissions() // list of permissions assigned to the user drectly 
+await Acl.model(user).rolePermissions() // Get permissions through roles
+await Acl.model(user).directGlobalPermissions()
+await Acl.model(user).directResourcePermissions()
+
+// checking for permission
+await Acl.model(user).hasPermission(permission)
+await Acl.model(user).hasAllPermissions([permission1, permission2])
+await Acl.model(user).hasAnyPermission([permission1, permission2])
+await Acl.model(user).hasAnyDirectPermission([permission1, permission2])
+await Acl.model(user).hasDirectPermission(permission1)
+await Acl.model(user).hasAllPermissionsDirect([permission1, permission2])
+await Acl.model(user).can(permission1) // alias for hasPermission()
+await Acl.model(user).canAll([permission1, permission2])
+await Acl.model(user).canAny([permission1, permission2])
+
+// check Contains vs hasPermission section to see the diferrence 
+await Acl.model(user).containsPermission(permission)
+await Acl.model(user).contains(permission) // alias for containsPermission
+await Acl.model(user).containsAllPermissions([permission1])
+await Acl.model(user).containsAnyPermission([permission1])
+await Acl.model(user).containsDirectPermission([permission1])
+await Acl.model(user).containsAllPermissionsDirectly([permission1])
+await Acl.model(user).containsAnyPermissionDirectly([permission1])
+
+// assigning permissions
+await Acl.model(user).assignDirectPermission(permission)
+await Acl.model(user).assignDirectAllPermissions([permission1, permission2])
+await Acl.model(user).allow(permission1) // alias for assignDirectPermission()
+await Acl.model(user).allowAll([permission1, permission2])
+
+// reviking permissions
+await Acl.model(user).revokePermission(permission1)
+await Acl.model(user).revoke(permission1) // alias for revokePermission()
+await Acl.model(user).revokeAllPermissions([permission1, permission2])
+await Acl.model(user).revokeAll([permission1, permission2]) // alias for revokeAllPermissions()
+await Acl.model(user).flushPermissions() // revoke/delete all direct assigned permissions
+await Acl.model(user).flush() // revoke/delete all assigned roles and permissions
+
+// sync permissions
+await Acl.model(user).syncPermissions([permission1, permission2]) // all direct assigned permissions will be revoked and only permission1, permission2 will be assigned
+
+// forbid/unforbiding permissions
+await Acl.model(user).forbid(permission1)
+await Acl.model(user).forbidAll([permission1, permission2])
+await Acl.model(user).unforbid(permission1)
+await Acl.model(user).unforbidAll([permission1, permission2])
+
+```
+
+Role methods 
+
+```typescript
+
+await Acl.role(myAdminRole).models() // get list of models assigned to the role
+await Acl.role(myAdminRole).modelsFor('ALIAS_FOR_MODEL')
+
+await Acl.role(myAdminRole).permissions() 
+await Acl.role(myAdminRole).globalPermissions()
+await Acl.role(myAdminRole).onResourcePermissions()
+
+// checking for a permissions
+await Acl.role(myAdminRole).hasPermission(permission)
+await Acl.role(myAdminRole).hasAllPermissions([permission1, permission2])
+await Acl.role(myAdminRole).hasAnyPermissions([permission1, permission2])
+await Acl.role(myAdminRole).can(permission) // alias for hasPermission
+await Acl.role(myAdminRole).canAll([permission1, permission2])
+await Acl.role(myAdminRole).canAny([permission1, permission2])
+
+await Acl.role(myAdminRole).containsPermission(permission)
+await Acl.role(myAdminRole).containsAllPermissions([permission1, permission2])
+await Acl.role(myAdminRole).containsAnyPermissions([permission1, permission2])
+await Acl.role(myAdminRole).forbidden(permission) // check if permission forbidden for a role
+
+// assigning permission
+await Acl.role(myAdminRole).give(permission)
+await Acl.role(myAdminRole).assign(permission) // alias for give()
+await Acl.role(myAdminRole).allow(permission) // alias for give()
+
+await Acl.role(myAdminRole).giveAll([permission1])
+await Acl.role(myAdminRole).assignAll([permission1])
+await Acl.role(myAdminRole).allowAll([permission1])
+
+// revoking permission
+await Acl.role(myAdminRole).revokePermission(permission1)
+await Acl.role(myAdminRole).revoke(permission1) // alias for revokePermission()
+await Acl.role(myAdminRole).revokeAllPermissions([permission1])
+await Acl.role(myAdminRole).revokeAll([permission1]) // alias for revokeAllPermissions()
+await Acl.role(myAdminRole).flush() // revoke all
+
+await Acl.role(myAdminRole).sync([permission1, permission2]) // revoke all and assign only permission1, permission2
+
+// forbid/unforbid
+
+await Acl.role(myAdminRole).forbid(permission)
+await Acl.role(myAdminRole).unforbid(permission)
+
+```
+
+Permission methods
+```typescript
+await Acl.permission(myPermission).roles() // list of roles
+await Acl.permission(myPermission).modelsFor('MODEL_ALIAS')
+await Acl.permission(myPermission).belongsToRole(role_slug) // check if permission belongs to role
+await Acl.permission(myPermission).attachToRole(role_slug)
+await Acl.permission(myPermission).detachFromRole(role_slug)
+
+```
 
 
 ## TODO

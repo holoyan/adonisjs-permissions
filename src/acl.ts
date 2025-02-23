@@ -1,5 +1,5 @@
 import { RoleHasModelPermissions } from './services/roles/role_has_model_permissions.js'
-import { ModelHasRolePermissions } from './services/model_has_role_permissions.js'
+import { ModelHasRolePermissions } from './services/models/model_has_role_permissions.js'
 import {
   AclModel,
   MorphInterface,

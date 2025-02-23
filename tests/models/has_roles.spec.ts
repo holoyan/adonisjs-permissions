@@ -12,7 +12,7 @@ import { Acl, AclManager } from '../../src/acl.js'
 import ModelManager from '../../src/model_manager.js'
 import { Scope } from '../../src/scope.js'
 
-test.group('', (group) => {
+test.group('Basic', (group) => {
   group.setup(async () => {})
 
   group.teardown(async () => {})
@@ -678,5 +678,73 @@ test.group('Has role | model - role interaction', (group) => {
     const roles = await acl.model(user).roles()
     assert.equal(roles.length, 1)
     assert.equal(roles[0].slug, 'admin')
+  })
+
+  test('Sync role for a model', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    modelManager.setModel('scope', Scope)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+    await seedDb({ User, Post, Product })
+    const user = await User.firstOrFail()
+    // create role
+    const admin = await Role.create({
+      slug: 'admin',
+    })
+
+    const manager = await Role.create({
+      slug: 'manager',
+    })
+
+    await Acl.model(user).assignRole(admin.slug)
+    await Acl.model(user).syncRoles([manager.slug])
+
+    const roles = await Acl.model(user).roles()
+
+    assert.lengthOf(roles, 1)
+    assert.equal(roles[0].slug, manager.slug)
+  })
+
+  test('Sync without detaching role for a model', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
+      await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    modelManager.setModel('scope', Scope)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+    await seedDb({ User, Post, Product })
+    const user = await User.firstOrFail()
+    // create role
+    const admin = await Role.create({
+      slug: 'admin',
+    })
+
+    const manager = await Role.create({
+      slug: 'manager',
+    })
+
+    await Acl.model(user).assignRole(admin.slug)
+    await Acl.model(user).syncRolesWithoutDetaching([manager.slug])
+
+    const roles = await Acl.model(user).roles()
+
+    assert.lengthOf(roles, 2)
+    roles.forEach((role) => {
+      assert.isTrue(role.slug === admin.slug || role.slug === manager.slug)
+    })
   })
 })

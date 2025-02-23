@@ -1,7 +1,7 @@
-import BaseService from './base_service.js'
-import { getModelPermissionModelQuery, getModelRoleModelQuery } from './query_helper.js'
+import BaseService from '../base_service.js'
+import { getModelPermissionModelQuery, getModelRoleModelQuery } from '../query_helper.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
-import { ModelIdType, MorphInterface, OptionsInterface } from '../types.js'
+import { ModelIdType, MorphInterface, OptionsInterface } from '../../types.js'
 
 export default class ModelService extends BaseService {
   private modelPermissionQuery

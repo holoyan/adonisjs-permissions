@@ -1,6 +1,6 @@
 import { AclModel, MorphInterface, OptionsInterface, PermissionInterface } from '../../types.js'
 import { destructTarget } from '../helper.js'
-import ModelService from '../model_service.js'
+import ModelService from '../models/model_service.js'
 import RoleService from '../roles/roles_service.js'
 import PermissionService from './permissions_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
