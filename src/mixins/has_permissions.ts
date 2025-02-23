@@ -12,30 +12,57 @@ export function hasPermissions() {
         )
       }
 
+      /**
+       * returns list of roles assigned to the model
+       */
       roles() {
         return Acl.model(this as unknown as AclModel).roles()
       }
 
+      /**
+       * Check if model has role
+       * @param role
+       */
       hasRole(role: string) {
         return Acl.model(this as unknown as AclModel).hasRole(role)
       }
 
+      /**
+       * Check if model has all roles - returns true ONLY, if model has all roles
+       * @param roles
+       */
       hasAllRoles(...roles: string[]) {
         return Acl.model(this as unknown as AclModel).hasAllRoles(...roles)
       }
 
+      /**
+       * Check if model has any role - returns true if model has any of the roles
+       * @param roles
+       */
       hasAnyRole(...roles: string[]) {
         return Acl.model(this as unknown as AclModel).hasAnyRole(...roles)
       }
 
+      /**
+       * Assign role to model
+       * @param role
+       */
       assignRole(role: string) {
         return Acl.model(this as unknown as AclModel).assignRole(role)
       }
 
+      /**
+       * Revoke role from model
+       * @param role
+       */
       revokeRole(role: string) {
         return Acl.model(this as unknown as AclModel).revokeRole(role)
       }
 
+      /**
+       * Revoke all roles from model
+       * @param roles
+       */
       revokeAllRoles(...roles: string[]) {
         return Acl.model(this as unknown as AclModel).revokeAllRoles(...roles)
       }
@@ -44,74 +71,154 @@ export function hasPermissions() {
 
       // permissions related section BEGIN
 
+      /**
+       * returns list of permissions assigned to the model
+       * @param includeForbiddings
+       */
       permissions(includeForbiddings: boolean = false) {
         return Acl.model(this as unknown as AclModel).permissions(includeForbiddings)
       }
 
+      /**
+       * returns list of global permissions assigned to the model
+       * @param includeForbiddings
+       */
       globalPermissions(includeForbiddings: boolean = false) {
         return Acl.model(this as unknown as AclModel).globalPermissions(includeForbiddings)
       }
 
+      /**
+       * returns list of resource permissions assigned to the model
+       * @param includeForbiddings
+       */
       async onResourcePermissions(includeForbiddings: boolean = false) {
         return Acl.model(this as unknown as AclModel).onResourcePermissions(includeForbiddings)
       }
 
-      async directGlobalPermissions(includeForbiddings: boolean = false) {
+      /**
+       * Returns list of direct permissions assigned to the model
+       * @param includeForbiddings
+       */
+      directGlobalPermissions(includeForbiddings: boolean = false) {
         return Acl.model(this as unknown as AclModel).directGlobalPermissions(includeForbiddings)
       }
 
-      async directResourcePermissions(includeForbiddings: boolean = false) {
+      /**
+       * Returns list of direct resource permissions assigned to the model
+       * @param includeForbiddings
+       */
+      directResourcePermissions(includeForbiddings: boolean = false) {
         return Acl.model(this as unknown as AclModel).directResourcePermissions(includeForbiddings)
       }
 
-      async containsPermission(permission: string) {
+      /**
+       * Check if model has "contains" permission
+       * If permission is forbidden, it will return true
+       * @param permission
+       */
+      containsPermission(permission: string) {
         return Acl.model(this as unknown as AclModel).containsPermission(permission)
       }
 
-      async containsAllPermissions(permissions: string[]) {
+      /**
+       * Check if model contains all permissions
+       * @param permissions
+       */
+      containsAllPermissions(permissions: string[]) {
         return Acl.model(this as unknown as AclModel).containsAllPermissions(permissions)
       }
 
-      async containsAnyPermission(permissions: string[]) {
+      /**
+       * Check if model contains any permission
+       * @param permissions
+       */
+      containsAnyPermission(permissions: string[]) {
         return Acl.model(this as unknown as AclModel).containsAnyPermission(permissions)
       }
 
-      async containsDirectPermission(permission: string) {
+      /**
+       * Check if model contains direct permission
+       * @param permission
+       */
+      containsDirectPermission(permission: string) {
         return Acl.model(this as unknown as AclModel).containsDirectPermission(permission)
       }
 
-      async containsAllPermissionsDirectly(permissions: string[]) {
+      /**
+       * Check if model contains all direct permissions
+       * @param permissions
+       */
+      containsAllPermissionsDirectly(permissions: string[]) {
         return Acl.model(this as unknown as AclModel).containsAllPermissionsDirectly(permissions)
       }
 
-      async containsAnyPermissionDirectly(permissions: string[]) {
+      /**
+       * Check if model contains any direct permission
+       * @param permissions
+       */
+      containsAnyPermissionDirectly(permissions: string[]) {
         return Acl.model(this as unknown as AclModel).containsAnyPermissionDirectly(permissions)
       }
 
-      async hasPermission(permission: string, target?: AclModel | Function) {
+      /**
+       * Check if model has permission
+       * @param permission
+       * @param target
+       */
+      hasPermission(permission: string, target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasPermission(permission, target)
       }
 
-      async hasAllPermissions(permissions: string[], target?: AclModel | Function) {
+      /**
+       * Check if model has all permissions
+       * @param permissions
+       * @param target
+       */
+      hasAllPermissions(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasAllPermissions(permissions, target)
       }
 
-      async hasAnyPermission(permissions: string[], target?: AclModel | Function) {
+      /**
+       * Check if model has any permission
+       * @param permissions
+       * @param target
+       */
+      hasAnyPermission(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasAnyPermission(permissions, target)
       }
 
-      async hasAnyDirectPermission(permissions: string[], target?: AclModel | Function) {
+      /**
+       * Check if model has direct permission
+       * @param permissions
+       * @param target
+       */
+      hasAnyDirectPermission(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasAnyDirectPermission(permissions, target)
       }
 
-      async hasDirectPermission(permission: string, target?: AclModel | Function) {
+      /**
+       * Check if model has direct permission
+       * @param permission
+       * @param target
+       */
+      hasDirectPermission(permission: string, target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasDirectPermission(permission, target)
       }
 
-      async hasAllPermissionsDirect(permissions: string[], target?: AclModel | Function) {
+      /**
+       * Check if model has all direct permissions
+       * @param permissions
+       * @param target
+       */
+      hasAllPermissionsDirect(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).hasAllPermissionsDirect(permissions, target)
       }
 
+      /**
+       * Check if model has all permission
+       * @param permissions
+       * @param target
+       */
       canAll(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).canAll(permissions, target)
       }
@@ -120,43 +227,115 @@ export function hasPermissions() {
         return Acl.model(this as unknown as AclModel).canAny(permissions, target)
       }
 
-      async assignDirectPermission(permission: string, target?: AclModel | Function) {
+      /**
+       * Check if model has any permission
+       * @param permission
+       * @param target
+       */
+      assignDirectPermission(permission: string, target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).assignDirectPermission(permission, target)
       }
 
+      /**
+       * Allow permission for model
+       * @param permission
+       * @param target
+       */
       allow(permission: string, target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).allow(permission, target)
       }
 
-      async revokePermission(permission: string, target?: AclModel | Function) {
+      /**
+       * Revoke permission from model
+       * @param permission
+       * @param target
+       */
+      revokePermission(permission: string, target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).revokePermission(permission, target)
       }
 
-      async revokeAllPermissions(permissions: string[], target?: AclModel | Function) {
+      /**
+       * Revoke all permissions from model
+       * @param permissions
+       * @param target
+       */
+      revokeAllPermissions(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).revokeAllPermissions(permissions, target)
       }
 
-      async flushPermissions() {
+      /**
+       * Flush(revoke all) permissions from model
+       */
+      flushPermissions() {
         return Acl.model(this as unknown as AclModel).flushPermissions()
       }
 
-      async flush() {
+      /**
+       * Flush(revoke all) roles and permissions from model
+       */
+      flush() {
         return Acl.model(this as unknown as AclModel).flush()
       }
 
-      async forbid(permission: string, target?: AclModel | Function) {
+      /**
+       * Sync Role with the given list
+       * @param roles
+       * @param detach
+       */
+      syncRoles(roles: string[], detach: boolean = true) {
+        return Acl.model(this as unknown as AclModel).syncRoles(roles, detach)
+      }
+
+      /**
+       * Sync Role with the given list without detaching existing roles
+       * @param roles
+       */
+      syncRolesWithoutDetaching(roles: string[]) {
+        return Acl.model(this as unknown as AclModel).syncRolesWithoutDetaching(roles)
+      }
+
+      /**
+       * Sync permissions with the given list
+       * @param permissions
+       * @param target
+       */
+      syncPermissions(permissions: string[], target?: AclModel | Function) {
+        return Acl.model(this as unknown as AclModel).syncPermissions(permissions, target)
+      }
+
+      /**
+       * Forbid permission for model
+       * @param permission
+       * @param target
+       */
+      forbid(permission: string, target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).forbid(permission, target)
       }
 
-      async forbidAll(permissions: string[], target?: AclModel | Function) {
+      /**
+       * Forbid all permissions for model
+       * @param permissions
+       * @param target
+       */
+      forbidAll(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).forbidAll(permissions, target)
       }
 
-      async unforbidAll(permissions: string[], target?: AclModel | Function) {
+      /**
+       * Unforbid all permissions for model
+       * @param permissions
+       * @param target
+       */
+      unforbidAll(permissions: string[], target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).unforbidAll(permissions, target)
       }
 
-      async unforbid(permission: string, target?: AclModel | Function) {
+      /**
+       * Unforbid permission for model
+       * @param permission
+       * @param target
+       */
+      unforbid(permission: string, target?: AclModel | Function) {
         return Acl.model(this as unknown as AclModel).unforbid(permission, target)
       }
     }
