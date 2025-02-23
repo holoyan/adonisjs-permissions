@@ -138,7 +138,7 @@ export default class Post extends BaseModel implements AclModelInterface {
 ## Release Notes
 
 Version: >= v1.0.3
-* Update: UUID version to ^10.0.0
+* Added `sync` method
 
 ## Mixins
 
