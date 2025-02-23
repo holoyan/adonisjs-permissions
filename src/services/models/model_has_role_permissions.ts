@@ -1,9 +1,9 @@
-import { AclModel, MorphInterface, OptionsInterface } from '../types.js'
-import RolesService from './roles/roles_service.js'
-import { destructTarget, formatList } from './helper.js'
-import BaseAdapter from './base_adapter.js'
-import ModelManager from '../model_manager.js'
-import PermissionService from './permissions/permissions_service.js'
+import { AclModel, MorphInterface, OptionsInterface } from '../../types.js'
+import RolesService from '../roles/roles_service.js'
+import { destructTarget, formatList } from '../helper.js'
+import BaseAdapter from '../base_adapter.js'
+import ModelManager from '../../model_manager.js'
+import PermissionService from '../permissions/permissions_service.js'
 
 export class ModelHasRolePermissions extends BaseAdapter {
   protected roleService: RolesService
@@ -78,6 +78,27 @@ export class ModelHasRolePermissions extends BaseAdapter {
     return this.roleService.flush(this.map.getAlias(this.model), this.model.getModelId())
   }
 
+  /**
+   * Sync roles with the model  (detach all roles and assign new roles)
+   * @param roles  - array of roles
+   * @param detach - if true, it will detach the existing roles
+   */
+  async syncRoles(roles: string[], detach: boolean = true) {
+    if (detach) {
+      await this.flushRoles()
+    }
+
+    return this.assignAllRoles(...roles)
+  }
+
+  /**
+   * Sync roles with the model without detaching the existing ones
+   * @param roles
+   */
+  syncRolesWithoutDetaching(roles: string[]) {
+    return this.syncRoles(roles, false)
+  }
+
   // roles related section END
 
   // permissions related section BEGIN
@@ -90,6 +111,10 @@ export class ModelHasRolePermissions extends BaseAdapter {
     )
   }
 
+  /**
+   * returns list of global permissions assigned to the model
+   * @param includeForbiddings
+   */
   async globalPermissions(includeForbiddings: boolean = false) {
     return this.permissionService.global(
       this.map.getAlias(this.model),
@@ -98,6 +123,9 @@ export class ModelHasRolePermissions extends BaseAdapter {
     )
   }
 
+  /**
+   * @param includeForbiddings
+   */
   async onResourcePermissions(includeForbiddings: boolean = false) {
     return this.permissionService.onResource(
       this.map.getAlias(this.model),
@@ -204,10 +232,19 @@ export class ModelHasRolePermissions extends BaseAdapter {
     return result
   }
 
+  /**
+   * @param permission
+   * @param target
+   */
   async hasPermission(permission: string, target?: AclModel | Function) {
     return this.hasAnyPermission([permission], target)
   }
 
+  /**
+   *
+   * @param permissions
+   * @param target
+   */
   async hasAllPermissions(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
     return await this.permissionService.hasAll(
@@ -327,6 +364,11 @@ export class ModelHasRolePermissions extends BaseAdapter {
 
   async flushPermissions() {
     return this.permissionService.flush(this.map.getAlias(this.model), this.model.getModelId())
+  }
+
+  async syncPermissions(permissions: string[], target?: AclModel | Function) {
+    await this.flushPermissions()
+    return this.allowAll(permissions, target)
   }
 
   async flush() {

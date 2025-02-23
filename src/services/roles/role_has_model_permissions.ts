@@ -1,5 +1,5 @@
 import { destructTarget } from '../helper.js'
-import ModelService from '../model_service.js'
+import ModelService from '../models/model_service.js'
 import PermissionService from '../permissions/permissions_service.js'
 import { AclModel, MorphInterface, OptionsInterface, RoleInterface } from '../../types.js'
 import BaseAdapter from '../base_adapter.js'
@@ -245,6 +245,16 @@ export class RoleHasModelPermissions extends BaseAdapter {
 
   async flush() {
     return this.permissionService.flush(this.map.getAlias(this.role), this.role.getModelId())
+  }
+
+  /**
+   * Sync permissions with the given list
+   * @param permissions - list of permissions
+   * @param target
+   */
+  async sync(permissions: string[], target?: AclModel | Function) {
+    await this.flush()
+    return this.giveAll(permissions, target)
   }
 
   async forbid(permission: string, target?: AclModel | Function) {

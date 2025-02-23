@@ -418,6 +418,91 @@ test.group('Has permission | model - permission direct global interaction', (gro
 
     assert.lengthOf(perms, 0)
   })
+
+  test('Sync permissions for a role', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User })
+    const role = await Role.create({
+      slug: 'Manager',
+    })
+
+    //
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    await Permission.create({
+      slug: 'delete',
+    })
+
+    await Acl.role(role).allow('create')
+
+    await Acl.role(role).sync(['edit', 'delete'])
+
+    const perms = await Acl.role(role).permissions()
+
+    assert.lengthOf(perms, 2)
+    perms.forEach((perm) => {
+      assert.isTrue(['edit', 'delete'].includes(perm.slug))
+    })
+  })
+
+  test('Sync permissions for a model', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
+    const modelManager = new ModelManager()
+    modelManager.setModel('permission', Permission)
+    modelManager.setModel('role', Role)
+    modelManager.setModel('modelPermission', ModelPermission)
+    modelManager.setModel('modelRole', ModelRole)
+    AclManager.setModelManager(modelManager)
+    AclManager.setMorphMap(morphMap)
+
+    modelManager.setModel('scope', Scope)
+    await seedDb({ User })
+
+    const user = await User.firstOrFail()
+
+    //
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    await Permission.create({
+      slug: 'delete',
+    })
+
+    await Acl.model(user).allow('create')
+
+    await Acl.model(user).syncPermissions(['edit', 'delete'])
+
+    const perms = await Acl.model(user).permissions()
+
+    assert.lengthOf(perms, 2)
+    perms.forEach((perm) => {
+      assert.isTrue(['edit', 'delete'].includes(perm.slug))
+    })
+  })
 })
 
 test.group('Has permission | model - permission direct resource interaction', (group) => {
