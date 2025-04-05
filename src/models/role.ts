@@ -2,20 +2,13 @@ import { DateTime } from 'luxon'
 import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
 import { ModelIdType, RoleInterface } from '../types.js'
 import { v4 as uuidv4 } from 'uuid'
-import app from '@adonisjs/core/services/app'
 
 export default class Role extends BaseModel implements RoleInterface {
-  static get table() {
-    return app.config.get('permissions.permissionsConfig.tables.roles') as string
-  }
-
-  static get selfAssignPrimaryKey() {
-    return app.config.get('permissions.permissionsConfig.uuidSupport') as boolean
-  }
+  static uuidSupport = false
 
   @beforeCreate()
   static assignUuid(role: Role) {
-    if (app.config.get('permissions.permissionsConfig.uuidSupport')) {
+    if (this.uuidSupport) {
       role.id = uuidv4()
     }
   }

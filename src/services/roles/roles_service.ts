@@ -8,13 +8,10 @@ import {
 } from '../../types.js'
 import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
-import {
-  // getModelPermissionModelQuery,
-  getModelRoleModelQuery,
-  // getPermissionModelQuery,
-  getRoleModelQuery,
-} from '../query_helper.js'
+import { getModelRoleModelQuery, getRoleModelQuery } from '../query_helper.js'
 import { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
+import Role from '../../models/role.js'
+import { Scope } from '../../scope.js'
 
 export default class RolesService extends BaseService {
   private readonly roleTable
@@ -26,13 +23,13 @@ export default class RolesService extends BaseService {
 
   constructor(
     protected options: OptionsInterface,
-    protected roleClassName: typeof BaseModel,
-    // private permissionClassName: typeof BaseModel,
+    protected scope: Scope,
+    protected roleClassName: typeof Role,
     protected modelPermissionClassName: typeof BaseModel,
     protected modelRoleClassName: typeof BaseModel,
     protected map: MorphInterface
   ) {
-    super(options)
+    super(options, scope)
     this.roleTable = this.roleClassName.table
 
     this.modelPermissionTable = this.modelPermissionClassName.table
@@ -49,7 +46,7 @@ export default class RolesService extends BaseService {
 
   private get roleQuery() {
     const q = getRoleModelQuery(this.roleClassName, this.getQueryOptions())
-    this.applyScopes(q, this.scope)
+    this.applyScopes(q, this.scope.get())
 
     return q
   }
@@ -165,7 +162,7 @@ export default class RolesService extends BaseService {
         }
       })
 
-    this.applyModelRoleScopes(q, 'r', this.scope)
+    this.applyModelRoleScopes(q, 'r', this.scope.get())
     await q.delete()
 
     return true

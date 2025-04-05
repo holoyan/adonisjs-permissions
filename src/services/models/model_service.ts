@@ -2,6 +2,7 @@ import BaseService from '../base_service.js'
 import { getModelPermissionModelQuery, getModelRoleModelQuery } from '../query_helper.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { ModelIdType, MorphInterface, OptionsInterface } from '../../types.js'
+import { Scope } from '../../scope.js'
 
 export default class ModelService extends BaseService {
   private modelPermissionQuery
@@ -12,11 +13,12 @@ export default class ModelService extends BaseService {
 
   constructor(
     protected options: OptionsInterface,
+    protected scope: Scope,
     private modelPermissionClassName: typeof BaseModel,
     private modelRoleClassName: typeof BaseModel,
     private map: MorphInterface
   ) {
-    super(options)
+    super(options, scope)
 
     this.modelPermissionQuery = getModelPermissionModelQuery(
       this.modelPermissionClassName,

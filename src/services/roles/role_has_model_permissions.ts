@@ -4,6 +4,7 @@ import PermissionService from '../permissions/permissions_service.js'
 import { AclModel, MorphInterface, OptionsInterface, RoleInterface } from '../../types.js'
 import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
+import { Scope } from '../../scope.js'
 
 export class RoleHasModelPermissions extends BaseAdapter {
   protected modelService: ModelService
@@ -13,18 +14,20 @@ export class RoleHasModelPermissions extends BaseAdapter {
     protected manager: ModelManager,
     protected map: MorphInterface,
     protected options: OptionsInterface,
+    protected scope: Scope,
     private role: RoleInterface
   ) {
-    super(manager, map, options)
+    super(manager, map, options, scope)
 
     const roleClass = manager.getModel('role')
     const modelPermission = manager.getModel('modelPermission')
     const modelRole = manager.getModel('modelRole')
     const permission = manager.getModel('permission')
 
-    this.modelService = new ModelService(this.options, modelPermission, modelRole, map)
+    this.modelService = new ModelService(this.options, scope, modelPermission, modelRole, map)
     this.permissionService = new PermissionService(
       this.options,
+      scope,
       permission,
       roleClass,
       modelPermission,

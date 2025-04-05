@@ -4,6 +4,7 @@ import { destructTarget, formatList } from '../helper.js'
 import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
 import PermissionService from '../permissions/permissions_service.js'
+import { Scope } from '../../scope.js'
 
 export class ModelHasRolePermissions extends BaseAdapter {
   protected roleService: RolesService
@@ -14,18 +15,27 @@ export class ModelHasRolePermissions extends BaseAdapter {
     protected manager: ModelManager,
     protected map: MorphInterface,
     protected options: OptionsInterface,
+    protected scope: Scope,
     private model: AclModel
   ) {
-    super(manager, map, options)
+    super(manager, map, options, scope)
 
     const role = manager.getModel('role')
     const modelPermission = manager.getModel('modelPermission')
     const modelRole = manager.getModel('modelRole')
 
-    this.roleService = new RolesService(this.options, role, modelPermission, modelRole, map)
+    this.roleService = new RolesService(
+      this.options,
+      this.scope,
+      role,
+      modelPermission,
+      modelRole,
+      map
+    )
 
     this.permissionService = new PermissionService(
       this.options,
+      scope,
       manager.getModel('permission'),
       role,
       modelPermission,

@@ -1,7 +1,10 @@
 import { LucidModel, ModelAdapterOptions } from '@adonisjs/lucid/types/model'
 import { DateTime } from 'luxon'
-import { BaseModel } from '@adonisjs/lucid/orm'
 import { Scope } from './scope.js'
+import Permission from './models/permission.js'
+import Role from './models/role.js'
+import ModelPermission from './models/model_permission.js'
+import ModelRole from './models/model_role.js'
 
 export interface AclModelInterface {
   getModelId(): ModelIdType
@@ -16,7 +19,7 @@ export interface PermissionInterface extends AclModelInterface {
 
   entityType: string
 
-  entityId: string | null
+  entityId: ModelIdType | null
 
   allowed: boolean
 
@@ -121,7 +124,9 @@ export interface ModelManagerInterface {
   [key: string]: any
 }
 
-export interface OptionsInterface extends ModelManagerInterface {}
+export interface OptionsInterface extends ModelManagerInterface {
+  queryOptions?: ModelAdapterOptions
+}
 
 export interface Permissions {
   tables: Object
@@ -137,10 +142,10 @@ export interface ScopeInterface {
 
 export interface ModelManagerBindings {
   scope: typeof Scope
-  role: typeof BaseModel
-  permission: typeof BaseModel
-  modelRole: typeof BaseModel
-  modelPermission: typeof BaseModel
+  role: typeof Role
+  permission: typeof Permission
+  modelRole: typeof ModelRole
+  modelPermission: typeof ModelPermission
   queryClient: ModelAdapterOptions
 }
 

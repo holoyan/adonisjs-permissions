@@ -8,6 +8,10 @@ import { getModelPermissionModelQuery, getRoleModelQuery } from '../query_helper
 import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
 import RolesService from '../roles/roles_service.js'
+import { Emitter } from '@adonisjs/core/events'
+// import Permission from '../../models/permission.js'
+import { Scope } from '../../scope.js'
+// import { PermissionsAttached } from '../../events/permissions/permissions.js'
 
 export default class PermissionHasModelRoles extends BaseAdapter {
   private modelPermissionQuery
@@ -29,9 +33,11 @@ export default class PermissionHasModelRoles extends BaseAdapter {
     protected manager: ModelManager,
     protected map: MorphInterface,
     protected options: OptionsInterface,
-    private permission: PermissionInterface
+    protected scope: Scope,
+    private permission: PermissionInterface,
+    protected emitter: Emitter<any>
   ) {
-    super(manager, map, options)
+    super(manager, map, options, scope)
 
     this.modelPermissionClassName = manager.getModel('modelPermission')
     this.roleClassName = manager.getModel('role')
@@ -45,10 +51,11 @@ export default class PermissionHasModelRoles extends BaseAdapter {
     const modelPermission = manager.getModel('modelPermission')
     const modelRole = manager.getModel('modelRole')
 
-    this.roleService = new RolesService(this.options, role, modelPermission, modelRole, map)
+    this.roleService = new RolesService(this.options, scope, role, modelPermission, modelRole, map)
 
     this.permissionService = new PermissionService(
       this.options,
+      scope,
       manager.getModel('permission'),
       role,
       modelPermission,
@@ -56,20 +63,11 @@ export default class PermissionHasModelRoles extends BaseAdapter {
       map
     )
 
-    this.modelService = new ModelService(this.options, modelPermission, modelRole, map)
+    this.modelService = new ModelService(this.options, scope, modelPermission, modelRole, map)
   }
 
   models() {
     return this.modelService.allByPermission(this.permission.getModelId())
-  }
-
-  on(scope: string) {
-    this.scope.set(scope)
-    return this
-  }
-
-  getScope() {
-    return this.scope.get()
   }
 
   modelsFor(modelType: string) {
@@ -109,7 +107,7 @@ export default class PermissionHasModelRoles extends BaseAdapter {
       role = String(r.id)
     }
     const entity = await destructTarget(this.map, target)
-    return this.permissionService.giveAll(
+    const attached = await this.permissionService.giveAll(
       this.map.getAlias(this.roleClassName),
       role,
       [this.permission.slug],
@@ -117,6 +115,15 @@ export default class PermissionHasModelRoles extends BaseAdapter {
       entity.targetId,
       true
     )
+
+    // if (attached.length > 0) {
+    //   this.emitter.emit(
+    //     PermissionsAttached,
+    //     new PermissionsAttached(attached as unknown as Permission[])
+    //   )
+    // }
+
+    return attached
   }
 
   async detachFromRole(role: string | number) {

@@ -1,20 +1,18 @@
 import { ModelAdapterOptions } from '@adonisjs/lucid/types/model'
 import ModelManager from '../model_manager.js'
 import { MorphInterface, OptionsInterface } from '../types.js'
+import { Scope } from '../scope.js'
 
 export default class BaseAdapter {
-  protected get scope() {
-    return this.options['scope']
-  }
-
   constructor(
     protected manager: ModelManager,
     protected map: MorphInterface,
-    protected options: OptionsInterface
+    protected options: OptionsInterface,
+    protected scope: Scope
   ) {}
 
   on(scope: string) {
-    this.options['scope'] = scope
+    this.scope.set(scope)
     return this
   }
 

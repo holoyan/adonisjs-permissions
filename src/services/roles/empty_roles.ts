@@ -3,6 +3,7 @@ import { getRoleModelQuery } from '../query_helper.js'
 import { MorphInterface, OptionsInterface, RoleInterface, RoleModel } from '../../types.js'
 import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
+import { Scope } from '../../scope.js'
 
 export default class EmptyRoles extends BaseAdapter {
   private roleQuery
@@ -11,9 +12,10 @@ export default class EmptyRoles extends BaseAdapter {
   constructor(
     protected manager: ModelManager,
     protected map: MorphInterface,
-    protected options: OptionsInterface
+    protected options: OptionsInterface,
+    protected scope: Scope
   ) {
-    super(manager, map, options)
+    super(manager, map, options, scope)
     this.roleClassName = manager.getModel('role')
     this.roleQuery = getRoleModelQuery(this.roleClassName)
   }
@@ -29,7 +31,7 @@ export default class EmptyRoles extends BaseAdapter {
 
     const search: Partial<RoleInterface> = {
       slug: values.slug,
-      scope: values.scope || this.getScope(),
+      scope: values.scope || this.getScope().get(),
     }
 
     return (await this.roleClassName.updateOrCreate(search, values)) as unknown as RoleModel<

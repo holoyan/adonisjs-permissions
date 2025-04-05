@@ -1,16 +1,17 @@
 import { formatList, formatListStringNumbers, formatStringNumbers } from './helper.js'
 import { OptionsInterface } from '../types.js'
+import { Scope } from '../scope.js'
 
 export default class BaseService {
-  constructor(protected options: OptionsInterface) {}
+  constructor(
+    protected options: OptionsInterface,
+    protected scope: Scope
+  ) {}
 
   protected getQueryOptions() {
     return this.options['queryOptions'] || undefined
   }
 
-  protected get scope() {
-    return this.options['scope']
-  }
   protected formatList(models: (string | number | any)[]) {
     return formatList(models)
   }
