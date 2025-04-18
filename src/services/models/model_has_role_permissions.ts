@@ -5,6 +5,14 @@ import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
 import PermissionService from '../permissions/permissions_service.js'
 import { Scope } from '../../scope.js'
+import { Emitter } from '@adonisjs/core/events'
+import {
+  PermissionsAttachedToModelEvent,
+  PermissionsDetachedFromModelEvent,
+  PermissionsFlushedEvent,
+  PermissionsForbadeEvent,
+  PermissionsUnForbadeEvent,
+} from '../../events/permissions/permissions.js'
 
 export class ModelHasRolePermissions extends BaseAdapter {
   protected roleService: RolesService
@@ -16,9 +24,10 @@ export class ModelHasRolePermissions extends BaseAdapter {
     protected map: MorphInterface,
     protected options: OptionsInterface,
     protected scope: Scope,
-    private model: AclModel
+    protected model: AclModel,
+    protected emitter: Emitter<any>
   ) {
-    super(manager, map, options, scope)
+    super(manager, map, options, scope, emitter)
 
     const role = manager.getModel('role')
     const modelPermission = manager.getModel('modelPermission')
@@ -204,24 +213,20 @@ export class ModelHasRolePermissions extends BaseAdapter {
     return result
   }
 
-  async containsAnyPermission(permissions: string[]) {
-    const result = await this.permissionService.containsAny(
+  containsAnyPermission(permissions: string[]) {
+    return this.permissionService.containsAny(
       this.map.getAlias(this.model),
       this.model.getModelId(),
       permissions
     )
-
-    return result
   }
 
-  async containsDirectPermission(permission: string) {
-    const result = await this.permissionService.containsAnyDirect(
+  containsDirectPermission(permission: string) {
+    return this.permissionService.containsAnyDirect(
       this.map.getAlias(this.model),
       this.model.getModelId(),
       [permission]
     )
-
-    return result
   }
 
   containsAllPermissionsDirectly(permissions: string[]) {
@@ -233,13 +238,11 @@ export class ModelHasRolePermissions extends BaseAdapter {
   }
 
   async containsAnyPermissionDirectly(permissions: string[]) {
-    const result = await this.permissionService.containsAnyDirect(
+    return await this.permissionService.containsAnyDirect(
       this.map.getAlias(this.model),
       this.model.getModelId(),
       permissions
     )
-
-    return result
   }
 
   /**
@@ -315,23 +318,24 @@ export class ModelHasRolePermissions extends BaseAdapter {
     return this.hasAnyPermission(permissions, target)
   }
 
+  /**
+   *
+   * @param permission
+   * @param target
+   */
   async assignDirectPermission(permission: string, target?: AclModel | Function) {
-    const entity = await destructTarget(this.map, target)
-
-    return this.permissionService.giveAll(
-      this.map.getAlias(this.model),
-      this.model.getModelId(),
-      [permission],
-      entity.targetClass,
-      entity.targetId,
-      true
-    )
+    return this.assignDirectAllPermissions([permission], target)
   }
 
+  /**
+   *
+   * @param permissions
+   * @param target
+   */
   async assignDirectAllPermissions(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
 
-    return this.permissionService.giveAll(
+    const assigned = await this.permissionService.giveAll(
       this.map.getAlias(this.model),
       this.model.getModelId(),
       permissions,
@@ -339,98 +343,175 @@ export class ModelHasRolePermissions extends BaseAdapter {
       entity.targetId,
       true
     )
+
+    this.fire(
+      PermissionsAttachedToModelEvent,
+      assigned.map((item) => item.permissionId),
+      this.model
+    )
+
+    return assigned
   }
 
+  /**
+   * Assign permission to the model
+   * calls assignDirectAllPermissions
+   * @param permission
+   * @param target
+   */
   allow(permission: string, target?: AclModel | Function) {
     return this.allowAll([permission], target)
   }
 
+  /**
+   * Assign list of permissions to the model
+   * calls assignDirectAllPermissions
+   * @param permission
+   * @param target
+   */
   allowAll(permission: string[], target?: AclModel | Function) {
     return this.assignDirectAllPermissions(permission, target)
   }
 
+  /**
+   * Revoke permission from the model
+   * calls revokeAllPermissions
+   * @param permission
+   * @param target
+   */
   async revokePermission(permission: string, target?: AclModel | Function) {
     return this.revokeAllPermissions([permission], target)
   }
 
+  /**
+   * Revoke permission from the model
+   * calls revokeAllPermissions
+   * @param permission
+   * @param target
+   */
   async revoke(permission: string, target?: AclModel | Function) {
     return this.revokeAllPermissions([permission], target)
   }
 
+  /**
+   * Revoke list of permissions from the model
+   * calls revokeAllPermissions
+   * @param permissions
+   * @param target
+   */
   async revokeAll(permissions: string[], target?: AclModel | Function) {
     return this.revokeAllPermissions(permissions, target)
   }
 
+  /**
+   * @param permissions
+   * @param target
+   */
   async revokeAllPermissions(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
-    return this.permissionService.revokeAll(
+    const revoked = this.permissionService.revokeAll(
       this.map.getAlias(this.model),
       this.model.getModelId(),
       permissions,
       entity.targetClass,
       entity.targetId
     )
+
+    this.fire(PermissionsDetachedFromModelEvent, permissions, this.model)
+
+    return revoked
   }
 
   async flushPermissions() {
-    return this.permissionService.flush(this.map.getAlias(this.model), this.model.getModelId())
+    const flushed = await this.permissionService.flush(
+      this.map.getAlias(this.model),
+      this.model.getModelId()
+    )
+    if (flushed.length) {
+      this.fire(PermissionsFlushedEvent, this.model)
+    }
+
+    return flushed
   }
 
+  /**
+   * @param permissions
+   * @param target
+   */
   async syncPermissions(permissions: string[], target?: AclModel | Function) {
     await this.flushPermissions()
     return this.allowAll(permissions, target)
   }
 
   async flush() {
-    await this.permissionService.flush(this.map.getAlias(this.model), this.model.getModelId())
+    await this.flushPermissions()
     await this.roleService.flush(this.map.getAlias(this.model), this.model.getModelId())
     return true
   }
 
+  /**
+   * @param permission
+   * @param target
+   */
   async forbid(permission: string, target?: AclModel | Function) {
     return this.forbidAll([permission], target)
   }
 
+  /**
+   * @param permissions
+   * @param target
+   */
   async forbidAll(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
 
-    return this.permissionService.forbidAll(
+    const forbade = await this.permissionService.forbidAll(
       this.map.getAlias(this.model),
       this.model.getModelId(),
       permissions,
       entity.targetClass,
       entity.targetId
     )
+
+    this.fire(
+      PermissionsForbadeEvent,
+      forbade.map((item) => item.permissionId),
+      this.model
+    )
   }
 
+  /**
+   * @param permissions
+   * @param target
+   */
   async unforbidAll(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
 
-    return this.permissionService.unforbidAll(
+    const unforbade = await this.permissionService.unforbidAll(
       this.map.getAlias(this.model),
       this.model.getModelId(),
       permissions,
       entity.targetClass,
       entity.targetId
     )
+
+    if (unforbade.length) {
+      this.fire(
+        PermissionsUnForbadeEvent,
+        unforbade.map((item) => item.permissionId),
+        this.model
+      )
+    }
+
+    return unforbade
   }
 
+  /**
+   * @param permission
+   * @param target
+   */
   async unforbid(permission: string, target?: AclModel | Function) {
     return this.unforbidAll([permission], target)
   }
 
-  // detachPermission(permission: string) {
-  //   // detach direct permission
-  //   // detach from role if exists
-
-  //   return this.permissionService.reverseModelPermissionQuery({
-  //     modelType: this.model.getMorphMapName(),
-  //     modelId: this.model.getModelId(),
-  //     directPermissions: false,
-  //     permissionSlugs: typeof permission === 'string' ? [permission] : [permission.slug],
-  //     permissionIds: [],
-  //   })
-  // }
-
-  // permissions related section BEGIN
+  // permissions related section END
 }

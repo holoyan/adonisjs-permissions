@@ -1,23 +1,30 @@
-import { AclModel, MorphInterface, OptionsInterface, PermissionInterface } from '../../types.js'
+import {
+  AclModel,
+  ModelManagerBindings,
+  MorphInterface,
+  OptionsInterface,
+  PermissionInterface,
+} from '../../types.js'
 import { destructTarget } from '../helper.js'
 import ModelService from '../models/model_service.js'
 import RoleService from '../roles/roles_service.js'
 import PermissionService from './permissions_service.js'
-import { BaseModel } from '@adonisjs/lucid/orm'
-import { getModelPermissionModelQuery, getRoleModelQuery } from '../query_helper.js'
+import { getModelPermissionModelQuery } from '../query_helper.js'
 import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
 import RolesService from '../roles/roles_service.js'
 import { Emitter } from '@adonisjs/core/events'
-// import Permission from '../../models/permission.js'
 import { Scope } from '../../scope.js'
-// import { PermissionsAttached } from '../../events/permissions/permissions.js'
+import {
+  PermissionsAttachedToRoleEvent,
+  PermissionsDetachedFromRoleEvent,
+} from '../../events/permissions/permissions.js'
 
 export default class PermissionHasModelRoles extends BaseAdapter {
   private modelPermissionQuery
 
-  protected modelPermissionClassName: typeof BaseModel
-  protected roleClassName: typeof BaseModel
+  protected modelPermissionClassName: ModelManagerBindings['modelPermission']
+  protected roleClassName: ModelManagerBindings['role']
 
   protected roleService: RoleService
 
@@ -26,7 +33,6 @@ export default class PermissionHasModelRoles extends BaseAdapter {
   protected modelService: ModelService
   // private readonly modelPermissionTable
 
-  private roleQuery
   private readonly roleTable
 
   constructor(
@@ -37,14 +43,12 @@ export default class PermissionHasModelRoles extends BaseAdapter {
     private permission: PermissionInterface,
     protected emitter: Emitter<any>
   ) {
-    super(manager, map, options, scope)
+    super(manager, map, options, scope, emitter)
 
     this.modelPermissionClassName = manager.getModel('modelPermission')
     this.roleClassName = manager.getModel('role')
 
     this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
-    // this.modelPermissionTable = this.modelPermissionClassName.table
-    this.roleQuery = getRoleModelQuery(this.roleClassName)
     this.roleTable = this.roleClassName.table
 
     const role = manager.getModel('role')
@@ -95,13 +99,17 @@ export default class PermissionHasModelRoles extends BaseAdapter {
     return r.length > 0
   }
 
+  /**
+   * @param role
+   * @param target
+   */
   async attachToRole(role: string, target?: AclModel | Function) {
     // if isNan that we assume that role slug is passed, because role id is number
     if (Number.isNaN(+role)) {
-      const r = await this.roleQuery.where('slug', role).first()
+      const r = await this.roleService.findBySlug(role)
 
       if (!r) {
-        throw new Error('Role not found')
+        throw new Error('Role not found: ' + role)
       }
 
       role = String(r.id)
@@ -116,19 +124,23 @@ export default class PermissionHasModelRoles extends BaseAdapter {
       true
     )
 
-    // if (attached.length > 0) {
-    //   this.emitter.emit(
-    //     PermissionsAttached,
-    //     new PermissionsAttached(attached as unknown as Permission[])
-    //   )
-    // }
+    if (attached.length > 0) {
+      this.fire(
+        PermissionsAttachedToRoleEvent,
+        attached.map((item) => item.permissionId),
+        role
+      )
+    }
 
     return attached
   }
 
+  /**
+   * @param role
+   */
   async detachFromRole(role: string | number) {
     if (typeof role === 'string') {
-      const r = await this.roleQuery.where('slug', role).first()
+      const r = await this.roleService.findBySlug(role)
 
       if (!r) {
         throw new Error('Role not found')
@@ -137,9 +149,13 @@ export default class PermissionHasModelRoles extends BaseAdapter {
       role = r.id
     }
 
-    return this.modelPermissionQuery
+    const detached = await this.modelPermissionQuery
       .where('model_type', this.map.getAlias(this.roleClassName))
       .where('model_id', role)
       .delete()
+
+    if (detached.length > 0) {
+      this.fire(PermissionsDetachedFromRoleEvent, [this.permission.slug], role)
+    }
   }
 }

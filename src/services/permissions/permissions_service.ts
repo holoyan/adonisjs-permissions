@@ -2,6 +2,7 @@ import { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 
 import {
   ModelIdType,
+  ModelManagerBindings,
   ModelPermissionInterface,
   ModelPermissionsQuery,
   MorphInterface,
@@ -12,9 +13,6 @@ import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { Scope } from '../../scope.js'
 import Permission from '../../models/permission.js'
-import Role from '../../models/role.js'
-import ModelPermission from '../../models/model_permission.js'
-import ModelRole from '../../models/model_role.js'
 
 export default class PermissionsService extends BaseService {
   private readonly permissionTable
@@ -26,10 +24,10 @@ export default class PermissionsService extends BaseService {
   constructor(
     protected options: OptionsInterface,
     protected scope: Scope,
-    protected permissionClassName: typeof Permission,
-    protected roleClassName: typeof Role,
-    protected modelPermissionClassName: typeof ModelPermission,
-    protected modelRoleClassName: typeof ModelRole,
+    protected permissionClassName: ModelManagerBindings['permission'],
+    protected roleClassName: ModelManagerBindings['role'],
+    protected modelPermissionClassName: ModelManagerBindings['modelPermission'],
+    protected modelRoleClassName: ModelManagerBindings['modelRole'],
     protected map: MorphInterface
   ) {
     super(options, scope)

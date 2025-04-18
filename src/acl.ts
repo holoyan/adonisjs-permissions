@@ -41,7 +41,9 @@ export class AclManager {
 
   private readonly allowOptionsRewriting: boolean
 
-  private options: OptionsInterface = {}
+  private options: OptionsInterface = {
+    events: true,
+  }
 
   constructor(allowOptionsRewriting: boolean, defaultOptions?: OptionsInterface) {
     this.allowOptionsRewriting = allowOptionsRewriting
@@ -58,7 +60,8 @@ export class AclManager {
       AclManager.map,
       { ...this.options },
       new Scope().set(this.currentScope.get()),
-      model
+      model,
+      AclManager.emitter
     )
   }
 
@@ -71,7 +74,8 @@ export class AclManager {
         AclManager.map,
         { ...this.options },
         new Scope().set(this.currentScope.get()),
-        role
+        role,
+        AclManager.emitter
       )
     }
 
@@ -79,7 +83,8 @@ export class AclManager {
       AclManager.modelManager,
       AclManager.map,
       { ...this.options },
-      new Scope().set(this.currentScope.get())
+      new Scope().set(this.currentScope.get()),
+      AclManager.emitter
     )
   }
 

@@ -1,6 +1,6 @@
-import { BaseModel } from '@adonisjs/lucid/orm'
 import { getPermissionModelQuery } from '../query_helper.js'
 import {
+  ModelManagerBindings,
   MorphInterface,
   OptionsInterface,
   PermissionInterface,
@@ -9,14 +9,16 @@ import {
 import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
 import { Emitter } from '@adonisjs/core/events'
-// import { PermissionCreated, PermissionDeleted } from '../../events/permissions/permissions.js'
-// import Permission from '../../models/permission.js'
+import {
+  PermissionCreatedEvent,
+  PermissionDeletedEvent,
+} from '../../events/permissions/permissions.js'
 import { Scope } from '../../scope.js'
 
 export default class EmptyPermission extends BaseAdapter {
   private permissionQuery
 
-  permissionClassName: typeof BaseModel
+  permissionClassName: ModelManagerBindings['permission']
 
   constructor(
     protected manager: ModelManager,
@@ -25,7 +27,7 @@ export default class EmptyPermission extends BaseAdapter {
     protected scope: Scope,
     protected emitter: Emitter<any>
   ) {
-    super(manager, map, options, scope)
+    super(manager, map, options, scope, emitter)
 
     this.permissionClassName = manager.getModel('permission')
 
@@ -48,7 +50,7 @@ export default class EmptyPermission extends BaseAdapter {
 
     if (!permission) {
       permission = await this.permissionClassName.create(values)
-      // this.emitter.emit(PermissionCreated, new PermissionCreated(permission as Permission))
+      this.fire(PermissionCreatedEvent, permission)
     }
 
     return permission as unknown as PermissionModel<typeof this.permissionClassName>
@@ -60,9 +62,9 @@ export default class EmptyPermission extends BaseAdapter {
       .where('scope', this.getScope().get())
       .delete()
 
-    // if (deleted.length > 0) {
-    //   this.emitter.emit(PermissionDeleted, new PermissionDeleted(permission))
-    // }
+    if (deleted.length > 0) {
+      this.fire(PermissionDeletedEvent, permission)
+    }
 
     return deleted.length > 0
   }

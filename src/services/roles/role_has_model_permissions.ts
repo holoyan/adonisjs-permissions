@@ -5,6 +5,7 @@ import { AclModel, MorphInterface, OptionsInterface, RoleInterface } from '../..
 import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
 import { Scope } from '../../scope.js'
+import { Emitter } from '@adonisjs/core/events'
 
 export class RoleHasModelPermissions extends BaseAdapter {
   protected modelService: ModelService
@@ -15,9 +16,10 @@ export class RoleHasModelPermissions extends BaseAdapter {
     protected map: MorphInterface,
     protected options: OptionsInterface,
     protected scope: Scope,
-    private role: RoleInterface
+    protected role: RoleInterface,
+    protected emitter: Emitter<any>
   ) {
-    super(manager, map, options, scope)
+    super(manager, map, options, scope, emitter)
 
     const roleClass = manager.getModel('role')
     const modelPermission = manager.getModel('modelPermission')

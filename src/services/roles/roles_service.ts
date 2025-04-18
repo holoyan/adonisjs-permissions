@@ -8,7 +8,7 @@ import {
 } from '../../types.js'
 import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
-import { getModelRoleModelQuery, getRoleModelQuery } from '../query_helper.js'
+import { getModelRoleModelQuery } from '../query_helper.js'
 import { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import Role from '../../models/role.js'
 import { Scope } from '../../scope.js'
@@ -45,7 +45,7 @@ export default class RolesService extends BaseService {
   }
 
   private get roleQuery() {
-    const q = getRoleModelQuery(this.roleClassName, this.getQueryOptions())
+    const q = this.roleClassName.query(this.getQueryOptions())
     this.applyScopes(q, this.scope.get())
 
     return q
@@ -195,5 +195,9 @@ export default class RolesService extends BaseService {
     scope: string
   ) {
     q.where(table + '.scope', scope)
+  }
+
+  findBySlug(slug: string) {
+    return this.roleQuery.where('slug', slug).first()
   }
 }

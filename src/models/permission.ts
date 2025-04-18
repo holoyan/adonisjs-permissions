@@ -18,7 +18,7 @@ export default class Permission extends BaseModel implements PermissionInterface
   }
 
   @column({ isPrimary: true })
-  declare id: string
+  declare id: ModelIdType
 
   @column()
   declare slug: string

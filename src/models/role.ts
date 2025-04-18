@@ -18,7 +18,7 @@ export default class Role extends BaseModel implements RoleInterface {
   }
 
   @column({ isPrimary: true })
-  declare id: string
+  declare id: ModelIdType
 
   @column()
   declare slug: string
@@ -30,7 +30,7 @@ export default class Role extends BaseModel implements RoleInterface {
   declare entityType: string
 
   @column()
-  declare entityId: string | null
+  declare entityId: ModelIdType | null
 
   @column()
   declare scope: string

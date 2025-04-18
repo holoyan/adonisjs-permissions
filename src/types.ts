@@ -38,7 +38,7 @@ export interface RoleInterface extends AclModelInterface {
 
   entityType: string
 
-  entityId: string | null
+  entityId: ModelIdType | null
 
   scope: string
 
@@ -126,6 +126,7 @@ export interface ModelManagerInterface {
 
 export interface OptionsInterface extends ModelManagerInterface {
   queryOptions?: ModelAdapterOptions
+  events?: boolean
 }
 
 export interface Permissions {

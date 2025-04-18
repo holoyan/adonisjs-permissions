@@ -4,6 +4,7 @@ import { MorphInterface, OptionsInterface, RoleInterface, RoleModel } from '../.
 import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
 import { Scope } from '../../scope.js'
+import { Emitter } from '@adonisjs/core/events'
 
 export default class EmptyRoles extends BaseAdapter {
   private roleQuery
@@ -13,9 +14,10 @@ export default class EmptyRoles extends BaseAdapter {
     protected manager: ModelManager,
     protected map: MorphInterface,
     protected options: OptionsInterface,
-    protected scope: Scope
+    protected scope: Scope,
+    protected emitter: Emitter<any>
   ) {
-    super(manager, map, options, scope)
+    super(manager, map, options, scope, emitter)
     this.roleClassName = manager.getModel('role')
     this.roleQuery = getRoleModelQuery(this.roleClassName)
   }

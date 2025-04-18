@@ -9,12 +9,13 @@ import {
 } from '../../test-helpers/index.js'
 
 import { Scope } from '../../src/scope.js'
-import { /*emitter,*/ User, Post, Product } from '../../test-helpers/index.js'
-// import {
-//   PermissionCreated,
-//   PermissionDeleted,
-//   PermissionsAttached,
-// } from '../../src/events/permissions/permissions.js'
+import { emitter, User, Post, Product } from '../../test-helpers/index.js'
+import {
+  PermissionCreatedEvent,
+  PermissionDeletedEvent,
+  PermissionsAttachedToRoleEvent,
+  PermissionsDetachedFromRoleEvent,
+} from '../../src/events/permissions/permissions.js'
 import Permission from '../../src/models/permission.js'
 import Role from '../../src/models/role.js'
 import ModelPermission from '../../src/models/model_permission.js'
@@ -40,17 +41,17 @@ test.group('Permissions | Basic operations', (group) => {
     await createTables(db)
     await seedDb({ User })
 
-    // let eventFired = false
-    // emitter.on(PermissionCreated, () => {
-    //   eventFired = true
-    // })
+    let eventFired = false
+    emitter.on(PermissionCreatedEvent, () => {
+      eventFired = true
+    })
 
     const create = await Acl.permission().create({
       slug: 'create',
     })
 
     assert.isTrue(create instanceof Permission)
-    // assert.isTrue(eventFired)
+    assert.isTrue(eventFired)
   })
 
   test('Deleting permission by acl', async ({ assert }) => {
@@ -62,15 +63,15 @@ test.group('Permissions | Basic operations', (group) => {
       slug: 'create',
     })
 
-    // let eventFired = false
-    // emitter.on(PermissionDeleted, () => {
-    //   eventFired = true
-    // })
+    let eventFired = false
+    emitter.on(PermissionDeletedEvent, () => {
+      eventFired = true
+    })
 
     const deleted = await Acl.permission().delete('create')
 
     assert.isTrue(deleted)
-    // assert.isTrue(eventFired)
+    assert.isTrue(eventFired)
   })
 
   test('Deleting permission by acl on non default scope', async ({ assert }) => {
@@ -96,16 +97,12 @@ test.group('Permissions | Basic operations', (group) => {
     assert.isTrue(defaultCreatePermission instanceof Permission)
   })
 
-  test('Attach permission to the role', async () => {
+  test('Attach permission to the role', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
     await seedDb({ User })
 
-    await Acl.permission().create({
-      slug: 'create',
-    })
-
-    const permission = await Acl.permission().on('scope_2').create({
+    const permission = await Acl.permission().create({
       slug: 'create',
     })
 
@@ -113,14 +110,14 @@ test.group('Permissions | Basic operations', (group) => {
       slug: 'admin',
     })
 
-    // let eventFired = false
-    // emitter.on(PermissionsAttached, () => {
-    //   eventFired = true
-    // })
+    let eventFired = false
+    emitter.on(PermissionsAttachedToRoleEvent, () => {
+      eventFired = true
+    })
 
     await Acl.permission(permission).attachToRole(role.slug)
 
-    // assert.isTrue(eventFired)
+    assert.isTrue(eventFired)
   })
 
   test('Detach permission from role', async () => {
@@ -185,7 +182,7 @@ test.group('Permissions | Basic operations', (group) => {
   })
 })
 
-test.group('Has permission | model - permission direct global interaction', (group) => {
+test.group('Permissions | model - permission direct global interaction', (group) => {
   group.setup(async () => {})
 
   group.teardown(async () => {})
@@ -495,7 +492,7 @@ test.group('Has permission | model - permission direct global interaction', (gro
   })
 })
 
-test.group('Has permission | model - permission direct resource interaction', (group) => {
+test.group('Permissions | model - permission direct resource interaction', (group) => {
   group.setup(async () => {})
 
   group.teardown(async () => {})
@@ -1338,6 +1335,76 @@ test.group('Has permission | model - permission direct resource interaction', (g
     assert.lengthOf(rolePerms, 2)
     assert.lengthOf(roles, 1)
     assert.lengthOf(directPerms, 0)
+  })
+})
+
+test.group('Permissions |  - permission interaction', (group) => {
+  group.setup(async () => {})
+
+  group.teardown(async () => {})
+
+  // group.tap((t) => {
+  //   t.pin()
+  // })
+
+  group.each.setup(async () => {
+    // reset scope to default before the test
+    Acl.scope(new Scope(), true)
+  })
+  group.each.disableTimeout()
+
+  // group.tap((t) => {
+  //   t.pin()
+  // })
+
+  test('Attach role from permission', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const create = await Permission.create({
+      slug: 'create',
+    })
+
+    const role = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    let eventFired = false
+    emitter.on(PermissionsAttachedToRoleEvent, () => {
+      eventFired = true
+    })
+
+    await Acl.permission(create).attachToRole('admin')
+
+    const hasPermission = await Acl.role(role).hasPermission('create')
+    assert.isTrue(hasPermission)
+    assert.isTrue(eventFired)
+  })
+
+  test('Detach role from permission', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const create = await Permission.create({
+      slug: 'create',
+    })
+
+    const role = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    let eventFired = false
+    emitter.on(PermissionsDetachedFromRoleEvent, () => {
+      eventFired = true
+    })
+
+    await Acl.permission(create).detachFromRole('admin')
+
+    const hasPermission = await Acl.role(role).hasPermission('create')
+    assert.isTrue(!hasPermission)
+    assert.isTrue(eventFired)
   })
 })
 
