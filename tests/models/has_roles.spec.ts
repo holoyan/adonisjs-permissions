@@ -3,6 +3,7 @@ import { test } from '@japa/runner'
 import {
   createDatabase,
   createTables,
+  emitter,
   Post,
   Product,
   seedDb,
@@ -12,8 +13,12 @@ import {
 import { AclManager, Acl } from '../../src/acl.js'
 import { Scope } from '../../src/scope.js'
 import { ModelRole, Role } from '../../index.js'
+import {
+  PermissionsAttachedToRoleEvent,
+  PermissionsDetachedFromRoleEvent,
+} from '../../src/events/permissions/permissions.js'
 
-test.group('Basic', (group) => {
+test.group('Role | Basic operations', (group) => {
   group.setup(async () => {})
 
   group.teardown(async () => {})
@@ -73,6 +78,78 @@ test.group('Basic', (group) => {
     })
 
     assert.isTrue(admin.id === duplicate.id)
+  })
+})
+
+test.group('Role | role - permission interaction', (group) => {
+  group.setup(async () => {})
+
+  group.teardown(async () => {})
+
+  group.each.setup(async () => {
+    // reset scope to default before the test
+    Acl.scope(new Scope(), true)
+  })
+  group.each.disableTimeout()
+
+  test('Giving role a permission', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+    //
+    const admin = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    const create = await Acl.permission().create({
+      slug: 'create',
+    })
+
+    const edit = await Acl.permission().create({
+      slug: 'ed',
+    })
+
+    let eventCalled = false
+    emitter.on(PermissionsAttachedToRoleEvent, () => {
+      eventCalled = true
+    })
+
+    await Acl.role(admin).give(create.slug)
+
+    const canCreate = await Acl.role(admin).can(create.slug)
+    const canEdit = await Acl.role(admin).can(edit.slug)
+
+    assert.isTrue(canCreate)
+    assert.isTrue(!canEdit)
+    assert.isTrue(eventCalled)
+  })
+
+  test('Removing permission from the role', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+    //
+    const admin = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    const create = await Acl.permission().create({
+      slug: 'create',
+    })
+
+    await Acl.role(admin).give(create.slug)
+
+    let eventCalled = false
+    emitter.on(PermissionsDetachedFromRoleEvent, () => {
+      eventCalled = true
+    })
+
+    await Acl.role(admin).revoke(create.slug)
+
+    const canCreate = await Acl.role(admin).can(create.slug)
+
+    assert.isTrue(!canCreate)
+    assert.isTrue(eventCalled)
   })
 })
 

@@ -101,3 +101,12 @@ export class PermissionsUnForbadeEvent<T extends LucidModel> extends BaseEvent {
     super()
   }
 }
+
+export class PermissionsFlushedFromRoleEvent extends BaseEvent {
+  /**
+   * Accept event data as constructor parameters
+   */
+  constructor(public roleId: ModelIdType) {
+    super()
+  }
+}

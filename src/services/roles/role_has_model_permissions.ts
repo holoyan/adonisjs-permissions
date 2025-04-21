@@ -6,6 +6,11 @@ import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
 import { Scope } from '../../scope.js'
 import { Emitter } from '@adonisjs/core/events'
+import {
+  PermissionsAttachedToRoleEvent,
+  PermissionsDetachedFromRoleEvent,
+  PermissionsFlushedFromRoleEvent,
+} from '../../events/permissions/permissions.js'
 
 export class RoleHasModelPermissions extends BaseAdapter {
   protected modelService: ModelService
@@ -183,31 +188,41 @@ export class RoleHasModelPermissions extends BaseAdapter {
     )
   }
 
+  /**
+   * calls giveAll()
+   * @param permission
+   * @param target
+   */
   assign(permission: string, target?: AclModel | Function) {
-    return this.give(permission, target)
+    return this.giveAll([permission], target)
   }
 
+  /**
+   * calls giveAll()
+   * @param permission
+   * @param target
+   */
   allow(permission: string, target?: AclModel | Function) {
-    return this.give(permission, target)
+    return this.giveAll([permission], target)
   }
 
+  /**
+   * calls giveAll()
+   * @param permission
+   * @param target
+   */
   async give(permission: string, target?: AclModel | Function) {
-    const entity = await destructTarget(this.map, target)
-
-    return this.permissionService.giveAll(
-      this.map.getAlias(this.role),
-      this.role.getModelId(),
-      [permission],
-      entity.targetClass,
-      entity.targetId,
-      true
-    )
+    return this.giveAll([permission], target)
   }
 
+  /**
+   * @param permissions
+   * @param target
+   */
   async giveAll(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
 
-    return this.permissionService.giveAll(
+    const attached = await this.permissionService.giveAll(
       this.map.getAlias(this.role),
       this.role.getModelId(),
       permissions,
@@ -215,41 +230,84 @@ export class RoleHasModelPermissions extends BaseAdapter {
       entity.targetId,
       true
     )
+
+    if (attached.length > 0) {
+      this.fire(
+        PermissionsAttachedToRoleEvent,
+        attached.map((item) => item.permissionId),
+        this.role.getModelId()
+      )
+    }
+
+    return attached
   }
 
+  /**
+   * calls giveAll()
+   * @param permissions
+   * @param target
+   */
   assignAll(permissions: string[], target?: AclModel | Function) {
     return this.giveAll(permissions, target)
   }
 
+  /**
+   * calls giveAll()
+   * @param permissions
+   * @param target
+   */
   allowAll(permissions: string[], target?: AclModel | Function) {
     return this.giveAll(permissions, target)
   }
 
+  /**
+   * calls revokeAll()
+   * @param permission
+   */
   async revokePermission(permission: string) {
-    return this.revoke(permission)
+    return this.revokeAll([permission])
   }
 
+  /**
+   * calls revokeAll()
+   * @param permission
+   */
   async revoke(permission: string) {
     return this.revokeAll([permission])
   }
 
   async revokeAll(permissions: string[], target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
-    return this.permissionService.revokeAll(
+    const revoked = await this.permissionService.revokeAll(
       this.map.getAlias(this.role),
       this.role.getModelId(),
       permissions,
       entity.targetClass,
       entity.targetId
     )
+
+    if (revoked.length > 0) {
+      this.fire(PermissionsDetachedFromRoleEvent, permissions, this.role.getModelId())
+    }
   }
 
+  /**
+   * calls revokeAll()
+   * @param permissions
+   */
   async revokeAllPermissions(permissions: string[]) {
     return this.revokeAll(permissions)
   }
 
   async flush() {
-    return this.permissionService.flush(this.map.getAlias(this.role), this.role.getModelId())
+    const flushed = await this.permissionService.flush(
+      this.map.getAlias(this.role),
+      this.role.getModelId()
+    )
+
+    if (flushed.length > 0) {
+      this.fire(PermissionsFlushedFromRoleEvent, this.role.getModelId())
+    }
   }
 
   /**

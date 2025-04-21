@@ -319,7 +319,7 @@ export class ModelHasRolePermissions extends BaseAdapter {
   }
 
   /**
-   *
+   * calls assignDirectAllPermissions()
    * @param permission
    * @param target
    */
@@ -450,6 +450,7 @@ export class ModelHasRolePermissions extends BaseAdapter {
   }
 
   /**
+   * calls forbidAll
    * @param permission
    * @param target
    */

@@ -13,8 +13,14 @@ import { emitter, User, Post, Product } from '../../test-helpers/index.js'
 import {
   PermissionCreatedEvent,
   PermissionDeletedEvent,
+  PermissionsAttachedToModelEvent,
   PermissionsAttachedToRoleEvent,
+  PermissionsDetachedFromModelEvent,
   PermissionsDetachedFromRoleEvent,
+  PermissionsFlushedEvent,
+  PermissionsFlushedFromRoleEvent,
+  PermissionsForbadeEvent,
+  PermissionsUnForbadeEvent,
 } from '../../src/events/permissions/permissions.js'
 import Permission from '../../src/models/permission.js'
 import Role from '../../src/models/role.js'
@@ -179,6 +185,42 @@ test.group('Permissions | Basic operations', (group) => {
     })
 
     assert.isTrue(duplicate.id === create.id)
+  })
+
+  test('Flushing permissions', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+    //
+    await Acl.permission().create({
+      slug: 'create',
+    })
+
+    await Acl.permission().create({
+      slug: 'edit',
+    })
+
+    await Acl.permission().create({
+      slug: 'delete',
+    })
+
+    const admin = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    await Acl.role(admin).assignAll(['create', 'edit', 'delete'])
+
+    let eventCalled = false
+    emitter.on(PermissionsFlushedFromRoleEvent, () => {
+      eventCalled = true
+    })
+
+    await Acl.role(admin).flush()
+
+    const hasPermission = await Acl.role(admin).hasAnyPermissions(['create', 'edit', 'delete'])
+
+    assert.isFalse(hasPermission)
+    assert.isTrue(eventCalled)
   })
 })
 
@@ -391,11 +433,18 @@ test.group('Permissions | model - permission direct global interaction', (group)
     }
 
     await Acl.model(user).assignDirectAllPermissions(['create'])
+
+    let eventCalled = false
+    emitter.on(PermissionsDetachedFromModelEvent, () => {
+      eventCalled = true
+    })
+
     await Acl.model(user).revokeAllPermissions(['create', 'edit'])
 
     const perms = await Acl.model(user).permissions()
 
     assert.lengthOf(perms, 0)
+    assert.isTrue(eventCalled)
   })
 
   test('Flush permissions', async ({ assert }) => {
@@ -418,11 +467,18 @@ test.group('Permissions | model - permission direct global interaction', (group)
     }
 
     await Acl.model(user).assignDirectAllPermissions(['create'])
+
+    let eventCalled = false
+    emitter.on(PermissionsFlushedEvent, () => {
+      eventCalled = true
+    })
+
     await Acl.model(user).flushPermissions()
 
     const perms = await Acl.model(user).permissions()
 
     assert.lengthOf(perms, 0)
+    assert.isTrue(eventCalled)
   })
 
   test('Sync permissions for a role', async ({ assert }) => {
@@ -654,6 +710,7 @@ test.group('Permissions | model - permission direct resource interaction', (grou
     await Acl.model(user).revokePermission('create')
     const hasResourcePermission = await Acl.model(user).hasPermission('create', post)
     const hasGlobalPermission = await Acl.model(user).hasPermission('create')
+
     assert.isFalse(hasResourcePermission)
     assert.isFalse(hasGlobalPermission)
   })
@@ -683,9 +740,56 @@ test.group('Permissions | model - permission direct resource interaction', (grou
 
     await Acl.model(user).assignDirectAllPermissions(['create', 'edit', 'delete'])
 
+    let eventFired = false
+    emitter.on(PermissionsForbadeEvent, () => {
+      eventFired = true
+    })
+
     await Acl.model(user).forbid('delete')
     const hasGlobalPermission = await Acl.model(user).hasPermission('delete')
+
     assert.isFalse(hasGlobalPermission)
+    assert.isTrue(eventFired)
+  })
+
+  test('Assign direct all permissions', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const user = await User.first()
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    await Permission.create({
+      slug: 'delete',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    let eventFired = false
+    emitter.on(PermissionsAttachedToModelEvent, () => {
+      eventFired = true
+    })
+
+    await Acl.model(user).assignDirectAllPermissions(['create', 'edit', 'delete'])
+
+    const hasCreatePermission = await Acl.model(user).hasPermission('create')
+    const hasEditPermission = await Acl.model(user).hasPermission('edit')
+    const hasDeletePermission = await Acl.model(user).hasPermission('delete')
+
+    assert.isTrue(hasCreatePermission)
+    assert.isTrue(hasEditPermission)
+    assert.isTrue(hasDeletePermission)
+    assert.isTrue(eventFired)
   })
 
   test('Forbidding permission on a resource', async ({ assert }) => {
@@ -934,6 +1038,82 @@ test.group('Permissions | model - permission direct resource interaction', (grou
     assert.isFalse(hasOnFirst)
   })
 
+  test('Forbid multiple time will not make effect', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const user = await User.first()
+    const post = await Post.first()
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    if (!post) {
+      throw new Error('Post not found')
+    }
+
+    await Acl.model(user).assignDirectAllPermissions(['create'])
+    await Acl.model(user).forbid('create', post)
+    await Acl.model(user).forbid('create', post)
+    await Acl.model(user).forbid('create', post)
+
+    const modelPermissions = await ModelPermission.query()
+      .where('model_type', 'users')
+      .where('model_id', user.id)
+
+    assert.lengthOf(modelPermissions, 2)
+  })
+
+  test('Un-forbidding permission', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const user = await User.first()
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    await Permission.create({
+      slug: 'delete',
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    await Acl.model(user).assignDirectAllPermissions(['create', 'edit', 'delete'])
+    await Acl.model(user).forbid('edit')
+    await Acl.model(user).forbid('delete')
+
+    let eventFired = false
+    emitter.on(PermissionsUnForbadeEvent, () => {
+      eventFired = true
+    })
+
+    await Acl.model(user).unforbid('delete')
+
+    const hasCreatePermission = await Acl.model(user).hasPermission('create')
+    const hasEditPermission = await Acl.model(user).hasPermission('edit')
+    const hasDeletePermission = await Acl.model(user).hasPermission('delete')
+
+    assert.isTrue(hasCreatePermission)
+    assert.isFalse(hasEditPermission)
+    assert.isTrue(hasDeletePermission)
+    assert.isTrue(eventFired)
+  })
+
   test('Get only global permissions', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
@@ -1061,38 +1241,6 @@ test.group('Permissions | model - permission direct resource interaction', (grou
       .where('model_id', user.id)
 
     assert.lengthOf(modelPermissions, 3)
-  })
-
-  test('Forbid multiple time will not make effect', async ({ assert }) => {
-    const db = await createDatabase()
-    await createTables(db)
-    await seedDb({ User, Post, Product })
-
-    const user = await User.first()
-    const post = await Post.first()
-
-    await Permission.create({
-      slug: 'create',
-    })
-
-    if (!user) {
-      throw new Error('User not found')
-    }
-
-    if (!post) {
-      throw new Error('Post not found')
-    }
-
-    await Acl.model(user).assignDirectAllPermissions(['create'])
-    await Acl.model(user).forbid('create', post)
-    await Acl.model(user).forbid('create', post)
-    await Acl.model(user).forbid('create', post)
-
-    const modelPermissions = await ModelPermission.query()
-      .where('model_type', 'users')
-      .where('model_id', user.id)
-
-    assert.lengthOf(modelPermissions, 2)
   })
 
   test('Ability to assign same slug permission from different scopes', async ({ assert }) => {
