@@ -17,6 +17,11 @@ import {
   PermissionsAttachedToRoleEvent,
   PermissionsDetachedFromRoleEvent,
 } from '../../src/events/permissions/permissions.js'
+import {
+  RoleCreatedEvent,
+  RoleDeletedEvent,
+  RolesAttachedToModel,
+} from '../../src/events/roles/roles.js'
 
 test.group('Role | Basic operations', (group) => {
   group.setup(async () => {})
@@ -33,13 +38,43 @@ test.group('Role | Basic operations', (group) => {
     const db = await createDatabase()
     await createTables(db)
     await seedDb({ User })
+
+    let eventCalled = false
+    emitter.on(RoleCreatedEvent, () => {
+      eventCalled = true
+    })
+
     //
     const admin = await Acl.role().create({
       slug: 'admin',
     })
 
     assert.isTrue(admin instanceof Role)
+    assert.isTrue(eventCalled)
   })
+
+  test('Deleting role by acl', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+
+    let eventCalled = false
+    emitter.on(RoleDeletedEvent, () => {
+      eventCalled = true
+    })
+
+    //
+    const admin = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    await Acl.role().delete(admin.slug)
+
+    const role = await Role.query().where('id', admin.id).first()
+
+    assert.isFalse(role instanceof Role)
+    assert.isTrue(eventCalled)
+  }).pin()
 
   test('Ensure that correct scope can be assigned to the role during create', async ({
     assert,
@@ -189,7 +224,25 @@ test.group('Has role | model - role interaction', (group) => {
     if (!user) {
       throw new Error('User not found')
     }
-    await Acl.model(user).assignAllRoles('admin', 'manager', client.slug)
+
+    const slugs = ['admin', 'manager', client.slug]
+
+    let eventCalled = false
+    let modelIsPassed = false
+    let rolesArePassed = false
+    emitter.on(RolesAttachedToModel, (event) => {
+      eventCalled = true
+
+      if (event.model instanceof User) {
+        modelIsPassed = true
+      }
+
+      if (event.roles.length === 3 && slugs.every((slug) => event.roles.includes(slug))) {
+        rolesArePassed = true
+      }
+    })
+
+    await Acl.model(user).assignAllRoles(...slugs)
 
     const modelRoles = await ModelRole.query()
       .where('model_type', 'users')
@@ -197,7 +250,10 @@ test.group('Has role | model - role interaction', (group) => {
       .count('* as total')
 
     assert.isTrue(+modelRoles[0].$extras.total === 3)
-  })
+    assert.isTrue(eventCalled)
+    assert.isTrue(modelIsPassed)
+    assert.isTrue(rolesArePassed)
+  }).pin()
 
   test('Ensure model can assign role by role slug', async ({ assert }) => {
     const db = await createDatabase()

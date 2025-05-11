@@ -13,6 +13,11 @@ import {
   PermissionsForbadeEvent,
   PermissionsUnForbadeEvent,
 } from '../../events/permissions/permissions.js'
+import {
+  RolesAttachedToModel,
+  RolesDetachedFromModelEvent,
+  RolesFlushedFromModelEvent,
+} from '../../events/roles/roles.js'
 
 export class ModelHasRolePermissions extends BaseAdapter {
   protected roleService: RolesService
@@ -71,30 +76,76 @@ export class ModelHasRolePermissions extends BaseAdapter {
     return this.roleService.hasAny(this.map.getAlias(this.model), this.model.getModelId(), roles)
   }
 
+  /**
+   * Assign role to the model
+   * calls assignAllRoles
+   * @param role
+   */
   assignRole(role: string) {
-    return this.roleService.assign(role, this.map.getAlias(this.model), this.model.getModelId())
+    return this.assignAllRoles(role)
   }
 
+  /**
+   * Assign role to the model
+   * calls assignAllRoles
+   * @param role
+   */
   assign(role: string) {
-    return this.assignRole(role)
+    return this.assignAllRoles(role)
   }
 
-  assignAllRoles(...roles: string[]) {
-    return this.roleService.assignAll(roles, this.map.getAlias(this.model), this.model.getModelId())
+  /**
+   * Assign list of roles to the model
+   * @param roles
+   */
+  async assignAllRoles(...roles: string[]) {
+    const assigned = await this.roleService.assignAll(
+      roles,
+      this.map.getAlias(this.model),
+      this.model.getModelId()
+    )
+
+    if (assigned) {
+      this.fire(RolesAttachedToModel, roles, this.model)
+    }
   }
 
+  /**
+   * Revoke role from the model
+   * calls revokeAllRoles
+   * @param role
+   */
   revokeRole(role: string) {
     return this.revokeAllRoles(role)
   }
 
-  revokeAllRoles(...roles: string[]) {
+  /**
+   * Revoke role from the model
+   * @param roles
+   */
+  async revokeAllRoles(...roles: string[]) {
     const { slugs } = formatList(roles)
 
-    return this.roleService.revokeAll(slugs, this.model)
+    const revoked = await this.roleService.revokeAll(slugs, this.model)
+
+    if (revoked) {
+      this.fire(RolesDetachedFromModelEvent, roles, this.model)
+    }
+
+    return revoked
   }
 
-  flushRoles() {
-    return this.roleService.flush(this.map.getAlias(this.model), this.model.getModelId())
+  async flushRoles() {
+    const deleted = await this.roleService.flush(
+      this.map.getAlias(this.model),
+      this.model.getModelId()
+    )
+
+    if (deleted.length) {
+      this.fire(RolesFlushedFromModelEvent, this.model)
+    }
+
+    return deleted.length > 0
   }
 
   /**

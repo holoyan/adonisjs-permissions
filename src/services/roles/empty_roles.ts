@@ -1,15 +1,21 @@
-import { BaseModel } from '@adonisjs/lucid/orm'
 import { getRoleModelQuery } from '../query_helper.js'
-import { MorphInterface, OptionsInterface, RoleInterface, RoleModel } from '../../types.js'
+import {
+  ModelManagerBindings,
+  MorphInterface,
+  OptionsInterface,
+  RoleInterface,
+} from '../../types.js'
 import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
 import { Scope } from '../../scope.js'
 import { Emitter } from '@adonisjs/core/events'
+import { RoleCreatedEvent, RoleDeletedEvent } from '../../events/roles/roles.js'
 
 export default class EmptyRoles extends BaseAdapter {
   private roleQuery
 
-  protected roleClassName: typeof BaseModel
+  protected roleClassName: ModelManagerBindings['role']
+
   constructor(
     protected manager: ModelManager,
     protected map: MorphInterface,
@@ -22,8 +28,13 @@ export default class EmptyRoles extends BaseAdapter {
     this.roleQuery = getRoleModelQuery(this.roleClassName)
   }
 
-  delete(role: string) {
-    return this.roleQuery.where('slug', role).delete()
+  async delete(role: string) {
+    const deleted = await this.roleQuery.where('slug', role).delete()
+    if (deleted.length) {
+      this.fire(RoleDeletedEvent, role)
+    }
+
+    return deleted
   }
 
   async create(values: Partial<RoleInterface>) {
@@ -36,9 +47,11 @@ export default class EmptyRoles extends BaseAdapter {
       scope: values.scope || this.getScope().get(),
     }
 
-    return (await this.roleClassName.updateOrCreate(search, values)) as unknown as RoleModel<
-      typeof this.roleClassName
-    >
+    const role = await this.roleClassName.updateOrCreate(search, values)
+
+    this.fire(RoleCreatedEvent, role)
+
+    return role
   }
 
   query() {

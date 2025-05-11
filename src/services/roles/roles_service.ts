@@ -8,10 +8,10 @@ import {
 } from '../../types.js'
 import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
-import { getModelRoleModelQuery } from '../query_helper.js'
 import { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import Role from '../../models/role.js'
 import { Scope } from '../../scope.js'
+import { getModelRoleModelQuery } from '../query_helper.js'
 
 export default class RolesService extends BaseService {
   private readonly roleTable
@@ -137,9 +137,9 @@ export default class RolesService extends BaseService {
       })
     }
 
-    await this.modelRoleClassName.createMany(data, this.getQueryOptions())
+    const created = await this.modelRoleClassName.createMany(data, this.getQueryOptions())
 
-    return true
+    return created.length === data.length
   }
 
   async revoke(role: string, model: AclModel) {
@@ -163,9 +163,9 @@ export default class RolesService extends BaseService {
       })
 
     this.applyModelRoleScopes(q, 'r', this.scope.get())
-    await q.delete()
+    const d = await q.delete()
 
-    return true
+    return d.length > 0
   }
 
   private extractRoleModel(roles: string[]) {
