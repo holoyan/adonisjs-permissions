@@ -138,8 +138,8 @@ export default class Post extends BaseModel implements AclModelInterface {
 
 ## Release Notes
 
-Version: >= v1.0.3
-* Update: UUID version to ^10.0.0
+Version: >= v1.1.0
+* Added support for [Events](#events)
 
 ## Mixins
 
@@ -1236,7 +1236,7 @@ await Acl.permission(myPermission).detachFromRole(role_slug)
 
 - [X] Scopes (Multitenancy)
 - [X] UUID support
-- [ ] Events
+- [X] Events
 - [ ] More test coverage
 - [ ] Caching
 - [ ] Integration with AdonisJs Bouncer
@@ -1251,7 +1251,7 @@ await Acl.permission(myPermission).detachFromRole(role_slug)
 
 | AdonisJS Lucid version | Package version |
 |------------------------|-----------------|
-| v20.x                  | 0.8.x           |
+| v20.x                  | 0.9.x           |
 | v21.x                  | 1.x             |
 
 
