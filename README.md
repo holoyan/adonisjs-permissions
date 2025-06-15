@@ -83,7 +83,7 @@ To be able to use the full power of Acl, you should have a clear understanding o
 
 ## Installation
     
-    npm i @holoyan/adonisjs-permissions@0.8.21
+    npm i @holoyan/adonisjs-permissions@0.9.0
 
 
 Next publish config files
@@ -1251,7 +1251,7 @@ await Acl.permission(myPermission).detachFromRole(role_slug)
 
 | AdonisJS Lucid version | Package version |
 |------------------------|-----------------|
-| v20.x                  | 0.8.x           |
+| v20.x                  | 0.9.x           |
 | v21.x                  | 1.x             |
 
 
