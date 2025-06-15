@@ -331,16 +331,6 @@ export class RoleHasModelPermissions extends BaseAdapter {
     return this.giveAll(permissions, target)
   }
 
-  /**
-   * Sync permissions with the given list
-   * @param permissions - list of permissions
-   * @param target
-   */
-  async sync(permissions: string[], target?: AclModel | Function) {
-    await this.flush()
-    return this.giveAll(permissions, target)
-  }
-
   async forbid(permission: string, target?: AclModel | Function) {
     const entity = await destructTarget(this.map, target)
 
