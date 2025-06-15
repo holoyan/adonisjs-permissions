@@ -13,3 +13,5 @@ yarn.lock
 shrinkwrap.yaml
 package-lock.json
 notes.md
+.yalc
+yalc.lock

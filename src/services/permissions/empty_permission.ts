@@ -1,6 +1,6 @@
-import { BaseModel } from '@adonisjs/lucid/orm'
 import { getPermissionModelQuery } from '../query_helper.js'
 import {
+  ModelManagerBindings,
   MorphInterface,
   OptionsInterface,
   PermissionInterface,
@@ -8,26 +8,27 @@ import {
 } from '../../types.js'
 import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
+import { Emitter } from '@adonisjs/core/events'
+import { PermissionCreatedEvent, PermissionDeletedEvent } from '../../events/index.js'
+import { Scope } from '../../scope.js'
 
 export default class EmptyPermission extends BaseAdapter {
-  private permissionQuery
-
-  permissionClassName: typeof BaseModel
+  permissionClassName: ModelManagerBindings['permission']
 
   constructor(
     protected manager: ModelManager,
     protected map: MorphInterface,
-    protected options: OptionsInterface
+    protected options: OptionsInterface,
+    protected scope: Scope,
+    protected emitter: Emitter<any>
   ) {
-    super(manager, map, options)
+    super(manager, map, options, scope, emitter)
 
     this.permissionClassName = manager.getModel('permission')
-
-    this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
   }
 
-  delete(permission: string) {
-    return this.permissionQuery.where('slug', permission).delete()
+  get permissionQuery() {
+    return getPermissionModelQuery(this.permissionClassName, this.queryOptions)
   }
 
   async create(values: Partial<PermissionInterface>) {
@@ -37,16 +38,31 @@ export default class EmptyPermission extends BaseAdapter {
 
     const search: Partial<PermissionInterface> = {
       slug: values.slug,
-      scope: values.scope || this.getScope(),
+      scope: values.scope || this.getScope().get(),
     }
 
-    return (await this.permissionClassName.updateOrCreate(
-      search,
-      values
-    )) as unknown as PermissionModel<typeof this.permissionClassName>
+    values.scope = values.scope || this.getScope().get()
+
+    let permission = await this.permissionClassName.findBy(search)
+
+    if (!permission) {
+      permission = await this.permissionClassName.create(values)
+      this.fire(PermissionCreatedEvent, permission)
+    }
+
+    return permission as unknown as PermissionModel<typeof this.permissionClassName>
   }
 
-  query() {
-    return this.permissionQuery
+  async delete(permission: string) {
+    const deleted = await this.permissionQuery
+      .where('slug', permission)
+      .where('scope', this.getScope().get())
+      .delete()
+
+    if (deleted.length > 0) {
+      this.fire(PermissionDeletedEvent, permission)
+    }
+
+    return deleted.length > 0
   }
 }

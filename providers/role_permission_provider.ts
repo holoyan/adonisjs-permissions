@@ -24,6 +24,21 @@ export default class RolePermissionProvider {
     this.app.container.singleton('modelManager', async () => {
       return new ModelManager()
     })
+    const wantsUuid = this.app.config.get('permissions.permissionsConfig.uuidSupport') as boolean
+
+    Permission.table = this.app.config.get('permissions.permissionsConfig.tables.permissions')
+    Permission.selfAssignPrimaryKey = wantsUuid
+    Permission.uuidSupport = wantsUuid
+
+    Role.table = this.app.config.get('permissions.permissionsConfig.tables.roles')
+    Role.selfAssignPrimaryKey = wantsUuid
+    Role.uuidSupport = wantsUuid
+
+    ModelRole.table = this.app.config.get('permissions.permissionsConfig.tables.modelRoles')
+
+    ModelPermission.table = this.app.config.get(
+      'permissions.permissionsConfig.tables.modelPermissions'
+    )
   }
 
   async boot() {
@@ -33,7 +48,12 @@ export default class RolePermissionProvider {
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
     modelManager.setModel('scope', Scope)
+
+    const emitter = await this.app.container.make('emitter')
+
     AclManager.setModelManager(modelManager)
+    AclManager.setEmitter(emitter)
+
     const map = await this.app.container.make('morphMap')
     map.set('permissions', Permission)
     map.set('roles', Role)

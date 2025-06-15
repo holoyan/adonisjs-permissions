@@ -18,7 +18,8 @@
   "exports": {
     ".": "./build/index.js",
     "./role_permission_provider": "./build/providers/role_permission_provider.js",
-    "./types": "./build/src/types.js"
+    "./types": "./build/src/types.js",
+    "./events": "./build/src/events/index.js"
   },
   "scripts": {
     "clean": "del-cli build",
