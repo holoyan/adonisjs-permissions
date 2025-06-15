@@ -9,7 +9,7 @@ import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
 import { Scope } from '../../scope.js'
 import { Emitter } from '@adonisjs/core/events'
-import { RoleCreatedEvent, RoleDeletedEvent } from '../../events/roles/roles.js'
+import { RoleCreatedEvent, RoleDeletedEvent } from '../../events/index.js'
 
 export default class EmptyRoles extends BaseAdapter {
   protected roleClassName: ModelManagerBindings['role']

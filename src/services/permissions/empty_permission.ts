@@ -9,10 +9,7 @@ import {
 import BaseAdapter from '../base_adapter.js'
 import ModelManager from '../../model_manager.js'
 import { Emitter } from '@adonisjs/core/events'
-import {
-  PermissionCreatedEvent,
-  PermissionDeletedEvent,
-} from '../../events/permissions/permissions.js'
+import { PermissionCreatedEvent, PermissionDeletedEvent } from '../../events/index.js'
 import { Scope } from '../../scope.js'
 
 export default class EmptyPermission extends BaseAdapter {
