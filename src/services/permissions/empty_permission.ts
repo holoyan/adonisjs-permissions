@@ -16,8 +16,6 @@ import {
 import { Scope } from '../../scope.js'
 
 export default class EmptyPermission extends BaseAdapter {
-  private permissionQuery
-
   permissionClassName: ModelManagerBindings['permission']
 
   constructor(
@@ -30,8 +28,10 @@ export default class EmptyPermission extends BaseAdapter {
     super(manager, map, options, scope, emitter)
 
     this.permissionClassName = manager.getModel('permission')
+  }
 
-    this.permissionQuery = getPermissionModelQuery(this.permissionClassName)
+  get permissionQuery() {
+    return getPermissionModelQuery(this.permissionClassName, this.queryOptions)
   }
 
   async create(values: Partial<PermissionInterface>) {

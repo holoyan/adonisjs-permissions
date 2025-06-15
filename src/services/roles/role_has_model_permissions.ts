@@ -13,9 +13,6 @@ import {
 } from '../../events/permissions/permissions.js'
 
 export class RoleHasModelPermissions extends BaseAdapter {
-  protected modelService: ModelService
-
-  protected permissionService: PermissionService
   constructor(
     protected manager: ModelManager,
     protected map: MorphInterface,
@@ -25,22 +22,36 @@ export class RoleHasModelPermissions extends BaseAdapter {
     protected emitter: Emitter<any>
   ) {
     super(manager, map, options, scope, emitter)
+  }
 
-    const roleClass = manager.getModel('role')
-    const modelPermission = manager.getModel('modelPermission')
-    const modelRole = manager.getModel('modelRole')
-    const permission = manager.getModel('permission')
+  get modelService() {
+    const modelPermission = this.manager.getModel('modelPermission')
+    const modelRole = this.manager.getModel('modelRole')
 
-    this.modelService = new ModelService(this.options, scope, modelPermission, modelRole, map)
-    this.permissionService = new PermissionService(
+    return new ModelService(
       this.options,
-      scope,
+      this.scope,
+      modelPermission,
+      modelRole,
+      this.map
+    ).setQueryOptions(this.queryOptions)
+  }
+
+  get permissionService() {
+    const roleClass = this.manager.getModel('role')
+    const modelPermission = this.manager.getModel('modelPermission')
+    const modelRole = this.manager.getModel('modelRole')
+    const permission = this.manager.getModel('permission')
+
+    return new PermissionService(
+      this.options,
+      this.scope,
       permission,
       roleClass,
       modelPermission,
       modelRole,
-      map
-    )
+      this.map
+    ).setQueryOptions(this.queryOptions)
   }
 
   models() {

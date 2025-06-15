@@ -20,10 +20,6 @@ import {
 } from '../../events/roles/roles.js'
 
 export class ModelHasRolePermissions extends BaseAdapter {
-  protected roleService: RolesService
-
-  protected permissionService: PermissionService
-
   constructor(
     protected manager: ModelManager,
     protected map: MorphInterface,
@@ -33,29 +29,37 @@ export class ModelHasRolePermissions extends BaseAdapter {
     protected emitter: Emitter<any>
   ) {
     super(manager, map, options, scope, emitter)
+  }
 
-    const role = manager.getModel('role')
-    const modelPermission = manager.getModel('modelPermission')
-    const modelRole = manager.getModel('modelRole')
+  get roleService(): RolesService {
+    const role = this.manager.getModel('role')
+    const modelPermission = this.manager.getModel('modelPermission')
+    const modelRole = this.manager.getModel('modelRole')
 
-    this.roleService = new RolesService(
+    return new RolesService(
       this.options,
       this.scope,
       role,
       modelPermission,
       modelRole,
-      map
-    )
+      this.map
+    ).setQueryOptions(this.queryOptions)
+  }
 
-    this.permissionService = new PermissionService(
+  get permissionService(): PermissionService {
+    const role = this.manager.getModel('role')
+    const modelPermission = this.manager.getModel('modelPermission')
+    const modelRole = this.manager.getModel('modelRole')
+
+    return new PermissionService(
       this.options,
-      scope,
-      manager.getModel('permission'),
+      this.scope,
+      this.manager.getModel('permission'),
       role,
       modelPermission,
       modelRole,
-      map
-    )
+      this.map
+    ).setQueryOptions(this.queryOptions)
   }
 
   // roles related section BEGIN

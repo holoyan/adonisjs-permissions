@@ -7,7 +7,6 @@ import {
 } from '../../types.js'
 import { destructTarget } from '../helper.js'
 import ModelService from '../models/model_service.js'
-import RoleService from '../roles/roles_service.js'
 import PermissionService from './permissions_service.js'
 import { getModelPermissionModelQuery } from '../query_helper.js'
 import BaseAdapter from '../base_adapter.js'
@@ -21,17 +20,8 @@ import {
 } from '../../events/permissions/permissions.js'
 
 export default class PermissionHasModelRoles extends BaseAdapter {
-  private modelPermissionQuery
-
   protected modelPermissionClassName: ModelManagerBindings['modelPermission']
   protected roleClassName: ModelManagerBindings['role']
-
-  protected roleService: RoleService
-
-  protected permissionService: PermissionService
-
-  protected modelService: ModelService
-  // private readonly modelPermissionTable
 
   private readonly roleTable
 
@@ -48,26 +38,49 @@ export default class PermissionHasModelRoles extends BaseAdapter {
     this.modelPermissionClassName = manager.getModel('modelPermission')
     this.roleClassName = manager.getModel('role')
 
-    this.modelPermissionQuery = getModelPermissionModelQuery(this.modelPermissionClassName)
     this.roleTable = this.roleClassName.table
+  }
 
-    const role = manager.getModel('role')
-    const modelPermission = manager.getModel('modelPermission')
-    const modelRole = manager.getModel('modelRole')
+  get modelPermissionQuery() {
+    return getModelPermissionModelQuery(this.modelPermissionClassName, this.queryOptions)
+  }
 
-    this.roleService = new RolesService(this.options, scope, role, modelPermission, modelRole, map)
+  get roleService() {
+    const role = this.manager.getModel('role')
+    const modelPermission = this.manager.getModel('modelPermission')
+    const modelRole = this.manager.getModel('modelRole')
 
-    this.permissionService = new PermissionService(
+    return new RolesService(
       this.options,
-      scope,
-      manager.getModel('permission'),
+      this.scope,
       role,
       modelPermission,
       modelRole,
-      map
-    )
+      this.map
+    ).setQueryOptions(this.queryOptions)
+  }
 
-    this.modelService = new ModelService(this.options, scope, modelPermission, modelRole, map)
+  get permissionService() {
+    const role = this.manager.getModel('role')
+    const modelPermission = this.manager.getModel('modelPermission')
+    const modelRole = this.manager.getModel('modelRole')
+
+    return new PermissionService(
+      this.options,
+      this.scope,
+      this.manager.getModel('permission'),
+      role,
+      modelPermission,
+      modelRole,
+      this.map
+    )
+  }
+
+  get modelService() {
+    const modelPermission = this.manager.getModel('modelPermission')
+    const modelRole = this.manager.getModel('modelRole')
+
+    return new ModelService(this.options, this.scope, modelPermission, modelRole, this.map)
   }
 
   models() {

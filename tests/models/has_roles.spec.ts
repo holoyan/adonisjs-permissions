@@ -74,7 +74,7 @@ test.group('Role | Basic operations', (group) => {
 
     assert.isFalse(role instanceof Role)
     assert.isTrue(eventCalled)
-  }).pin()
+  })
 
   test('Ensure that correct scope can be assigned to the role during create', async ({
     assert,
@@ -253,7 +253,7 @@ test.group('Has role | model - role interaction', (group) => {
     assert.isTrue(eventCalled)
     assert.isTrue(modelIsPassed)
     assert.isTrue(rolesArePassed)
-  }).pin()
+  })
 
   test('Ensure model can assign role by role slug', async ({ assert }) => {
     const db = await createDatabase()

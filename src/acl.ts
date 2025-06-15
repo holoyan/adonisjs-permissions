@@ -11,7 +11,7 @@ import PermissionHasModelRoles from './services/permissions/permission_has_model
 import ModelManager from './model_manager.js'
 import EmptyPermission from './services/permissions/empty_permission.js'
 import EmptyRoles from './services/roles/empty_roles.js'
-import type { Emitter } from '@adonisjs/core/events'
+import { BaseEvent, Emitter } from '@adonisjs/core/events'
 import { Scope } from './scope.js'
 
 export class AclManager {
@@ -20,6 +20,18 @@ export class AclManager {
   private static map: MorphInterface
 
   private static emitter: Emitter<any>
+
+  protected currentScope: Scope
+
+  private readonly allowOptionsRewriting: boolean
+
+  private options: OptionsInterface = {
+    events: {
+      fire: true,
+      except: [],
+      only: [],
+    },
+  }
 
   static setModelManager(manager: ModelManager) {
     this.modelManager = manager
@@ -37,14 +49,6 @@ export class AclManager {
     this.emitter = emitter
   }
 
-  protected currentScope: Scope
-
-  private readonly allowOptionsRewriting: boolean
-
-  private options: OptionsInterface = {
-    events: true,
-  }
-
   constructor(allowOptionsRewriting: boolean, defaultOptions?: OptionsInterface) {
     this.allowOptionsRewriting = allowOptionsRewriting
     if (defaultOptions) {
@@ -58,7 +62,7 @@ export class AclManager {
     return new ModelHasRolePermissions(
       AclManager.modelManager,
       AclManager.map,
-      { ...this.options },
+      this.optionClone(),
       new Scope().set(this.currentScope.get()),
       model,
       AclManager.emitter
@@ -72,7 +76,7 @@ export class AclManager {
       return new RoleHasModelPermissions(
         AclManager.modelManager,
         AclManager.map,
-        { ...this.options },
+        this.optionClone(),
         new Scope().set(this.currentScope.get()),
         role,
         AclManager.emitter
@@ -82,7 +86,7 @@ export class AclManager {
     return new EmptyRoles(
       AclManager.modelManager,
       AclManager.map,
-      { ...this.options },
+      this.optionClone(),
       new Scope().set(this.currentScope.get()),
       AclManager.emitter
     )
@@ -95,7 +99,7 @@ export class AclManager {
       return new PermissionHasModelRoles(
         AclManager.modelManager,
         AclManager.map,
-        { ...this.options },
+        this.optionClone(),
         new Scope().set(this.currentScope.get()),
         permission,
         AclManager.emitter
@@ -105,7 +109,7 @@ export class AclManager {
     return new EmptyPermission(
       AclManager.modelManager,
       AclManager.map,
-      { ...this.options },
+      this.optionClone(),
       new Scope().set(this.currentScope.get()),
       AclManager.emitter
     )
@@ -145,6 +149,36 @@ export class AclManager {
 
   getScope() {
     return this.options['scope']
+  }
+
+  withoutEvents(): AclManager
+  withoutEvents<T extends BaseEvent>(events: T[]): AclManager
+  withoutEvents<T extends BaseEvent>(events?: T[]): AclManager {
+    if (events?.length) {
+      this.options.events.except = events
+      return this
+    }
+
+    this.options.events.fire = false
+
+    return this
+  }
+
+  withEvents(): AclManager
+  withEvents<T extends BaseEvent>(events: T[]): AclManager
+  withEvents<T extends BaseEvent>(events?: T[]): AclManager {
+    if (events?.length) {
+      this.options.events.only = events
+      return this
+    }
+
+    this.options.events.fire = true
+
+    return this
+  }
+
+  protected optionClone(): OptionsInterface {
+    return structuredClone(this.options)
   }
 }
 

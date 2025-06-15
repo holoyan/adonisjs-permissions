@@ -5,6 +5,7 @@ import Permission from './models/permission.js'
 import Role from './models/role.js'
 import ModelPermission from './models/model_permission.js'
 import ModelRole from './models/model_role.js'
+import { BaseEvent } from '@adonisjs/core/events'
 
 export interface AclModelInterface {
   getModelId(): ModelIdType
@@ -124,9 +125,15 @@ export interface ModelManagerInterface {
   [key: string]: any
 }
 
+interface EventInterface<E extends BaseEvent = BaseEvent> {
+  fire: boolean
+  except?: E[]
+  only?: E[] // if only is set, except will be ignored
+}
+
 export interface OptionsInterface extends ModelManagerInterface {
   queryOptions?: ModelAdapterOptions
-  events?: boolean
+  events: EventInterface
 }
 
 export interface Permissions {

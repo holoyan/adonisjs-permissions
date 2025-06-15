@@ -12,8 +12,6 @@ import { Emitter } from '@adonisjs/core/events'
 import { RoleCreatedEvent, RoleDeletedEvent } from '../../events/roles/roles.js'
 
 export default class EmptyRoles extends BaseAdapter {
-  private roleQuery
-
   protected roleClassName: ModelManagerBindings['role']
 
   constructor(
@@ -25,7 +23,10 @@ export default class EmptyRoles extends BaseAdapter {
   ) {
     super(manager, map, options, scope, emitter)
     this.roleClassName = manager.getModel('role')
-    this.roleQuery = getRoleModelQuery(this.roleClassName)
+  }
+
+  get roleQuery() {
+    return getRoleModelQuery(this.roleClassName, this.queryOptions)
   }
 
   async delete(role: string) {
@@ -47,9 +48,15 @@ export default class EmptyRoles extends BaseAdapter {
       scope: values.scope || this.getScope().get(),
     }
 
-    const role = await this.roleClassName.updateOrCreate(search, values)
+    let role = await this.roleClassName.query().where(search).first()
 
-    this.fire(RoleCreatedEvent, role)
+    if (role) {
+      await role.merge(values).save()
+    } else {
+      role = await this.roleClassName.create(values)
+
+      this.fire(RoleCreatedEvent, role)
+    }
 
     return role
   }

@@ -7,7 +7,6 @@ import ModelManager from '../src/model_manager.js'
 import { AclManager } from '../src/acl.js'
 import MorphMap from '../src/morph_map.js'
 import { Scope } from '../src/scope.js'
-import emitter from '@adonisjs/core/services/emitter'
 
 declare module '@adonisjs/core/types' {
   export interface ContainerBindings {
@@ -49,6 +48,8 @@ export default class RolePermissionProvider {
     modelManager.setModel('modelPermission', ModelPermission)
     modelManager.setModel('modelRole', ModelRole)
     modelManager.setModel('scope', Scope)
+
+    const emitter = await this.app.container.make('emitter')
 
     AclManager.setModelManager(modelManager)
     AclManager.setEmitter(emitter)

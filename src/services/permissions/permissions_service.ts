@@ -534,7 +534,6 @@ export default class PermissionsService extends BaseService {
       }
     }
 
-    console.log(permissionsSlug)
     await q.delete()
     return this.permissionQuery.whereIn('slug', permissionsSlug).where('allowed', false).delete()
   }
