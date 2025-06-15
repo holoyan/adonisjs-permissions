@@ -109,5 +109,5 @@ test.group('Events | Basic operations', (group) => {
     })
 
     assert.isTrue(roleCreatedEvent)
-  }).pin()
+  })
 })

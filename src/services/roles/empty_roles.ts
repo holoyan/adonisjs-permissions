@@ -48,6 +48,8 @@ export default class EmptyRoles extends BaseAdapter {
       scope: values.scope || this.getScope().get(),
     }
 
+    values.scope = search.scope
+
     let role = await this.roleClassName.query().where(search).first()
 
     if (role) {
