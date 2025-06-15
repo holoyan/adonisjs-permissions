@@ -1011,6 +1011,42 @@ await Acl.model(myUser).allow('create')
 
 ```
 
+
+You can also disable events per query by calling withoutEvents() method
+
+```typescript
+
+emitter.on(RoleCreatedEvent, () => {
+  console.log('Role created') // this will not be called
+})
+
+//
+await Acl.role().withoutEvents().create({ // this one will not trigger RoleCreatedEvent
+  slug: 'admin',
+})
+
+await Acl.role().create({ // this will trigger
+  slug: 'admin',
+})
+
+```
+
+If you want to completely disable events, you can do that by calling `withoutEvents()` method on the `Acl` class
+
+```typescript
+
+Acl.withoutEvents()
+
+// any method called on the Acl will not trigger any events
+emitter.on(RoleCreatedEvent, () => {
+  console.log('Role created') // this will not be called
+})
+
+await Acl.role().create({ // this will not trigger because globaly withoutEvents() is set
+  slug: 'admin',
+})
+```
+
 List of events you can listen to:
 
 ```
