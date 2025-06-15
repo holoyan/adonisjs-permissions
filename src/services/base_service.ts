@@ -1,16 +1,25 @@
 import { formatList, formatListStringNumbers, formatStringNumbers } from './helper.js'
 import { OptionsInterface } from '../types.js'
+import { Scope } from '../scope.js'
+import { ModelAdapterOptions } from '@adonisjs/lucid/types/model'
 
 export default class BaseService {
-  constructor(protected options: OptionsInterface) {}
+  protected queryOptions: ModelAdapterOptions = {}
+
+  constructor(
+    protected options: OptionsInterface,
+    protected scope: Scope
+  ) {}
 
   protected getQueryOptions() {
-    return this.options['queryOptions'] || undefined
+    return this.queryOptions
   }
 
-  protected get scope() {
-    return this.options['scope']
+  setQueryOptions(options: ModelAdapterOptions) {
+    this.queryOptions = options
+    return this
   }
+
   protected formatList(models: (string | number | any)[]) {
     return formatList(models)
   }

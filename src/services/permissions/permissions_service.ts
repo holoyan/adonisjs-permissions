@@ -2,16 +2,17 @@ import { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 
 import {
   ModelIdType,
+  ModelManagerBindings,
   ModelPermissionInterface,
   ModelPermissionsQuery,
   MorphInterface,
   OptionsInterface,
   PermissionInterface,
-  PermissionModel,
 } from '../../types.js'
 import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
-import { getModelPermissionModelQuery, getPermissionModelQuery } from '../query_helper.js'
+import { Scope } from '../../scope.js'
+import Permission from '../../models/permission.js'
 
 export default class PermissionsService extends BaseService {
   private readonly permissionTable
@@ -22,13 +23,14 @@ export default class PermissionsService extends BaseService {
 
   constructor(
     protected options: OptionsInterface,
-    protected permissionClassName: typeof BaseModel,
-    protected roleClassName: typeof BaseModel,
-    protected modelPermissionClassName: typeof BaseModel,
-    protected modelRoleClassName: typeof BaseModel,
+    protected scope: Scope,
+    protected permissionClassName: ModelManagerBindings['permission'],
+    protected roleClassName: ModelManagerBindings['role'],
+    protected modelPermissionClassName: ModelManagerBindings['modelPermission'],
+    protected modelRoleClassName: ModelManagerBindings['modelRole'],
     protected map: MorphInterface
   ) {
-    super(options)
+    super(options, scope)
     this.permissionTable = this.permissionClassName.table
 
     this.modelPermissionTable = this.modelPermissionClassName.table
@@ -37,14 +39,14 @@ export default class PermissionsService extends BaseService {
   }
 
   private get permissionQuery() {
-    const q = getPermissionModelQuery(this.permissionClassName, this.getQueryOptions())
+    const q = this.permissionClassName.query(this.getQueryOptions())
     this.applyScopes(q)
 
     return q
   }
 
   private get modelPermissionQuery() {
-    return getModelPermissionModelQuery(this.modelPermissionClassName, this.getQueryOptions())
+    return this.modelPermissionClassName.query(this.getQueryOptions())
   }
 
   /**
@@ -387,7 +389,7 @@ export default class PermissionsService extends BaseService {
           entityType: entityType || '*',
           entityId,
           allowed,
-          scope: this.scope,
+          scope: this.scope.get(),
         })
       } else {
         permissionIds.push(found.id)
@@ -395,10 +397,10 @@ export default class PermissionsService extends BaseService {
     }
 
     if (createManyData.length) {
-      const newPermissions = (await this.permissionClassName.createMany(
+      const newPermissions = await this.permissionClassName.createMany(
         createManyData,
         this.getQueryOptions()
-      )) as unknown as PermissionModel<typeof this.permissionClassName>[]
+      )
       newPermissions.map((i) => permissionIds.push(i.id))
     }
 
@@ -532,7 +534,8 @@ export default class PermissionsService extends BaseService {
       }
     }
 
-    return q.delete()
+    await q.delete()
+    return this.permissionQuery.whereIn('slug', permissionsSlug).where('allowed', false).delete()
   }
 
   async findBySlug(slug: string, allowed: boolean = true) {
@@ -564,7 +567,6 @@ export default class PermissionsService extends BaseService {
         })
         if (conditions.throughRoles) {
           q.whereRaw('mr.role_id=mp.model_id').where('mp.model_type', 'roles')
-          // q.whereRaw('CAST(mr.role_id AS CHAR)=mp.model_id').where('mp.model_type', 'roles')
         } else {
           q.where((subQuery) => {
             subQuery
@@ -674,7 +676,7 @@ export default class PermissionsService extends BaseService {
 
   private applyTargetRestriction(
     table: string,
-    q: ModelQueryBuilderContract<typeof BaseModel, PermissionInterface>,
+    q: ModelQueryBuilderContract<typeof Permission, PermissionInterface>,
     entityType: string | null,
     entityId: ModelIdType | null
   ) {
@@ -695,13 +697,13 @@ export default class PermissionsService extends BaseService {
   }
 
   private applyScopes(q: ModelQueryBuilderContract<typeof BaseModel, PermissionInterface>) {
-    q.where(this.permissionTable + '.scope', this.scope)
+    q.where(this.permissionTable + '.scope', this.scope.get())
   }
 
   private applyModelPermissionScopes(
     q: ModelQueryBuilderContract<typeof BaseModel, ModelPermissionInterface>,
     table: string
   ) {
-    q.where(table + '.scope', this.scope)
+    q.where(table + '.scope', this.scope.get())
   }
 }

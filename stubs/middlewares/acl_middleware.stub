@@ -18,6 +18,7 @@ export default class UserScopeMiddleware {
     ctx.acl = new AclManager(true).scope(scope)
     /**
      * Call next method in the pipeline and return its output
+     * Call next method in the pipeline and return its output
      */
     const output = await next()
     return output
