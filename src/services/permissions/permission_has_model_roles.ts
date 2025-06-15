@@ -17,7 +17,7 @@ import { Scope } from '../../scope.js'
 import {
   PermissionsAttachedToRoleEvent,
   PermissionsDetachedFromRoleEvent,
-} from '../../events/permissions/permissions.js'
+} from '../../events/index.js'
 
 export default class PermissionHasModelRoles extends BaseAdapter {
   protected modelPermissionClassName: ModelManagerBindings['modelPermission']

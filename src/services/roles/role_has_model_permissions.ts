@@ -10,7 +10,7 @@ import {
   PermissionsAttachedToRoleEvent,
   PermissionsDetachedFromRoleEvent,
   PermissionsFlushedFromRoleEvent,
-} from '../../events/permissions/permissions.js'
+} from '../../events/index.js'
 
 export class RoleHasModelPermissions extends BaseAdapter {
   constructor(
