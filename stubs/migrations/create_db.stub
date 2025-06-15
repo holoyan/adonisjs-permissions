@@ -8,7 +8,30 @@ import config from '@adonisjs/core/services/config'
 
 export default class extends BaseSchema {
   async up() {
-    this.schema.createTable('permissions', (table) => {
+    this.schema.createTable(
+      config.get('permissions.permissionsConfig.tables.permissions'),
+      (table) => {
+        this.primaryKey(table, 'id')
+
+        table.string('slug')
+        table.string('title').nullable()
+        table.string('entity_type').defaultTo('*')
+        this.modelId(table, 'entity_id').nullable()
+        table.string('scope').defaultTo('default')
+        table.boolean('allowed').defaultTo(true)
+
+        /**
+         * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+         */
+        table.timestamp('created_at', { useTz: true })
+        table.timestamp('updated_at', { useTz: true })
+
+        table.index(['scope', 'slug'])
+        table.index(['entity_type', 'entity_id'])
+      }
+    )
+
+    this.schema.createTable(config.get('permissions.permissionsConfig.tables.roles'), (table) => {
       this.primaryKey(table, 'id')
 
       table.string('slug')
@@ -28,61 +51,53 @@ export default class extends BaseSchema {
       table.index(['entity_type', 'entity_id'])
     })
 
-    this.schema.createTable('roles', (table) => {
-      this.primaryKey(table, 'id')
+    this.schema.createTable(
+      config.get('permissions.permissionsConfig.tables.modelRoles'),
+      (table) => {
+        table.bigIncrements('id')
 
-      table.string('slug')
-      table.string('title').nullable()
-      table.string('entity_type').defaultTo('*')
-      this.modelId(table, 'entity_id').nullable()
-      table.string('scope').defaultTo('default')
-      table.boolean('allowed').defaultTo(true)
+        table.string('model_type')
+        this.modelId(table, 'model_id')
+        this.modelId(table, 'role_id')
 
-      /**
-       * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
-       */
-      table.timestamp('created_at', { useTz: true })
-      table.timestamp('updated_at', { useTz: true })
+        /**
+         * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+         */
+        table.timestamp('created_at', { useTz: true })
+        table.timestamp('updated_at', { useTz: true })
 
-      table.index(['scope', 'slug'])
-      table.index(['entity_type', 'entity_id'])
-    })
+        table.index(['model_type', 'model_id'])
 
-    this.schema.createTable('model_roles', (table) => {
-      table.bigIncrements('id')
+        table
+          .foreign('role_id')
+          .references(config.get('permissions.permissionsConfig.tables.roles') + '.id')
+          .onDelete('CASCADE')
+      }
+    )
 
-      table.string('model_type')
-      this.modelId(table, 'model_id')
-      this.modelId(table, 'role_id')
+    this.schema.createTable(
+      config.get('permissions.permissionsConfig.tables.modelPermissions'),
+      (table) => {
+        table.bigIncrements('id')
 
-      /**
-       * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
-       */
-      table.timestamp('created_at', { useTz: true })
-      table.timestamp('updated_at', { useTz: true })
+        table.string('model_type')
+        this.modelId(table, 'model_id')
+        this.modelId(table, 'permission_id')
 
-      table.index(['model_type', 'model_id'])
+        /**
+         * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
+         */
+        table.timestamp('created_at', { useTz: true })
+        table.timestamp('updated_at', { useTz: true })
 
-      table.foreign('role_id').references('roles.id').onDelete('CASCADE')
-    })
+        table.index(['model_type', 'model_id'])
 
-    this.schema.createTable('model_permissions', (table) => {
-      table.bigIncrements('id')
-
-      table.string('model_type')
-      this.modelId(table, 'model_id')
-      this.modelId(table, 'permission_id')
-
-      /**
-       * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
-       */
-      table.timestamp('created_at', { useTz: true })
-      table.timestamp('updated_at', { useTz: true })
-
-      table.index(['model_type', 'model_id'])
-
-      table.foreign('permission_id').references('permissions.id').onDelete('CASCADE')
-    })
+        table
+          .foreign('permission_id')
+          .references(config.get('permissions.permissionsConfig.tables.permissions') + '.id')
+          .onDelete('CASCADE')
+      }
+    )
   }
 
   async down() {

@@ -3,44 +3,77 @@ import { test } from '@japa/runner'
 import {
   createDatabase,
   createTables,
-  defineModels,
-  morphMap,
+  emitter,
+  Post,
+  Product,
   seedDb,
+  User,
 } from '../../test-helpers/index.js'
 
-import { Acl, AclManager } from '../../src/acl.js'
-import ModelManager from '../../src/model_manager.js'
+import { AclManager, Acl } from '../../src/acl.js'
 import { Scope } from '../../src/scope.js'
+import { ModelRole, Role } from '../../index.js'
+import {
+  PermissionsAttachedToRoleEvent,
+  PermissionsDetachedFromRoleEvent,
+} from '../../src/events/permissions/permissions.js'
+import {
+  RoleCreatedEvent,
+  RoleDeletedEvent,
+  RolesAttachedToModel,
+} from '../../src/events/roles/roles.js'
 
-test.group('Basic', (group) => {
+test.group('Role | Basic operations', (group) => {
   group.setup(async () => {})
 
   group.teardown(async () => {})
 
-  // group.each.setup(async () => {})
+  group.each.setup(async () => {
+    // reset scope to default before the test
+    Acl.scope(new Scope(), true)
+  })
   group.each.disableTimeout()
 
   test('Creating role by acl', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    modelManager.setModel('scope', Scope)
-
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
     await seedDb({ User })
+
+    let eventCalled = false
+    emitter.on(RoleCreatedEvent, () => {
+      eventCalled = true
+    })
+
     //
     const admin = await Acl.role().create({
       slug: 'admin',
     })
 
     assert.isTrue(admin instanceof Role)
+    assert.isTrue(eventCalled)
+  })
+
+  test('Deleting role by acl', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+
+    let eventCalled = false
+    emitter.on(RoleDeletedEvent, () => {
+      eventCalled = true
+    })
+
+    //
+    const admin = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    await Acl.role().delete(admin.slug)
+
+    const role = await Role.query().where('id', admin.id).first()
+
+    assert.isFalse(role instanceof Role)
+    assert.isTrue(eventCalled)
   })
 
   test('Ensure that correct scope can be assigned to the role during create', async ({
@@ -48,19 +81,7 @@ test.group('Basic', (group) => {
   }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    modelManager.setModel('scope', Scope)
 
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    await seedDb({ User })
-    //
     const admin = await Acl.role().create({
       slug: 'admin',
     })
@@ -81,17 +102,6 @@ test.group('Basic', (group) => {
   test('Ensure that duplicate roles are ignored', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Role, Permission, ModelRole, ModelPermission } = await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    modelManager.setModel('scope', Scope)
-
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
     await seedDb({ User })
     //
     const admin = await Acl.role().create({
@@ -106,12 +116,87 @@ test.group('Basic', (group) => {
   })
 })
 
+test.group('Role | role - permission interaction', (group) => {
+  group.setup(async () => {})
+
+  group.teardown(async () => {})
+
+  group.each.setup(async () => {
+    // reset scope to default before the test
+    Acl.scope(new Scope(), true)
+  })
+  group.each.disableTimeout()
+
+  test('Giving role a permission', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+    //
+    const admin = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    const create = await Acl.permission().create({
+      slug: 'create',
+    })
+
+    const edit = await Acl.permission().create({
+      slug: 'ed',
+    })
+
+    let eventCalled = false
+    emitter.on(PermissionsAttachedToRoleEvent, () => {
+      eventCalled = true
+    })
+
+    await Acl.role(admin).give(create.slug)
+
+    const canCreate = await Acl.role(admin).can(create.slug)
+    const canEdit = await Acl.role(admin).can(edit.slug)
+
+    assert.isTrue(canCreate)
+    assert.isTrue(!canEdit)
+    assert.isTrue(eventCalled)
+  })
+
+  test('Removing permission from the role', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+    //
+    const admin = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    const create = await Acl.permission().create({
+      slug: 'create',
+    })
+
+    await Acl.role(admin).give(create.slug)
+
+    let eventCalled = false
+    emitter.on(PermissionsDetachedFromRoleEvent, () => {
+      eventCalled = true
+    })
+
+    await Acl.role(admin).revoke(create.slug)
+
+    const canCreate = await Acl.role(admin).can(create.slug)
+
+    assert.isTrue(!canCreate)
+    assert.isTrue(eventCalled)
+  })
+})
+
 test.group('Has role | model - role interaction', (group) => {
   group.setup(async () => {})
 
   group.teardown(async () => {})
 
-  group.each.setup(async () => {})
+  group.each.setup(async () => {
+    // reset scope to default before the test
+    Acl.scope(new Scope(), true)
+  })
   group.each.disableTimeout()
   // group.tap((t) => {
   //   t.pin()
@@ -120,18 +205,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Ensure model can assign multiple roles at once', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     await Role.create({
@@ -149,7 +224,25 @@ test.group('Has role | model - role interaction', (group) => {
     if (!user) {
       throw new Error('User not found')
     }
-    await Acl.model(user).assignAllRoles('admin', 'manager', client.slug)
+
+    const slugs = ['admin', 'manager', client.slug]
+
+    let eventCalled = false
+    let modelIsPassed = false
+    let rolesArePassed = false
+    emitter.on(RolesAttachedToModel, (event) => {
+      eventCalled = true
+
+      if (event.model instanceof User) {
+        modelIsPassed = true
+      }
+
+      if (event.roles.length === 3 && slugs.every((slug) => event.roles.includes(slug))) {
+        rolesArePassed = true
+      }
+    })
+
+    await Acl.model(user).assignAllRoles(...slugs)
 
     const modelRoles = await ModelRole.query()
       .where('model_type', 'users')
@@ -157,23 +250,16 @@ test.group('Has role | model - role interaction', (group) => {
       .count('* as total')
 
     assert.isTrue(+modelRoles[0].$extras.total === 3)
+    assert.isTrue(eventCalled)
+    assert.isTrue(modelIsPassed)
+    assert.isTrue(rolesArePassed)
   })
 
   test('Ensure model can assign role by role slug', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     const role = await Role.create({
@@ -197,18 +283,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Get model roles', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     const role = await Role.create({
@@ -228,18 +304,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Check if model hasRole', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     const role = await Role.create({
@@ -261,18 +327,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Check if model has all roles', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     const admin = await Role.create({
@@ -302,18 +358,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('hasAllRoles must return false', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     const admin = await Role.create({
@@ -343,18 +389,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Check if model has at least one role', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     const admin = await Role.create({
@@ -384,18 +420,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('hasAnyRole must return false', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     const admin = await Role.create({
@@ -420,18 +446,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Revoke role from the model', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     const admin = await Role.create({
@@ -455,18 +471,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Revoke all roles from the model', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     const admin = await Role.create({
@@ -493,17 +499,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Flush roles', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    modelManager.setModel('scope', Scope)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     const admin = await Role.create({
@@ -529,18 +526,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Duplicate assign will not make effect', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     const admin = await Role.create({
@@ -567,18 +554,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Assign role on other then default scope', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     await Role.create({
@@ -612,18 +589,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Revoke role on other then default scope', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
+
     const user = await User.first()
     // create role
     await Role.create({
@@ -650,16 +617,6 @@ test.group('Has role | model - role interaction', (group) => {
   test('Overwrite global middleware scope', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
-    modelManager.setModel('scope', Scope)
     await seedDb({ User, Post, Product })
 
     const scope = new Scope()
@@ -683,17 +640,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Sync role for a model', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    modelManager.setModel('scope', Scope)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
     await seedDb({ User, Post, Product })
+
     const user = await User.firstOrFail()
     // create role
     const admin = await Role.create({
@@ -716,17 +664,8 @@ test.group('Has role | model - role interaction', (group) => {
   test('Sync without detaching role for a model', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
-    const { User, Post, Product, Role, Permission, ModelRole, ModelPermission } =
-      await defineModels()
-    const modelManager = new ModelManager()
-    modelManager.setModel('permission', Permission)
-    modelManager.setModel('role', Role)
-    modelManager.setModel('modelPermission', ModelPermission)
-    modelManager.setModel('modelRole', ModelRole)
-    modelManager.setModel('scope', Scope)
-    AclManager.setModelManager(modelManager)
-    AclManager.setMorphMap(morphMap)
     await seedDb({ User, Post, Product })
+
     const user = await User.firstOrFail()
     // create role
     const admin = await Role.create({

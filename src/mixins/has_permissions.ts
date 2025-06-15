@@ -1,7 +1,8 @@
 import type { NormalizeConstructor } from '@adonisjs/core/types/helpers'
 import { BaseModel } from '@adonisjs/lucid/orm'
-import { Acl } from '../acl.js'
+
 import { AclModel, AclModelInterface, ModelIdType } from '../types.js'
+import { Acl } from '../acl.js'
 
 export function hasPermissions() {
   return <Model extends NormalizeConstructor<typeof BaseModel>>(superclass: Model) => {

@@ -49,6 +49,7 @@ Checkout other AdonisJS packages
     - [The Scope middleware](#the-scope-middleware) 
     - [Default Scope](#default-scope-tenant)
   - [Transactions](#transactions)
+  - [Events] (#events)
 - [Cheat sheet](#cheat-sheet)
 - [Todo](#todo)
 - [Test](#test)
@@ -137,8 +138,8 @@ export default class Post extends BaseModel implements AclModelInterface {
 
 ## Release Notes
 
-Version: >= v1.0.3
-* Update: UUID version to ^10.0.0
+Version: >= v1.1.0
+* Added support for [Events](#events)
 
 ## Mixins
 
@@ -992,6 +993,103 @@ await trx.commit()
 ```
 
 
+### Events
+
+`Acl` has built-in events that you can listen to. All they are class-based. To listen to the events, you can use `emitter`
+
+```typescript
+import emitter from '@adonisjs/core/services/emitter'
+import { PermissionsAttachedToModelEvent } from '@holoyan/adonisjs-permissions/events'
+
+emitter.on(PermissionsAttachedToModelEvent, (event) => {
+  console.log('permission attached to the model')
+  console.log(event.model) // lucid model instance
+  console.log(event.permissionIds) // array of permission ids
+})
+
+await Acl.model(myUser).allow('create')
+
+```
+
+List of events you can listen to:
+
+```
+
+// Permission events
+
+PermissionCreatedEvent { // only if you use Acl.permission().create() method
+  permission: Permission // created permission instance
+}
+
+PermissionDeletedEvent {
+  permission: string // slug of deleted permission
+}
+
+PermissionsAttachedToRoleEvent {
+  permissionIds: ModelIdType[],
+  roleId: ModelIdType
+}
+
+PermissionsDetachedFromRoleEvent {
+    permissions: string[],
+    roleId: ModelIdType
+}
+
+PermissionsAttachedToModelEvent<T extends LucidModel>{
+    permissionIds: ModelIdType[],
+    model: T
+}
+
+PermissionsDetachedFromModelEvent<T extends LucidModel>{
+    permissions: string[],
+    model: T
+}
+
+PermissionsFlushedEvent<T extends LucidModel> {
+    model: T
+}
+
+PermissionsForbadeEvent<T extends LucidModel> {
+    permissionIds: ModelIdType[],
+    model: T
+}
+
+PermissionsUnForbadeEvent<T extends LucidModel> {
+    permissionIds: ModelIdType[],
+    model: T
+}
+
+PermissionsFlushedFromRoleEvent{
+    roleId: ModelIdType
+}
+
+// Role events
+
+RoleCreatedEvent {
+  role: Role // created role instance
+}
+
+RoleDeletedEvent {
+  role: string // slug of deleted role
+}
+
+RolesAttachedToModel<T extends LucidModel> {
+  roles: string[], // array of role slugs
+  model: T // lucid model instance
+}
+
+RolesDetachedFromModelEvent<T extends LucidModel> {
+  roles: string[], // array of role slugs
+  model: T // lucid model instance
+}
+
+RolesFlushedFromModelEvent {
+  model: T // lucid model instance
+}
+
+```
+
+
 ## Cheat sheet
 
 Model methods
@@ -1138,7 +1236,7 @@ await Acl.permission(myPermission).detachFromRole(role_slug)
 
 - [X] Scopes (Multitenancy)
 - [X] UUID support
-- [ ] Events
+- [X] Events
 - [ ] More test coverage
 - [ ] Caching
 - [ ] Integration with AdonisJs Bouncer
@@ -1153,7 +1251,7 @@ await Acl.permission(myPermission).detachFromRole(role_slug)
 
 | AdonisJS Lucid version | Package version |
 |------------------------|-----------------|
-| v20.x                  | 0.8.x           |
+| v20.x                  | 0.9.x           |
 | v21.x                  | 1.x             |
 
 

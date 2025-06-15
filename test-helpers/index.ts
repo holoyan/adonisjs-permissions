@@ -1,31 +1,26 @@
 import { configDotenv } from 'dotenv'
 import { getActiveTest } from '@japa/runner'
 import { Emitter } from '@adonisjs/core/events'
-import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
+import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { Database } from '@adonisjs/lucid/database'
 import { Encryption } from '@adonisjs/core/encryption'
 import { AppFactory } from '@adonisjs/core/factories/app'
 import { LoggerFactory } from '@adonisjs/core/factories/logger'
 import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
-import { compose } from '@adonisjs/core/helpers'
 
 import { join } from 'node:path'
 import fs from 'node:fs'
-import { DateTime } from 'luxon'
-import {
-  AclModelInterface,
-  ModelIdType,
-  ModelPermissionInterface,
-  ModelRoleInterface,
-  MorphInterface,
-  MorphMapInterface,
-  PermissionInterface,
-  RoleInterface,
-} from '../src/types.js'
+import { AclModelInterface, MorphInterface, MorphMapInterface } from '../src/types.js'
 import { ApplicationService } from '@adonisjs/core/types'
 import { Chance } from 'chance'
 import { v4 as uuidv4 } from 'uuid'
+import { compose } from '@adonisjs/core/helpers'
 import { hasPermissions } from '../src/mixins/has_permissions.js'
+import { DateTime } from 'luxon'
+import { AclManager, Permission, Role, Scope } from '../index.js'
+import ModelManager from '../src/model_manager.js'
+import ModelPermission from '../src/models/model_permission.js'
+import ModelRole from '../src/models/model_role.js'
 
 export const encryption: Encryption = new EncryptionFactory().create()
 configDotenv()
@@ -37,7 +32,7 @@ await app.init()
 await app.boot()
 
 const logger = new LoggerFactory().create()
-const emitter = new Emitter(app)
+export const emitter = new Emitter(app)
 
 class MorphMap implements MorphInterface {
   _map: MorphMapInterface = {}
@@ -90,7 +85,76 @@ class MorphMap implements MorphInterface {
     throw new Error('Target not found')
   }
 }
+
+export class User extends compose(BaseModel, hasPermissions()) implements AclModelInterface {
+  @column({ isPrimary: true })
+  declare id: number
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+
+  getModelId() {
+    return String(this.id)
+  }
+}
+
+export class Product extends BaseModel implements AclModelInterface {
+  @column({ isPrimary: true })
+  declare id: number
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+
+  getModelId(): string {
+    return String(this.id)
+  }
+}
+
+export class Post extends BaseModel implements AclModelInterface {
+  @column({ isPrimary: true })
+  declare id: string
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+
+  getModelId(): string {
+    return String(this.id)
+  }
+}
+
 export const morphMap = MorphMap.create()
+morphMap.set('permissions', Permission)
+morphMap.set('roles', Role)
+morphMap.set('users', User)
+morphMap.set('posts', Post)
+morphMap.set('products', Product)
+
+const permissionTable = 'permissions'
+const roleTable = 'roles'
+const userTable = 'users'
+const modelRoleTable = 'model_roles'
+const modelPermissionTable = 'model_permissions'
+
+Permission.uuidSupport = wantsUUID()
+Permission.selfAssignPrimaryKey = wantsUUID()
+Permission.table = permissionTable
+
+Role.uuidSupport = wantsUUID()
+Role.selfAssignPrimaryKey = wantsUUID()
+Role.table = roleTable
+
+ModelRole.table = modelRoleTable
+ModelPermission.table = modelPermissionTable
+
 export function MorphMapDecorator(param: string) {
   return function <T extends { new (...args: any[]): {} }>(target: T) {
     target.prototype.__morphMapName = param
@@ -123,6 +187,7 @@ export async function createDatabase() {
           connection: {
             filename: join('../tmp', 'db.sqlite3'),
           },
+          debug: true,
         },
         pg: {
           client: 'pg',
@@ -133,6 +198,7 @@ export async function createDatabase() {
             user: process.env.PG_USER as string,
             password: process.env.PG_PASSWORD as string,
           },
+          debug: true,
         },
         mssql: {
           client: 'mssql',
@@ -146,6 +212,7 @@ export async function createDatabase() {
               enableArithAbort: true,
             },
           },
+          debug: true,
         },
         mysql: {
           client: 'mysql2',
@@ -156,6 +223,7 @@ export async function createDatabase() {
             user: process.env.MYSQL_USER as string,
             password: process.env.MYSQL_PASSWORD as string,
           },
+          debug: true,
         },
       },
     },
@@ -178,12 +246,12 @@ export async function createTables(db: Database) {
   }
 
   test.cleanup(async () => {
-    await db.connection().schema.dropTableIfExists('users')
-    await db.connection().schema.dropTableIfExists('model_roles')
-    await db.connection().schema.dropTableIfExists('model_permissions')
+    await db.connection().schema.dropTableIfExists(userTable)
+    await db.connection().schema.dropTableIfExists(modelRoleTable)
+    await db.connection().schema.dropTableIfExists(modelPermissionTable)
 
-    await db.connection().schema.dropTableIfExists('roles')
-    await db.connection().schema.dropTableIfExists('permissions')
+    await db.connection().schema.dropTableIfExists(roleTable)
+    await db.connection().schema.dropTableIfExists(permissionTable)
 
     await db.connection().schema.dropTableIfExists('products')
     await db.connection().schema.dropTableIfExists('posts')
@@ -196,7 +264,7 @@ export async function createTables(db: Database) {
     table.timestamp('updated_at').nullable()
   })
 
-  await db.connection().schema.createTableIfNotExists('permissions', (table) => {
+  await db.connection().schema.createTableIfNotExists(permissionTable, (table) => {
     PrimaryKey(table, 'id')
 
     table.string('slug')
@@ -216,7 +284,7 @@ export async function createTables(db: Database) {
     table.index(['entity_type', 'entity_id'])
   })
 
-  await db.connection().schema.createTableIfNotExists('roles', (table) => {
+  await db.connection().schema.createTableIfNotExists(roleTable, (table) => {
     PrimaryKey(table, 'id')
 
     table.string('slug')
@@ -236,7 +304,7 @@ export async function createTables(db: Database) {
     table.index(['entity_type', 'entity_id'])
   })
 
-  await db.connection().schema.createTableIfNotExists('model_roles', (table) => {
+  await db.connection().schema.createTableIfNotExists(modelRoleTable, (table) => {
     table.bigIncrements('id')
 
     table.string('model_type')
@@ -251,10 +319,13 @@ export async function createTables(db: Database) {
 
     table.index(['model_type', 'model_id'])
 
-    table.foreign('role_id').references('roles.id').onDelete('CASCADE')
+    table
+      .foreign('role_id')
+      .references(roleTable + '.id')
+      .onDelete('CASCADE')
   })
 
-  await db.connection().schema.createTableIfNotExists('model_permissions', (table) => {
+  await db.connection().schema.createTableIfNotExists(modelPermissionTable, (table) => {
     table.bigIncrements('id')
 
     table.string('model_type')
@@ -269,7 +340,10 @@ export async function createTables(db: Database) {
 
     table.index(['model_type', 'model_id'])
 
-    table.foreign('permission_id').references('permissions.id').onDelete('CASCADE')
+    table
+      .foreign('permission_id')
+      .references(permissionTable + '.id')
+      .onDelete('CASCADE')
   })
 
   await db.connection().schema.createTableIfNotExists('products', (table) => {
@@ -304,202 +378,13 @@ export function wantsUUID() {
   return process.env.UUID_SUPPORT === 'true'
 }
 
-export async function defineModels() {
-  @MorphMapDecorator('users')
-  class User extends compose(BaseModel, hasPermissions()) implements AclModelInterface {
-    @column({ isPrimary: true })
-    declare id: number
-
-    @column.dateTime({ autoCreate: true })
-    declare createdAt: DateTime
-
-    @column.dateTime({ autoCreate: true, autoUpdate: true })
-    declare updatedAt: DateTime | null
-
-    getModelId() {
-      return String(this.id)
-    }
-  }
-
-  @MorphMapDecorator('roles')
-  class Role extends BaseModel implements RoleInterface {
-    static get selfAssignPrimaryKey() {
-      return wantsUUID()
-    }
-
-    @beforeCreate()
-    static assignUuid(role: Role) {
-      if (wantsUUID()) {
-        role.id = uuidv4()
-      }
-    }
-
-    getModelId(): string {
-      return String(this.id)
-    }
-
-    @column({ isPrimary: true })
-    declare id: string
-
-    @column()
-    declare slug: string
-
-    @column()
-    declare title: string
-
-    @column()
-    declare entityType: string
-
-    @column()
-    declare entityId: string | null
-
-    @column()
-    declare scope: string
-
-    @column()
-    declare allowed: boolean
-
-    @column.dateTime({ autoCreate: true })
-    declare createdAt: DateTime
-
-    @column.dateTime({ autoCreate: true, autoUpdate: true })
-    declare updatedAt: DateTime
-  }
-
-  @MorphMapDecorator('permissions')
-  class Permission extends BaseModel implements PermissionInterface {
-    static get selfAssignPrimaryKey() {
-      return wantsUUID()
-    }
-
-    @beforeCreate()
-    static assignUuid(permission: Permission) {
-      if (wantsUUID()) {
-        permission.id = uuidv4()
-      }
-    }
-    getModelId(): string {
-      return String(this.id)
-    }
-
-    @column({ isPrimary: true })
-    declare id: ModelIdType
-
-    @column()
-    declare slug: string
-
-    @column()
-    declare title: string
-
-    @column()
-    declare entityType: string
-
-    @column()
-    declare entityId: string | null
-
-    @column()
-    declare allowed: boolean
-
-    @column()
-    declare scope: string
-
-    @column.dateTime({ autoCreate: true })
-    declare createdAt: DateTime
-
-    @column.dateTime({ autoCreate: true, autoUpdate: true })
-    declare updatedAt: DateTime
-  }
-
-  class ModelRole extends BaseModel implements ModelRoleInterface {
-    @column({ isPrimary: true })
-    declare id: number
-
-    @column()
-    declare roleId: ModelIdType
-
-    @column()
-    declare modelType: string
-
-    @column()
-    declare modelId: ModelIdType
-
-    @column.dateTime({ autoCreate: true })
-    declare createdAt: DateTime
-
-    @column.dateTime({ autoCreate: true, autoUpdate: true })
-    declare updatedAt: DateTime
-  }
-
-  class ModelPermission extends BaseModel implements ModelPermissionInterface {
-    @column({ isPrimary: true })
-    declare id: number
-
-    @column()
-    declare permissionId: ModelIdType
-
-    @column()
-    declare modelType: string
-
-    @column()
-    declare modelId: ModelIdType
-
-    @column.dateTime({ autoCreate: true })
-    declare createdAt: DateTime
-
-    @column.dateTime({ autoCreate: true, autoUpdate: true })
-    declare updatedAt: DateTime
-  }
-
-  @MorphMapDecorator('products')
-  class Product extends BaseModel implements AclModelInterface {
-    @column({ isPrimary: true })
-    declare id: number
-
-    @column.dateTime({ autoCreate: true })
-    declare createdAt: DateTime
-
-    @column.dateTime({ autoCreate: true, autoUpdate: true })
-    declare updatedAt: DateTime
-
-    getModelId(): string {
-      return String(this.id)
-    }
-  }
-
-  @MorphMapDecorator('posts')
-  class Post extends BaseModel implements AclModelInterface {
-    @column({ isPrimary: true })
-    declare id: string
-
-    @column.dateTime({ autoCreate: true })
-    declare createdAt: DateTime
-
-    @column.dateTime({ autoCreate: true, autoUpdate: true })
-    declare updatedAt: DateTime
-
-    getModelId(): string {
-      return String(this.id)
-    }
-  }
-
-  return {
-    User: User,
-    Product: Product,
-    Post: Post,
-    Role: Role,
-    Permission: Permission,
-    ModelRole: ModelRole,
-    ModelPermission: ModelPermission,
-  }
-}
-
 export async function seedDb(models: any) {
   await models.User.createMany(getUsers(100))
   if (models.Post) {
     await models.Post.createMany(getPosts(20))
   }
   if (models.Product) {
-    await models.Product.createMany(getProduts(20))
+    await models.Product.createMany(getProducts(20))
   }
 }
 
@@ -550,7 +435,7 @@ export function getPosts(count: number) {
 /**
  * Returns an array of posts for a given user, filled with random data
  */
-export function getProduts(count: number) {
+export function getProducts(count: number) {
   return [...new Array(count)].map(() => {
     return {}
   })
@@ -559,3 +444,14 @@ export function getProduts(count: number) {
 export function makeId() {
   return uuidv4()
 }
+
+const modelManager = new ModelManager()
+modelManager.setModel('permission', Permission)
+modelManager.setModel('role', Role)
+modelManager.setModel('modelPermission', ModelPermission)
+modelManager.setModel('modelRole', ModelRole)
+modelManager.setModel('scope', Scope)
+
+AclManager.setModelManager(modelManager)
+AclManager.setMorphMap(morphMap)
+AclManager.setEmitter(emitter)
