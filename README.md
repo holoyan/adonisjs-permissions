@@ -138,8 +138,8 @@ export default class Post extends BaseModel implements AclModelInterface {
 
 ## Release Notes
 
-Version: >= 'v0.8.21'
-* Added `sync` methods
+Version: >= 'v0.9.x'
+* Added [Events](#events) support
 
 ## Mixins
 
