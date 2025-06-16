@@ -49,7 +49,7 @@ Checkout other AdonisJS packages
     - [The Scope middleware](#the-scope-middleware) 
     - [Default Scope](#default-scope-tenant)
   - [Transactions](#transactions)
-  - [Events] (#events)
+  - [Events](#events)
 - [Cheat sheet](#cheat-sheet)
 - [Todo](#todo)
 - [Test](#test)
