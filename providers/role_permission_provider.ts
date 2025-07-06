@@ -5,12 +5,12 @@ import ModelPermission from '../src/models/model_permission.js'
 import ModelRole from '../src/models/model_role.js'
 import ModelManager from '../src/model_manager.js'
 import { AclManager } from '../src/acl.js'
-import MorphMap from '../src/morph_map.js'
 import { Scope } from '../src/scope.js'
+import { MorphMapManager, morphMap } from '@holoyan/morph-map-js'
 
 declare module '@adonisjs/core/types' {
   export interface ContainerBindings {
-    morphMap: MorphMap
+    morphMap: MorphMapManager
     modelManager: ModelManager
   }
 }
@@ -19,7 +19,7 @@ export default class RolePermissionProvider {
 
   register() {
     this.app.container.singleton('morphMap', async () => {
-      return new MorphMap()
+      return morphMap
     })
     this.app.container.singleton('modelManager', async () => {
       return new ModelManager()
@@ -55,8 +55,8 @@ export default class RolePermissionProvider {
     AclManager.setEmitter(emitter)
 
     const map = await this.app.container.make('morphMap')
-    map.set('permissions', Permission)
-    map.set('roles', Role)
+    // map.set('permissions', Permission)
+    // map.set('roles', Role)
     AclManager.setMorphMap(map)
   }
 }
