@@ -2,7 +2,9 @@ import { DateTime } from 'luxon'
 import { v4 as uuidv4 } from 'uuid'
 import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
 import { ModelIdType, PermissionInterface } from '../types.js'
+import { MorphMap } from '@holoyan/morph-map-js'
 
+@MorphMap('permissions')
 export default class Permission extends BaseModel implements PermissionInterface {
   static uuidSupport = false
 

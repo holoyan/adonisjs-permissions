@@ -12,6 +12,11 @@ Checkout other AdonisJS packages
 - It's simple, just star this repository, that is enough to keep me motivated to maintain this package.
 
 
+## Release Notes
+
+Version: >= v1.1.0
+* Added support for [Events](#events)
+
 ## Table of Contents
 
 <details><summary>Click to expand</summary><p>
@@ -105,7 +110,7 @@ Example.
 ```typescript
 
 import { BaseModel, column } from '@adonisjs/lucid/orm'
-import { MorphMap } from '@holoyan/adonisjs-permissions'
+import { MorphMap } from '@holoyan/morph-map-js'  // (NOTE upper case `MorphMap`)
 import { AclModelInterface } from '@holoyan/adonisjs-permissions/types'
 
 @MorphMap('users')
@@ -136,11 +141,6 @@ export default class Post extends BaseModel implements AclModelInterface {
 
 ```
 
-## Release Notes
-
-Version: >= v1.1.0
-* Added support for [Events](#events)
-
 ## Mixins
 
 If you want to be able to call `Acl` methods on a `User` model then consider using `hasPermissions` mixin
@@ -148,7 +148,7 @@ If you want to be able to call `Acl` methods on a `User` model then consider usi
 ```typescript
 
 import { BaseModel, column } from '@adonisjs/lucid/orm'
-import { MorphMap } from '@holoyan/adonisjs-permissions'
+import { MorphMap } from '@holoyan/morph-map-js'  // (NOTE upper case `MorphMap`)
 import { AclModelInterface } from '@holoyan/adonisjs-permissions/types'
 
 // import mixin

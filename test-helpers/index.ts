@@ -10,7 +10,7 @@ import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 
 import { join } from 'node:path'
 import fs from 'node:fs'
-import { AclModelInterface, MorphInterface, MorphMapInterface } from '../src/types.js'
+import { AclModelInterface } from '../src/types.js'
 import { ApplicationService } from '@adonisjs/core/types'
 import { Chance } from 'chance'
 import { v4 as uuidv4 } from 'uuid'
@@ -21,6 +21,7 @@ import { AclManager, Permission, Role, Scope } from '../index.js'
 import ModelManager from '../src/model_manager.js'
 import ModelPermission from '../src/models/model_permission.js'
 import ModelRole from '../src/models/model_role.js'
+import { morphMap } from '@holoyan/morph-map-js'
 
 export const encryption: Encryption = new EncryptionFactory().create()
 configDotenv()
@@ -33,58 +34,6 @@ await app.boot()
 
 const logger = new LoggerFactory().create()
 export const emitter = new Emitter(app)
-
-class MorphMap implements MorphInterface {
-  _map: MorphMapInterface = {}
-
-  static _instance?: MorphMap
-
-  static create() {
-    if (this._instance) {
-      return this._instance
-    }
-
-    return new MorphMap()
-  }
-
-  set(alias: string, target: any) {
-    this._map[alias] = target
-  }
-
-  get(alias: string) {
-    if (!(alias in this._map)) {
-      throw new Error('morph map not found for ' + alias)
-    }
-
-    return this._map[alias] || null
-  }
-
-  has(alias: string) {
-    return alias in this._map
-  }
-
-  hasTarget(target: any) {
-    const keys = Object.keys(this._map)
-    for (const key of keys) {
-      if (this._map[key] === target) {
-        return true
-      }
-    }
-
-    return false
-  }
-
-  getAlias(target: any) {
-    const keys = Object.keys(this._map)
-    for (const key of keys) {
-      if (target instanceof this._map[key] || target === this._map[key]) {
-        return key
-      }
-    }
-
-    throw new Error('Target not found')
-  }
-}
 
 export class User extends compose(BaseModel, hasPermissions()) implements AclModelInterface {
   @column({ isPrimary: true })
@@ -131,9 +80,8 @@ export class Post extends BaseModel implements AclModelInterface {
   }
 }
 
-export const morphMap = MorphMap.create()
-morphMap.set('permissions', Permission)
-morphMap.set('roles', Role)
+// morphMap.set('permissions', Permission)
+// morphMap.set('roles', Role)
 morphMap.set('users', User)
 morphMap.set('posts', Post)
 morphMap.set('products', Product)
