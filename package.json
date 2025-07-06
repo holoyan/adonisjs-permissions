@@ -1,7 +1,7 @@
 {
   "name": "@holoyan/adonisjs-permissions",
-  "description": "Adonisjs roles and permissions system",
-  "version": "0.9.0",
+  "description": "AdonisJs roles and permissions system",
+  "version": "0.10.0",
   "engines": {
     "node": ">=18.16.0"
   },
@@ -72,9 +72,9 @@
   "peerDependencies": {
     "@adonisjs/core": "^6.2.0",
     "@adonisjs/lucid": "^20.1.0",
+    "@types/uuid": "^10.0.0",
     "luxon": "^3.4.4",
-    "uuid": "^10.0.0",
-    "@types/uuid": "^10.0.0"
+    "uuid": "^10.0.0"
   },
   "publishConfig": {
     "access": "public",
@@ -98,5 +98,8 @@
   "eslintConfig": {
     "extends": "@adonisjs/eslint-config/package"
   },
-  "prettier": "@adonisjs/prettier-config"
+  "prettier": "@adonisjs/prettier-config",
+  "dependencies": {
+    "@holoyan/morph-map-js": "^0.1.1"
+  }
 }

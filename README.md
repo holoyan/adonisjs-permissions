@@ -11,6 +11,10 @@ Checkout other AdonisJS packages
 
 - It's simple, just star this repository, that is enough to keep me motivated to maintain this package.
 
+## Release Notes
+
+Version: >= v0.10.0
+* Added [Morph Map](https://github.com/holoyan/morph-map-js) as a dependency to handle polymorphic relations - fixed [#20](https://github.com/holoyan/adonisjs-permissions/issues/20)
 
 ## Table of Contents
 
@@ -83,7 +87,7 @@ To be able to use the full power of Acl, you should have a clear understanding o
 
 ## Installation
     
-    npm i @holoyan/adonisjs-permissions@0.9.0
+    npm i @holoyan/adonisjs-permissions@0.10.0
 
 
 Next publish config files
@@ -135,11 +139,6 @@ export default class Post extends BaseModel implements AclModelInterface {
 }
 
 ```
-
-## Release Notes
-
-Version: >= 'v0.9.x'
-* Added [Events](#events) support
 
 ## Mixins
 
@@ -1287,7 +1286,7 @@ await Acl.permission(myPermission).detachFromRole(role_slug)
 
 | AdonisJS Lucid version | Package version |
 |------------------------|-----------------|
-| v20.x                  | 0.9.x           |
+| v20.x                  | 0.10.x          |
 | v21.x                  | 1.x             |
 
 
