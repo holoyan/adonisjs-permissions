@@ -1,7 +1,7 @@
 {
   "name": "@holoyan/adonisjs-permissions",
   "description": "AdonisJs roles and permissions system",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "engines": {
     "node": ">=18.16.0"
   },
@@ -100,7 +100,6 @@
   },
   "prettier": "@adonisjs/prettier-config",
   "dependencies": {
-    "@holoyan/adonisjs-permissions": "file:.yalc/@holoyan/adonisjs-permissions",
     "@holoyan/morph-map-js": "^0.1.1"
   }
 }

@@ -14,8 +14,8 @@ Checkout other AdonisJS packages
 
 ## Release Notes
 
-Version: >= v1.1.0
-* Added support for [Events](#events)
+Version: >= v1.2.0
+* Added [Morph Map](https://github.com/holoyan/morph-map-js) as a dependency to handle polymorphic relations - fixed [#20](https://github.com/holoyan/adonisjs-permissions/issues/20)
 
 ## Table of Contents
 
@@ -1287,7 +1287,7 @@ await Acl.permission(myPermission).detachFromRole(role_slug)
 
 | AdonisJS Lucid version | Package version |
 |------------------------|-----------------|
-| v20.x                  | 0.9.x           |
+| v20.x                  | 0.10.x          |
 | v21.x                  | 1.x             |
 
 
