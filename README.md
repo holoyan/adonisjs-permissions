@@ -1272,7 +1272,7 @@ await Acl.permission(myPermission).detachFromRole(role_slug)
 
 - [X] Scopes (Multitenancy)
 - [X] UUID support
-- [ ] Events
+- [X] Events
 - [ ] More test coverage
 - [ ] Caching
 - [ ] Integration with AdonisJs Bouncer
