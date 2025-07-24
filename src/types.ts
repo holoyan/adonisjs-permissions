@@ -109,10 +109,6 @@ export interface ModelPermissionsQuery extends AclModelQuery {
   throughRoles: boolean
 }
 
-export interface MorphMapInterface {
-  [key: string]: any
-}
-
 export interface MorphInterface {
   set(alias: string, target: any): void
   get(alias: string): any

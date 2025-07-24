@@ -127,7 +127,7 @@ export default class PermissionHasModelRoles extends BaseAdapter {
 
       role = String(r.id)
     }
-    const entity = await destructTarget(this.map, target)
+    const entity = destructTarget(this.map, target)
     const attached = await this.permissionService.giveAll(
       this.map.getAlias(this.roleClassName),
       role,

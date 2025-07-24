@@ -1,8 +1,20 @@
 import type { NormalizeConstructor } from '@adonisjs/core/types/helpers'
-import { BaseModel } from '@adonisjs/lucid/orm'
+import { BaseModel, manyToMany, hasMany } from '@adonisjs/lucid/orm'
 
 import { AclModel, AclModelInterface, ModelIdType } from '../types.js'
 import { Acl } from '../acl.js'
+import type {
+  ManyToMany,
+  ManyToManySubQueryBuilderContract,
+  HasMany,
+  RelationSubQueryBuilderContract,
+} from '@adonisjs/lucid/types/relations'
+import Role from '../models/role.js'
+import { LucidModel, LucidRow, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
+import { ModelRole, Permission } from '../../index.js'
+import ModelPermission from '../models/model_permission.js'
+import { morphMap } from '@holoyan/morph-map-js'
+import { applyTargetRestriction, destructTarget } from '../services/helper.js'
 
 export function hasPermissions() {
   return <Model extends NormalizeConstructor<typeof BaseModel>>(superclass: Model) => {
@@ -342,5 +354,147 @@ export function hasPermissions() {
     }
 
     return HasPermissionsMixin
+  }
+}
+
+export function permissionQueryHelpers() {
+  return <Model extends NormalizeConstructor<typeof BaseModel>>(superclass: Model) => {
+    class QueryHelpersMixin extends superclass {
+      @manyToMany(() => Role, {
+        localKey: 'id',
+        relatedKey: 'id',
+        pivotForeignKey: 'model_id',
+        pivotRelatedForeignKey: 'role_id',
+        pivotTable: 'model_roles',
+        pivotColumns: ['model_type'],
+        pivotTimestamps: true,
+      })
+      declare _roles: ManyToMany<typeof Role>
+
+      _whereRoles<TargetClass extends Model>(
+        query: ModelQueryBuilderContract<LucidModel, LucidRow>,
+        targetClass: TargetClass,
+        ...roles: string[]
+      ) {
+        return query.whereHas(
+          // @ts-ignore
+          '_roles',
+          (rolesQuery: ManyToManySubQueryBuilderContract<typeof Role>) => {
+            rolesQuery.whereIn('slug', roles).where('model_type', morphMap.getAlias(targetClass))
+          }
+        )
+      }
+
+      @manyToMany(() => Permission, {
+        localKey: 'id',
+        relatedKey: 'id',
+        pivotForeignKey: 'model_id',
+        pivotRelatedForeignKey: 'permission_id',
+        pivotTable: 'model_permissions',
+        pivotColumns: ['model_type'],
+        pivotTimestamps: true,
+      })
+      declare _permissions: ManyToMany<typeof Permission>
+
+      _whereDirectPermissions<TargetClass extends Model>(
+        query: ModelQueryBuilderContract<LucidModel, LucidRow>,
+        targetClass: TargetClass,
+        permissions: string[],
+        target?: AclModel | Function
+      ) {
+        return query.whereHas(
+          // @ts-ignore
+          '_permissions',
+          (permissionsQuery: ManyToManySubQueryBuilderContract<typeof Permission>) => {
+            const entity = destructTarget(morphMap, target)
+
+            permissionsQuery
+              .whereIn('slug', permissions)
+              .where('model_type', morphMap.getAlias(targetClass))
+              .whereNotExists((subQuery) => {
+                subQuery
+                  .from(Permission.table + ' as p2')
+                  .leftJoin(ModelPermission.table + ' as mp2', 'mp2.permission_id', '=', 'p2.id')
+                  .where('p2.allowed', false)
+                  .whereRaw('p2.slug=' + Permission.table + '.slug')
+                  .whereRaw('p2.scope=' + Permission.table + '.scope')
+                  .whereColumn('mp2.model_id', targetClass.table + '.id')
+                  .where('mp2.model_type', morphMap.getAlias(targetClass))
+                  .select('p2.slug')
+                  .groupBy('p2.slug')
+              })
+
+            applyTargetRestriction(
+              Permission.table,
+              permissionsQuery,
+              entity.targetClass,
+              entity.targetId
+            )
+          }
+        )
+      }
+
+      @hasMany(() => ModelRole, {
+        foreignKey: 'modelId',
+      })
+      declare _model_roles: HasMany<typeof ModelRole>
+
+      _whereRolePermissions<TargetClass extends Model>(
+        query: ModelQueryBuilderContract<LucidModel, LucidRow>,
+        targetClass: TargetClass,
+        permissions: string[],
+        target?: AclModel | Function
+      ) {
+        return query.whereHas(
+          // @ts-ignore
+          '_model_roles',
+          (rolesQuery: RelationSubQueryBuilderContract<typeof ModelRole>) => {
+            const entity = destructTarget(morphMap, target)
+            rolesQuery
+              .where(ModelRole.table + '.model_type', morphMap.getAlias(targetClass))
+              .join(
+                ModelPermission.table + ' as mp',
+                'mp.model_id',
+                '=',
+                ModelRole.table + '.role_id'
+              )
+              .where('mp.model_type', 'roles')
+              .join(Permission.table + ' as p', 'p.id', '=', 'mp.permission_id')
+              .whereIn('p.slug', permissions)
+              .whereNotExists((subQuery) => {
+                subQuery
+                  .from(Permission.table + ' as p2')
+                  .leftJoin(ModelPermission.table + ' as mp2', 'mp2.permission_id', '=', 'p2.id')
+                  .where('p2.allowed', false)
+                  .whereRaw('p2.slug=' + 'p.slug')
+                  .whereRaw('p2.scope=' + 'p.scope')
+                  .whereColumn('mp2.model_id', targetClass.table + '.id')
+                  .where('mp2.model_type', morphMap.getAlias(targetClass))
+                  .select('p2.slug')
+                  .groupBy('p2.slug')
+              })
+
+            applyTargetRestriction('p', rolesQuery, entity.targetClass, entity.targetId)
+          }
+        )
+      }
+
+      _wherePermissions<TargetClass extends Model>(
+        query: ModelQueryBuilderContract<LucidModel, LucidRow>,
+        targetClass: TargetClass,
+        permissions: string[],
+        target?: AclModel | Function
+      ) {
+        query
+          .where((subQuery) => {
+            this._whereDirectPermissions(subQuery, targetClass, permissions, target)
+          })
+          .orWhere((subQuery) => {
+            this._whereRolePermissions(subQuery, targetClass, permissions, target)
+          })
+      }
+    }
+
+    return QueryHelpersMixin
   }
 }
