@@ -14,8 +14,8 @@ Checkout other AdonisJS packages
 
 ## Release Notes
 
-Version: >= v1.2.0
-* Added [Morph Map](https://github.com/holoyan/morph-map-js) as a dependency to handle polymorphic relations - fixed [#20](https://github.com/holoyan/adonisjs-permissions/issues/20)
+Version: >= v1.3.0
+* Added [query helpers](#permissionqueryhelpers-mixin) mixin. To make it easier to query users(models) based on their roles and permissions
 
 ## Table of Contents
 
