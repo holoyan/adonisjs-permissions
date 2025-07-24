@@ -2,7 +2,9 @@ import { DateTime } from 'luxon'
 import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
 import { ModelIdType, RoleInterface } from '../types.js'
 import { v4 as uuidv4 } from 'uuid'
+import { MorphMap } from '@holoyan/morph-map-js'
 
+@MorphMap('roles')
 export default class Role extends BaseModel implements RoleInterface {
   static uuidSupport = false
 

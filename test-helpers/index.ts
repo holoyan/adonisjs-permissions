@@ -3,26 +3,26 @@ import { getActiveTest } from '@japa/runner'
 import { Emitter } from '@adonisjs/core/events'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { Database } from '@adonisjs/lucid/database'
-import { Encryption } from '@adonisjs/core/encryption'
 import { AppFactory } from '@adonisjs/core/factories/app'
 import { LoggerFactory } from '@adonisjs/core/factories/logger'
-import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 
 import { join } from 'node:path'
 import fs from 'node:fs'
-import { AclModelInterface, MorphInterface, MorphMapInterface } from '../src/types.js'
+import { AclModel, AclModelInterface } from '../src/types.js'
 import { ApplicationService } from '@adonisjs/core/types'
 import { Chance } from 'chance'
 import { v4 as uuidv4 } from 'uuid'
 import { compose } from '@adonisjs/core/helpers'
-import { hasPermissions } from '../src/mixins/has_permissions.js'
+import { hasPermissions, permissionQueryHelpers } from '../src/mixins/has_permissions.js'
 import { DateTime } from 'luxon'
 import { AclManager, Permission, Role, Scope } from '../index.js'
 import ModelManager from '../src/model_manager.js'
 import ModelPermission from '../src/models/model_permission.js'
 import ModelRole from '../src/models/model_role.js'
+import { morphMap } from '@holoyan/morph-map-js'
 
-export const encryption: Encryption = new EncryptionFactory().create()
+import { scope } from '@adonisjs/lucid/orm'
+
 configDotenv()
 
 const BASE_URL = new URL('./tmp/', import.meta.url)
@@ -34,59 +34,10 @@ await app.boot()
 const logger = new LoggerFactory().create()
 export const emitter = new Emitter(app)
 
-class MorphMap implements MorphInterface {
-  _map: MorphMapInterface = {}
-
-  static _instance?: MorphMap
-
-  static create() {
-    if (this._instance) {
-      return this._instance
-    }
-
-    return new MorphMap()
-  }
-
-  set(alias: string, target: any) {
-    this._map[alias] = target
-  }
-
-  get(alias: string) {
-    if (!(alias in this._map)) {
-      throw new Error('morph map not found for ' + alias)
-    }
-
-    return this._map[alias] || null
-  }
-
-  has(alias: string) {
-    return alias in this._map
-  }
-
-  hasTarget(target: any) {
-    const keys = Object.keys(this._map)
-    for (const key of keys) {
-      if (this._map[key] === target) {
-        return true
-      }
-    }
-
-    return false
-  }
-
-  getAlias(target: any) {
-    const keys = Object.keys(this._map)
-    for (const key of keys) {
-      if (target instanceof this._map[key] || target === this._map[key]) {
-        return key
-      }
-    }
-
-    throw new Error('Target not found')
-  }
-}
-
-export class User extends compose(BaseModel, hasPermissions()) implements AclModelInterface {
+export class User
+  extends compose(BaseModel, hasPermissions(), permissionQueryHelpers())
+  implements AclModelInterface
+{
   @column({ isPrimary: true })
   declare id: number
 
@@ -99,7 +50,29 @@ export class User extends compose(BaseModel, hasPermissions()) implements AclMod
   getModelId() {
     return String(this.id)
   }
+
+  static whereRoles = scope((query, ...roles: string[]) => {
+    new User()._whereRoles(query, User, ...roles)
+  })
+
+  static whereDirectPermissions = scope(
+    (query, permissions: string[], target?: AclModel | Function) => {
+      new User()._whereDirectPermissions(query, User, permissions, target)
+    }
+  )
+
+  static whereRolePermissions = scope(
+    (query, permissions: string[], target?: AclModel | Function) => {
+      new User()._whereRolePermissions(query, User, permissions, target)
+    }
+  )
+
+  static wherePermissions = scope((query, permissions: string[], target?: AclModel | Function) => {
+    new User()._wherePermissions(query, User, permissions, target)
+  })
 }
+
+// await User.query().whereHas('_mode_roles', (query) => {})
 
 export class Product extends BaseModel implements AclModelInterface {
   @column({ isPrimary: true })
@@ -131,9 +104,8 @@ export class Post extends BaseModel implements AclModelInterface {
   }
 }
 
-export const morphMap = MorphMap.create()
-morphMap.set('permissions', Permission)
-morphMap.set('roles', Role)
+// morphMap.set('permissions', Permission)
+// morphMap.set('roles', Role)
 morphMap.set('users', User)
 morphMap.set('posts', Post)
 morphMap.set('products', Product)
@@ -366,6 +338,13 @@ export async function createTables(db: Database) {
     table.timestamp('updated_at', { useTz: true })
   })
 }
+
+if (process.env.DB_DEBUG === 'true') {
+  emitter.on('db:query', (query) => {
+    console.log(query.sql, query.bindings)
+  })
+}
+
 function PrimaryKey(table: any, columnName: string) {
   return wantsUUID() ? table.string(columnName).primary() : table.bigIncrements(columnName)
 }

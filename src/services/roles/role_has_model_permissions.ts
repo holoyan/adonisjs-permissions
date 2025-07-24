@@ -121,7 +121,7 @@ export class RoleHasModelPermissions extends BaseAdapter {
   }
 
   async hasPermission(permission: string, target?: AclModel | Function) {
-    const entity = await destructTarget(this.map, target)
+    const entity = destructTarget(this.map, target)
     const result = await this.permissionService.hasAny(
       this.map.getAlias(this.role),
       this.role.getModelId(),
@@ -140,7 +140,7 @@ export class RoleHasModelPermissions extends BaseAdapter {
    * @returns
    */
   async hasAllPermissions(permissions: string[], target?: AclModel | Function) {
-    const entity = await destructTarget(this.map, target)
+    const entity = destructTarget(this.map, target)
     const result = await this.permissionService.hasAll(
       this.map.getAlias(this.role),
       this.role.getModelId(),
@@ -159,7 +159,7 @@ export class RoleHasModelPermissions extends BaseAdapter {
    * @returns
    */
   async hasAnyPermissions(permissions: string[], target?: AclModel | Function) {
-    const entity = await destructTarget(this.map, target)
+    const entity = destructTarget(this.map, target)
     const result = await this.permissionService.hasAny(
       this.map.getAlias(this.role),
       this.role.getModelId(),
@@ -189,7 +189,7 @@ export class RoleHasModelPermissions extends BaseAdapter {
   }
 
   async forbidden(permission: string, target?: AclModel | Function) {
-    const entity = await destructTarget(this.map, target)
+    const entity = destructTarget(this.map, target)
     return this.permissionService.forbidden(
       this.map.getAlias(this.role),
       this.role.getModelId(),
@@ -231,7 +231,7 @@ export class RoleHasModelPermissions extends BaseAdapter {
    * @param target
    */
   async giveAll(permissions: string[], target?: AclModel | Function) {
-    const entity = await destructTarget(this.map, target)
+    const entity = destructTarget(this.map, target)
 
     const attached = await this.permissionService.giveAll(
       this.map.getAlias(this.role),
@@ -288,7 +288,7 @@ export class RoleHasModelPermissions extends BaseAdapter {
   }
 
   async revokeAll(permissions: string[], target?: AclModel | Function) {
-    const entity = await destructTarget(this.map, target)
+    const entity = destructTarget(this.map, target)
     const revoked = await this.permissionService.revokeAll(
       this.map.getAlias(this.role),
       this.role.getModelId(),
@@ -332,7 +332,7 @@ export class RoleHasModelPermissions extends BaseAdapter {
   }
 
   async forbid(permission: string, target?: AclModel | Function) {
-    const entity = await destructTarget(this.map, target)
+    const entity = destructTarget(this.map, target)
 
     return this.permissionService.forbid(
       this.map.getAlias(this.role),
@@ -344,7 +344,7 @@ export class RoleHasModelPermissions extends BaseAdapter {
   }
 
   async unforbid(permission: string, target?: AclModel | Function) {
-    const entity = await destructTarget(this.map, target)
+    const entity = destructTarget(this.map, target)
     return this.permissionService.unforbidAll(
       this.map.getAlias(this.role),
       this.role.getModelId(),

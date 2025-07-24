@@ -687,3 +687,43 @@ test.group('Has role | model - role interaction', (group) => {
     })
   })
 })
+
+test.group('Has role | fetch models by role', (group) => {
+  group.setup(async () => {})
+
+  group.teardown(async () => {})
+
+  group.each.setup(async () => {
+    // reset scope to default before the test
+    Acl.scope(new Scope(), true)
+  })
+  group.each.disableTimeout()
+  // group.tap((t) => {
+  //   t.pin()
+  // })
+
+  test('Fetch all user which has admin role', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const users = await User.query().limit(5)
+
+    // create role
+    await Role.create({
+      slug: 'admin',
+    })
+
+    for (const user of users) {
+      await Acl.model(user).assignAllRoles('admin')
+    }
+
+    const info = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereRoles('admin')
+      })
+      .count('* as total')
+
+    assert.equal(info[0].$extras.total, 5)
+  })
+})
