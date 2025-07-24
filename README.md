@@ -25,6 +25,8 @@ Version: >= v1.2.0
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Mixins](#mixins)
+  - [hasPermissions](#haspermissions-mixin)
+  - [permissionQueryHelpers](#permissionqueryhelpers-mixin)
 - [Support](#support)
   - [Database support](#database-support)
   - [UUID support](#uuid-support)
@@ -143,6 +145,8 @@ export default class Post extends BaseModel implements AclModelInterface {
 
 ## Mixins
 
+### hasPermissions mixin
+
 If you want to be able to call `Acl` methods on a `User` model then consider using `hasPermissions` mixin
 
 ```typescript
@@ -169,6 +173,61 @@ const user = await User.first()
 const roles = await user.roles() // get user roles
 await user.allow('edit') // give edit permission
 // and so on...
+
+```
+
+
+### permissionQueryHelpers mixin
+
+Sometimes you might want to get all users who have a specific permission, for that you can use `permissionQueryHelpers` mixin
+
+```typescript
+
+import { permissionQueryHelpers } from '@holoyan/adonisjs-permissions'
+
+
+@MorphMap('users')
+export default class User extends compose(BaseModel, permissionQueryHelpers()) implements AclModelInterface {
+  getModelId(): number {
+    return this.id
+  }
+  // other code goes here
+
+  // name your scopes whatever you want, make sure to call query helper methods inside the scope
+  static whereRoles = scope((query, ...roles: string[]) => {
+    // all users who have roles
+    new User()._whereRoles(query, User, ...roles)
+  })
+
+  static whereDirectPermissions = scope(
+    (query, permissions: string[], target?: AclModel | Function) => {
+      // all users who have direct assigned permissions
+      new User()._whereDirectPermissions(query, User, permissions, target)
+    }
+  )
+
+  static whereRolePermissions = scope(
+    (query, permissions: string[], target?: AclModel | Function) => {
+      // all users who have permissions assigned through the role
+      new User()._whereRolePermissions(query, User, permissions, target)
+    }
+  )
+
+  static wherePermissions = scope((query, permissions: string[], target?: AclModel | Function) => {
+    // all users who have permissions assigned directly or through the role
+    new User()._wherePermissions(query, User, permissions, target)
+  })
+}
+
+```
+
+And to get all users who have `edit` permission, you can do that like this
+
+```typescript
+
+const users = await User.query().withScopes((scopes) => {
+  scopes.wherePermissions(['edit'])
+})
 
 ```
 
@@ -1273,6 +1332,7 @@ await Acl.permission(myPermission).detachFromRole(role_slug)
 - [X] Scopes (Multitenancy)
 - [X] UUID support
 - [X] Events
+- [X] Query helpers
 - [ ] More test coverage
 - [ ] Caching
 - [ ] Integration with AdonisJs Bouncer
