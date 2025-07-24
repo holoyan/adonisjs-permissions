@@ -13,8 +13,8 @@ Checkout other AdonisJS packages
 
 ## Release Notes
 
-Version: >= v0.10.0
-* Added [Morph Map](https://github.com/holoyan/morph-map-js) as a dependency to handle polymorphic relations - fixed [#20](https://github.com/holoyan/adonisjs-permissions/issues/20)
+Version: >= v0.11.1
+* Added [query helpers](#haspermissions-mixin) mixin. To make it easier to query users(models) based on their roles and permissions
 
 ## Release Notes
 
@@ -94,7 +94,7 @@ To be able to use the full power of Acl, you should have a clear understanding o
 
 ## Installation
     
-    npm i @holoyan/adonisjs-permissions@0.10.0
+    npm i @holoyan/adonisjs-permissions@0.11.0
 
 
 Next publish config files
