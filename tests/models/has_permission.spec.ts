@@ -1484,6 +1484,39 @@ test.group('Permissions | model - permission direct resource interaction', (grou
     assert.lengthOf(roles, 1)
     assert.lengthOf(directPerms, 0)
   })
+
+  test('hasPermission v containsPermission', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+    const user = await User.first()
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    await Permission.create({
+      slug: 'delete',
+    })
+
+    await Acl.model(user).allowAll(['create', 'edit', 'delete'])
+
+    await Acl.model(user).forbid('create')
+
+    const hasPermission = await Acl.model(user).hasPermission('create')
+    const containsPermission = await Acl.model(user).containsPermission('create')
+
+    assert.isTrue(containsPermission)
+    assert.isFalse(hasPermission)
+  })
 })
 
 test.group('Permissions |  - permission interaction', (group) => {
@@ -1611,5 +1644,442 @@ test.group('hasPermissions mixin', (group) => {
     const has = await user.hasPermission('create')
 
     assert.isTrue(has)
+  })
+})
+
+test.group('Has permission | fetch models by permissions', (group) => {
+  group.setup(async () => {})
+
+  group.teardown(async () => {})
+
+  group.each.setup(async () => {
+    // reset scope to default before the test
+    Acl.scope(new Scope(), true)
+  })
+  group.each.disableTimeout()
+  // group.tap((t) => {
+  //   t.pin()
+  // })
+
+  test('Fetch all users which has create direct permission', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const usersWithCreatePermissions = await User.query().limit(5)
+
+    // create role
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    for (const user of usersWithCreatePermissions) {
+      await Acl.model(user).allow('create')
+    }
+
+    const usersWithEditPermissions = await User.query().offset(5).limit(5)
+
+    for (const user of usersWithEditPermissions) {
+      await Acl.model(user).allow('edit')
+    }
+
+    const info = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereDirectPermissions(['create'])
+      })
+      .count('* as total')
+
+    assert.equal(info[0].$extras.total, 5)
+  })
+
+  test('Fetch all users which has "Manager" role', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const users = await User.query().limit(5)
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    const role = await Role.create({
+      slug: 'Manager',
+    })
+
+    await Acl.role(role).allow('edit')
+
+    for (const user of users) {
+      await Acl.model(user).assignRole('Manager')
+    }
+
+    const usersWithManagerRole = await User.query().withScopes((scopes) => {
+      scopes.whereRoles('Manager')
+    })
+
+    assert.equal(usersWithManagerRole.length, users.length)
+  })
+
+  test('Fetch all users which has "create" direct permission, ignore forbidden', async ({
+    assert,
+  }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const usersWithCreatePermissions = await User.query().limit(5)
+
+    // create role
+    await Permission.create({
+      slug: 'create',
+    })
+
+    const crateUsers = []
+    for (const user of usersWithCreatePermissions) {
+      await Acl.model(user).allow('create')
+      crateUsers.push(user)
+    }
+
+    const userToForbid = crateUsers[0]
+    await Acl.model(userToForbid).forbid('create')
+
+    const info = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereDirectPermissions(['create'])
+      })
+      .count('* as total')
+    //
+    assert.equal(info[0].$extras.total, usersWithCreatePermissions.length - 1)
+  })
+
+  test('Fetch all users with roles and permission', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const usersWithRoleAndPermission = await User.query().limit(5)
+    const usersWithRoleAndPermissionIds = usersWithRoleAndPermission.map((u) => u.id)
+    const usersWithRoleOnly = await User.query()
+      .whereNotIn('id', usersWithRoleAndPermissionIds)
+      .limit(5)
+    const usersWithRoleOnlyIds = usersWithRoleOnly.map((u) => u.id)
+    const usersWithPermissionOnly = await User.query()
+      .whereNotIn('id', [...usersWithRoleAndPermissionIds, ...usersWithRoleOnlyIds])
+      .limit(5)
+    const usersWithPermissionOnlyIds = usersWithPermissionOnly.map((u) => u.id)
+
+    // create role
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    const role = await Role.create({
+      slug: 'Manager',
+    })
+
+    await Acl.role(role).allow('edit')
+
+    for (const user of usersWithRoleAndPermission) {
+      await Acl.model(user).allow('create')
+      await Acl.model(user).assignRole('Manager')
+    }
+
+    for (const user of usersWithRoleOnly) {
+      await Acl.model(user).assignRole('Manager')
+    }
+
+    for (const user of usersWithPermissionOnly) {
+      await Acl.model(user).allow('create')
+    }
+
+    // for (const user of users) {
+    const directPerms = await User.query().withScopes((scopes) => {
+      scopes.whereDirectPermissions(['create'])
+    })
+    const directPermUserIds = directPerms.map((u) => u.id)
+    assert.equal(
+      directPermUserIds.length,
+      usersWithPermissionOnlyIds.length + usersWithRoleAndPermissionIds.length
+    )
+
+    const usersWithRoles = await User.query().withScopes((scopes) => {
+      scopes.whereRoles('Manager')
+    })
+    const usersWithRolesIds = usersWithRoles.map((u) => u.id)
+    assert.equal(
+      usersWithRolesIds.length,
+      usersWithRoleAndPermissionIds.length + usersWithRoleOnlyIds.length
+    )
+  })
+
+  test('Fetch all users which has "create" permission on specific resource', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const user = await User.first()
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+    // create role
+    await Permission.create({
+      slug: 'create',
+    })
+
+    const post = await Post.first()
+    if (!post) {
+      throw new Error('Post not found')
+    }
+
+    await Acl.model(user).allow('create', post)
+
+    const usersWithPostInstancePermission = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereDirectPermissions(['create'], post)
+      })
+      .count('* as total')
+
+    const usersWithPostClassPermission = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereDirectPermissions(['create'], Post)
+      })
+      .count('* as total')
+
+    const usersWithGlobalPermission = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereDirectPermissions(['create'])
+      })
+      .count('* as total')
+
+    assert.equal(usersWithPostInstancePermission[0].$extras.total, 1)
+    assert.equal(usersWithPostClassPermission[0].$extras.total, 0)
+    assert.equal(usersWithGlobalPermission[0].$extras.total, 0)
+  })
+
+  test('Fetch all users which has "create" permission on class level', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const user = await User.first()
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+    // create role
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Acl.model(user).allow('create', Post)
+
+    const post = await Post.first()
+    if (!post) {
+      throw new Error('Post not found')
+    }
+
+    const usersWithPostInstancePermission = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereDirectPermissions(['create'], post)
+      })
+      .count('* as total')
+
+    const usersWithPostClassPermission = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereDirectPermissions(['create'], Post)
+      })
+      .count('* as total')
+
+    const usersWithGlobalPermission = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereDirectPermissions(['create'])
+      })
+      .count('* as total')
+
+    assert.equal(usersWithPostInstancePermission[0].$extras.total, 1)
+    assert.equal(usersWithPostClassPermission[0].$extras.total, 1)
+    assert.equal(usersWithGlobalPermission[0].$extras.total, 0)
+  })
+
+  test('Fetch all users which has "create" permission on global level', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const user = await User.first()
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+    // create role
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Acl.model(user).allow('create')
+
+    const post = await Post.first()
+    if (!post) {
+      throw new Error('Post not found')
+    }
+
+    const usersWithPostInstancePermission = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereDirectPermissions(['create'], post)
+      })
+      .count('* as total')
+
+    const usersWithPostClassPermission = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereDirectPermissions(['create'], Post)
+      })
+      .count('* as total')
+
+    const usersWithGlobalPermission = await User.query()
+      .withScopes((scopes) => {
+        scopes.whereDirectPermissions(['create'])
+      })
+      .count('* as total')
+
+    assert.equal(usersWithPostInstancePermission[0].$extras.total, 1)
+    assert.equal(usersWithPostClassPermission[0].$extras.total, 1)
+    assert.equal(usersWithGlobalPermission[0].$extras.total, 1)
+  })
+
+  test('Fetch all users which has "create" permission through role', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const user = await User.first()
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+    // create role
+    await Permission.create({
+      slug: 'create',
+    })
+
+    const role = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    const user2 = await User.query().where('id', '<>', user.id).first()
+    if (!user2) {
+      throw new Error('User2 not found')
+    }
+
+    await Acl.role(role).allow('create')
+
+    await Acl.model(user).assign('admin')
+
+    await Acl.model(user2).allow('create')
+
+    const userWithPermissionThroughRole = await User.query().withScopes((scopes) => {
+      scopes.whereRolePermissions(['create'])
+    })
+
+    assert.equal(userWithPermissionThroughRole[0].id, user.id)
+  })
+
+  test('Fetch all users which has "create" permission through role on resource', async ({
+    assert,
+  }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const user = await User.first()
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+    // create role
+    await Permission.create({
+      slug: 'create',
+    })
+
+    const role = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    const post = await Post.first()
+
+    if (!post) {
+      throw new Error('Post not found')
+    }
+
+    const user2 = await User.query().where('id', '<>', user.id).first()
+    if (!user2) {
+      throw new Error('User2 not found')
+    }
+
+    await Acl.role(role).allow('create', post)
+
+    await Acl.model(user).assign('admin')
+
+    await Acl.model(user2).allow('create')
+
+    const userWithPermissionThroughRoleOnResource = await User.query().withScopes((scopes) => {
+      scopes.whereRolePermissions(['create'], post)
+    })
+
+    const userWithPermissionThroughRole = await User.query().withScopes((scopes) => {
+      scopes.whereRolePermissions(['create'])
+    })
+
+    assert.equal(userWithPermissionThroughRoleOnResource[0].id, user.id)
+    assert.equal(userWithPermissionThroughRole.length, 0)
+  })
+
+  test('Fetch all users which has permissions through role or direct', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const user = await User.first()
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+    // create role
+    await Permission.create({
+      slug: 'create',
+    })
+
+    await Permission.create({
+      slug: 'edit',
+    })
+
+    const role = await Acl.role().create({
+      slug: 'admin',
+    })
+
+    const user2 = await User.query().where('id', '<>', user.id).first()
+    if (!user2) {
+      throw new Error('User2 not found')
+    }
+
+    await Acl.role(role).allow('create')
+
+    await Acl.model(user).assign('admin')
+
+    await Acl.model(user2).allowAll(['create', 'edit'])
+
+    const userWithPermissionThroughRoleAndDirect = await User.query().withScopes((scopes) => {
+      scopes.wherePermissions(['create', 'edit'])
+    })
+
+    assert.equal(userWithPermissionThroughRoleAndDirect.length, 2)
   })
 })

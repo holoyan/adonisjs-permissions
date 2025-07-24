@@ -1,5 +1,17 @@
-import { AclModel, AclModelInterface, MorphInterface } from '../types.js'
+import {
+  AclModel,
+  AclModelInterface,
+  ModelIdType,
+  MorphInterface,
+  PermissionInterface,
+} from '../types.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
+import type {
+  ManyToManySubQueryBuilderContract,
+  RelationSubQueryBuilderContract,
+} from '@adonisjs/lucid/types/relations'
+import { ModelRole, Permission } from '../../index.js'
+import { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 
 export function formatList(models: (string | number | any)[]) {
   let slugs: string[] = []
@@ -53,7 +65,7 @@ export function formatStringNumbers(models: string | number | any) {
   return { slugs, ids }
 }
 
-export async function destructTarget(map: MorphInterface, target?: AclModel | Function) {
+export function destructTarget(map: MorphInterface, target?: AclModel | Function) {
   if (!target) {
     return {
       targetClass: null,
@@ -69,4 +81,29 @@ export async function destructTarget(map: MorphInterface, target?: AclModel | Fu
 
 function isAclModelInterface(obj: any): obj is AclModelInterface {
   return typeof obj === 'object' && typeof obj.getModelId === 'function'
+}
+
+export function applyTargetRestriction(
+  table: string,
+  q:
+    | ManyToManySubQueryBuilderContract<typeof Permission>
+    | ModelQueryBuilderContract<typeof Permission, PermissionInterface>
+    | RelationSubQueryBuilderContract<typeof ModelRole>,
+  entityType: string | null,
+  entityId: ModelIdType | null
+) {
+  if (entityType) {
+    q.where((query) => {
+      query.where(table + '.entity_type', entityType).orWhere(table + '.entity_type', '*')
+    })
+    if (entityId) {
+      q.where((query) => {
+        query.where(table + '.entity_id', entityId).orWhereNull(table + '.entity_id')
+      })
+    } else {
+      q.whereNull(table + '.entity_id')
+    }
+  } else {
+    q.where(table + '.entity_type', '*').whereNull(table + '.entity_id')
+  }
 }

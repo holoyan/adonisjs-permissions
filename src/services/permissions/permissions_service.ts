@@ -13,6 +13,7 @@ import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { Scope } from '../../scope.js'
 import Permission from '../../models/permission.js'
+import { applyTargetRestriction } from '../helper.js'
 
 export default class PermissionsService extends BaseService {
   private readonly permissionTable
@@ -302,6 +303,7 @@ export default class PermissionsService extends BaseService {
       directPermissions: this.map.getAlias(this.roleClassName) === modelType,
       permissionSlugs: slugs,
       permissionIds: ids,
+      includeForbiddings: true,
     }).distinct(this.permissionTable + '.id')
 
     const r = await q.select(this.permissionTable + '.id')
@@ -322,6 +324,7 @@ export default class PermissionsService extends BaseService {
       directPermissions: true,
       permissionSlugs: slugs,
       permissionIds: ids,
+      includeForbiddings: true,
     }).distinct(this.permissionTable + '.id')
 
     const r = await q.select(this.permissionTable + '.id')
@@ -341,6 +344,7 @@ export default class PermissionsService extends BaseService {
       directPermissions: true,
       permissionSlugs: slugs,
       permissionIds: ids,
+      includeForbiddings: true,
     }).distinct(this.permissionTable + '.id')
 
     const r = await q.select(this.permissionTable + '.id')
@@ -560,14 +564,18 @@ export default class PermissionsService extends BaseService {
 
     if (modelId && modelType) {
       if (directPermissions) {
+        // check direct-assigned permissions
         q.where('mp.model_type', modelType).where('mp.model_id', modelId)
       } else {
+        //
         q.leftJoin(this.modelRoleTable + ' as mr', (joinQuery) => {
           joinQuery.onVal('mr.model_type', modelType).onVal('mr.model_id', modelId)
         })
         if (conditions.throughRoles) {
+          // only through roles
           q.whereRaw('mr.role_id=mp.model_id').where('mp.model_type', 'roles')
         } else {
+          // check direct-assigned permissions and through roles
           q.where((subQuery) => {
             subQuery
               .where((query) => {
@@ -575,9 +583,6 @@ export default class PermissionsService extends BaseService {
               })
               .orWhere((query) => {
                 query.whereRaw('mr.role_id=mp.model_id').where('mp.model_type', 'roles')
-                // query
-                //   .whereRaw('CAST(mr.role_id AS CHAR)=mp.model_id')
-                //   .where('mp.model_type', 'roles')
               })
           })
         }
@@ -680,20 +685,7 @@ export default class PermissionsService extends BaseService {
     entityType: string | null,
     entityId: ModelIdType | null
   ) {
-    if (entityType) {
-      q.where((query) => {
-        query.where(table + '.entity_type', entityType).orWhere(table + '.entity_type', '*')
-      })
-      if (entityId) {
-        q.where((query) => {
-          query.where(table + '.entity_id', entityId).orWhereNull(table + '.entity_id')
-        })
-      } else {
-        q.whereNull(table + '.entity_id')
-      }
-    } else {
-      q.where(table + '.entity_type', '*').whereNull(table + '.entity_id')
-    }
+    applyTargetRestriction(table, q, entityType, entityId)
   }
 
   private applyScopes(q: ModelQueryBuilderContract<typeof BaseModel, PermissionInterface>) {
