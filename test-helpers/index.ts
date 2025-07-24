@@ -52,7 +52,7 @@ export class User
   }
 
   static whereRoles = scope((query, ...roles: string[]) => {
-    new User()._whereRoles(query, morphMap.getAlias(User), ...roles)
+    new User()._whereRoles(query, User, ...roles)
   })
 
   static whereDirectPermissions = scope(

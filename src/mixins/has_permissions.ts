@@ -371,16 +371,16 @@ export function permissionQueryHelpers() {
       })
       declare _roles: ManyToMany<typeof Role>
 
-      _whereRoles(
+      _whereRoles<TargetClass extends Model>(
         query: ModelQueryBuilderContract<LucidModel, LucidRow>,
-        type: string,
+        targetClass: TargetClass,
         ...roles: string[]
       ) {
         return query.whereHas(
           // @ts-ignore
           '_roles',
           (rolesQuery: ManyToManySubQueryBuilderContract<typeof Role>) => {
-            rolesQuery.whereIn('slug', roles).where('model_type', type)
+            rolesQuery.whereIn('slug', roles).where('model_type', morphMap.getAlias(targetClass))
           }
         )
       }
