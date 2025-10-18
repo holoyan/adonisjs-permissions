@@ -107,3 +107,18 @@ export function applyTargetRestriction(
     q.where(table + '.entity_type', '*').whereNull(table + '.entity_id')
   }
 }
+
+/**
+ * Apply target restriction for partial permission checks
+ * This function doesn't check entity_id when only entityType is provided
+ */
+export function applyPartialTargetRestriction(
+  table: string,
+  q:
+    | ManyToManySubQueryBuilderContract<typeof Permission>
+    | ModelQueryBuilderContract<typeof Permission, PermissionInterface>
+    | RelationSubQueryBuilderContract<typeof ModelRole>,
+  entityType: string
+) {
+  q.where(table + '.entity_type', entityType).whereNotNull(table + '.entity_id')
+}

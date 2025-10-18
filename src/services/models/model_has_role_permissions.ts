@@ -374,6 +374,39 @@ export class ModelHasRolePermissions extends BaseAdapter {
   }
 
   /**
+   * Check if model has permission on any instance of a model class
+   * @param permission
+   * @param targetClass
+   */
+  async hasPartialPermission(permission: string, targetClass: Function) {
+    return this.hasAnyPartialPermission([permission], targetClass)
+  }
+
+  /**
+   * Check if model has any of the permissions on any instance of a model class
+   * @param permissions
+   * @param targetClass
+   */
+  async hasAnyPartialPermission(permissions: string[], targetClass: Function) {
+    const entityType = this.map.getAlias(targetClass)
+    return await this.permissionService.hasAnyPartial(
+      this.map.getAlias(this.model),
+      this.model.getModelId(),
+      permissions,
+      entityType
+    )
+  }
+
+  /**
+   * Check if a model has permission on any instance of a model class
+   * @param permission
+   * @param targetClass
+   */
+  canPartially(permission: string, targetClass: Function) {
+    return this.hasPartialPermission(permission, targetClass)
+  }
+
+  /**
    * calls assignDirectAllPermissions()
    * @param permission
    * @param target
