@@ -18,8 +18,8 @@ Version: >= v0.11.1
 
 ## Release Notes
 
-Version: >= v1.2.0
-* Added [Morph Map](https://github.com/holoyan/morph-map-js) as a dependency to handle polymorphic relations - fixed [#20](https://github.com/holoyan/adonisjs-permissions/issues/20)
+Version: >= v1.3.0
+* Added [query helpers](#permissionqueryhelpers-mixin) mixin. To make it easier to query users(models) based on their roles and permissions
 
 ## Table of Contents
 
@@ -506,6 +506,21 @@ await Acl.role(role).hasPermission('update')
 await Acl.role(role).hasAllPermissions(['update', 'read'])
 await Acl.role(role).hasAnyPermission(['update', 'read'])
 
+```
+
+### Checking partial permissions
+
+Sometimes you might want to check if a user has a specific permission on any instance of a model class, rather than checking for global permissions or permissions on a specific instance. For this purpose, you can use the `canPartially` method:
+
+```typescript
+
+const postWithId = await Post.find(id)
+await Acl.model(user).allow('create', postWithId) // allow 'create' on post instance
+
+// This is useful when you want to know if a user has permission on at least one instance
+Acl.model(user).can('create') // will return false
+Acl.model(user).can('create', Post) // will return false
+Acl.model(user).canPartially('create', Post) // will return true because user has a 'create' permission on postWithId instance
 ```
 
 ### Middleware

@@ -241,6 +241,15 @@ export function hasPermissions() {
       }
 
       /**
+       * Check if a model has permission on any instance of a model class
+       * @param permission
+       * @param targetClass
+       */
+      canPartially(permission: string, targetClass: Function) {
+        return Acl.model(this as unknown as AclModel).canPartially(permission, targetClass)
+      }
+
+      /**
        * Check if model has any permission
        * @param permission
        * @param target

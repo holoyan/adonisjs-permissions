@@ -13,7 +13,7 @@ import BaseService from '../base_service.js'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { Scope } from '../../scope.js'
 import Permission from '../../models/permission.js'
-import { applyTargetRestriction } from '../helper.js'
+import { applyTargetRestriction, applyPartialTargetRestriction } from '../helper.js'
 
 export default class PermissionsService extends BaseService {
   private readonly permissionTable
@@ -266,6 +266,37 @@ export default class PermissionsService extends BaseService {
     })
 
     this.applyTargetRestriction(this.permissionTable, q, entityType, entityId)
+
+    const r = await q.distinct(this.permissionTable + '.id').select(this.permissionTable + '.id')
+
+    return r.length > 0
+  }
+
+  /**
+   * has any of permissions on any instance of a model class
+   */
+  async hasAnyPartial(
+    modelType: string,
+    modelId: ModelIdType,
+    permissions: string[],
+    entityType: string
+  ) {
+    const { slugs, ids } = this.formatList(permissions)
+
+    const q = this.modelPermissionQueryWithForbiddenCheck({
+      modelType,
+      modelId,
+      directPermissions: this.map.getAlias(this.roleClassName) === modelType,
+      permissionSlugs: slugs,
+      permissionIds: ids,
+      entity: {
+        type: entityType,
+        id: null,
+      },
+    })
+
+    // We use applyPartialTargetRestriction which doesn't check entity_id when only entityType is provided
+    this.applyPartialTargetRestriction(this.permissionTable, q, entityType)
 
     const r = await q.distinct(this.permissionTable + '.id').select(this.permissionTable + '.id')
 
@@ -686,6 +717,14 @@ export default class PermissionsService extends BaseService {
     entityId: ModelIdType | null
   ) {
     applyTargetRestriction(table, q, entityType, entityId)
+  }
+
+  private applyPartialTargetRestriction(
+    table: string,
+    q: ModelQueryBuilderContract<typeof Permission, PermissionInterface>,
+    entityType: string
+  ) {
+    applyPartialTargetRestriction(table, q, entityType)
   }
 
   private applyScopes(q: ModelQueryBuilderContract<typeof BaseModel, PermissionInterface>) {
