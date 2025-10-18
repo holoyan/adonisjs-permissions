@@ -14,12 +14,7 @@ Checkout other AdonisJS packages
 ## Release Notes
 
 Version: >= v0.11.1
-* Added [query helpers](#haspermissions-mixin) mixin. To make it easier to query users(models) based on their roles and permissions
-
-## Release Notes
-
-Version: >= v1.3.0
-* Added [query helpers](#permissionqueryhelpers-mixin) mixin. To make it easier to query users(models) based on their roles and permissions
+* Added [canPartially](#checking-partial-permissions) method
 
 ## Table of Contents
 
