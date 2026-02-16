@@ -1364,6 +1364,8 @@ await Acl.permission(myPermission).detachFromRole(role_slug)
 |------------------------|-----------------|
 | v20.x                  | 0.10.x          |
 | v21.x                  | 1.x             |
+| v22.x                  | 2.x             |
+
 
 
 
