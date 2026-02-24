@@ -4,9 +4,7 @@ import { BaseModel, manyToMany, hasMany } from '@adonisjs/lucid/orm'
 import { AclModel, AclModelInterface, ModelIdType } from '../types.js'
 import { Acl } from '../acl.js'
 import type {
-  ManyToMany,
   ManyToManySubQueryBuilderContract,
-  HasMany,
   RelationSubQueryBuilderContract,
 } from '@adonisjs/lucid/types/relations'
 import Role from '../models/role.js'
@@ -378,7 +376,7 @@ export function permissionQueryHelpers() {
         pivotColumns: ['model_type'],
         pivotTimestamps: true,
       })
-      declare _roles: ManyToMany<typeof Role>
+      declare _roles: undefined
 
       _whereRoles<TargetClass extends Model>(
         query: ModelQueryBuilderContract<LucidModel, LucidRow>,
@@ -403,7 +401,7 @@ export function permissionQueryHelpers() {
         pivotColumns: ['model_type'],
         pivotTimestamps: true,
       })
-      declare _permissions: ManyToMany<typeof Permission>
+      declare _permissions: undefined
 
       _whereDirectPermissions<TargetClass extends Model>(
         query: ModelQueryBuilderContract<LucidModel, LucidRow>,
@@ -446,7 +444,7 @@ export function permissionQueryHelpers() {
       @hasMany(() => ModelRole, {
         foreignKey: 'modelId',
       })
-      declare _model_roles: HasMany<typeof ModelRole>
+      declare _model_roles: undefined
 
       _whereRolePermissions<TargetClass extends Model>(
         query: ModelQueryBuilderContract<LucidModel, LucidRow>,
