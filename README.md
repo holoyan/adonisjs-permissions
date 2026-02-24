@@ -14,8 +14,8 @@ Checkout other AdonisJS packages
 
 ## Release Notes
 
-Version: >= v1.3.1
-* Added [canPartially](#checking-partial-permissions) method
+Version: >= v2.0.0-beta.2
+* Fixed `permissionQueryHelpers()` mixin leaking internal relations (`_roles`, `_permissions`, `_model_roles`) into the public `related()` API, which caused incorrect IDE type inference on user-defined relations
 
 ## Table of Contents
 
