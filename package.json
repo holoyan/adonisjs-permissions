@@ -78,12 +78,12 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "latest"
+    "tag": "v1-latest"
   },
   "np": {
     "message": "chore(release): %s",
-    "tag": "latest",
-    "branch": "main",
+    "tag": "v1-latest",
+    "branch": "v1.3.x",
     "anyBranch": false
   },
   "c8": {
