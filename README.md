@@ -89,8 +89,14 @@ await user.allow('delete', post)
 To be able to use the full power of Acl, you should have a clear understanding of how it is structured and how it works. That's why the documentation will be divided into two parts: [Basic usage](#basic-usage) and [Advanced usage](#digging-deeper). For most applications, Basic Usage will be enough.
 
 ## Installation
-    
+
+For AdonisJS v7 (latest):
+
     npm i @holoyan/adonisjs-permissions
+
+For AdonisJS v6:
+
+    npm i @holoyan/adonisjs-permissions@v1-latest
 
 
 Next publish config files
