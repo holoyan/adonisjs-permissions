@@ -1,4 +1,9 @@
-# Role permissions system for AdonisJS V6+
+# Role permissions system for AdonisJS
+
+| Package version | AdonisJS version |
+|----------------|-----------------|
+| v1.x           | v6              |
+| v2.x           | v7              |
 
 Checkout other AdonisJS packages
 
@@ -13,6 +18,9 @@ Checkout other AdonisJS packages
 
 
 ## Release Notes
+
+Version: v2.0.0
+* Added support for AdonisJS v7
 
 Version: >= v1.3.2
 * Fixed `permissionQueryHelpers()` mixin leaking internal relations (`_roles`, `_permissions`, `_model_roles`) into the public `related()` API, which caused incorrect IDE type inference on user-defined relations
