@@ -84,7 +84,7 @@
   "np": {
     "message": "chore(release): %s",
     "tag": "latest",
-    "branch": "main",
+    "branch": "master",
     "anyBranch": false
   },
   "c8": {
