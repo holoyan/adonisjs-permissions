@@ -7,6 +7,7 @@
 
 Checkout other AdonisJS packages
 
+- [AdonisJs Lucid Polymorphic Relations](https://github.com/holoyan/adonisjs-polymorphic)
 - [AdonisJs activity log](https://github.com/holoyan/adonisjs-activitylog)
 
 [//]: # ([![test]&#40;https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml/badge.svg&#41;]&#40;https://github.com/holoyan/adonisjs-permissions/actions/workflows/test.yml&#41;)
