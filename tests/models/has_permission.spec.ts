@@ -1589,6 +1589,129 @@ test.group('Permissions |  - permission interaction', (group) => {
   })
 })
 
+test.group('Permissions | role - forbidden check', (group) => {
+  group.setup(async () => {})
+
+  group.teardown(async () => {})
+
+  group.each.setup(async () => {
+    Acl.scope(new Scope(), true)
+  })
+  group.each.disableTimeout()
+
+  test('forbidden returns boolean, not Promise (regression: missing await on hasAny)', async ({
+    assert,
+  }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+
+    await Permission.create({ slug: 'delete' })
+
+    const role = await Acl.role().create({ slug: 'admin' })
+    await Acl.role(role).allow('delete')
+
+    const result = await Acl.role(role).forbidden('delete')
+    assert.equal(typeof result, 'boolean')
+  })
+
+  test('forbidden returns false when no forbid row exists', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+
+    await Permission.create({ slug: 'delete' })
+
+    const role = await Acl.role().create({ slug: 'admin' })
+
+    const result = await Acl.role(role).forbidden('delete')
+    assert.isFalse(result)
+  })
+
+  test('forbidden returns false when permission is only allowed', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+
+    await Permission.create({ slug: 'delete' })
+
+    const role = await Acl.role().create({ slug: 'admin' })
+    await Acl.role(role).allow('delete')
+
+    const result = await Acl.role(role).forbidden('delete')
+    assert.isFalse(result)
+  })
+
+  test('forbidden returns true after global forbid on role', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+
+    await Permission.create({ slug: 'delete' })
+
+    const role = await Acl.role().create({ slug: 'admin' })
+    await Acl.role(role).allow('delete')
+    await Acl.role(role).forbid('delete')
+
+    const result = await Acl.role(role).forbidden('delete')
+    assert.isTrue(result)
+  })
+
+  test('forbidden returns true after resource-scoped forbid on role', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const post = await Post.first()
+    if (!post) throw new Error('Post not found')
+
+    await Permission.create({ slug: 'delete' })
+
+    const role = await Acl.role().create({ slug: 'admin' })
+    await Acl.role(role).allow('delete', post)
+    await Acl.role(role).forbid('delete', post)
+
+    const result = await Acl.role(role).forbidden('delete', post)
+    assert.isTrue(result)
+  })
+
+  test('forbidden is scoped by entity: resource forbid does not leak to global', async ({
+    assert,
+  }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User, Post, Product })
+
+    const post = await Post.first()
+    if (!post) throw new Error('Post not found')
+
+    await Permission.create({ slug: 'delete' })
+
+    const role = await Acl.role().create({ slug: 'admin' })
+    await Acl.role(role).allow('delete', post)
+    await Acl.role(role).forbid('delete', post)
+
+    const globalForbidden = await Acl.role(role).forbidden('delete')
+    assert.isFalse(globalForbidden)
+  })
+
+  test('forbidden returns false after unforbid clears the forbid row', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+    await seedDb({ User })
+
+    await Permission.create({ slug: 'delete' })
+
+    const role = await Acl.role().create({ slug: 'admin' })
+    await Acl.role(role).allow('delete')
+    await Acl.role(role).forbid('delete')
+    await Acl.role(role).unforbid('delete')
+
+    const result = await Acl.role(role).forbidden('delete')
+    assert.isFalse(result)
+  })
+})
+
 test.group('hasPermissions mixin', (group) => {
   group.setup(async () => {})
 
