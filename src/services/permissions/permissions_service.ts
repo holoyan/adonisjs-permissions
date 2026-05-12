@@ -385,16 +385,36 @@ export default class PermissionsService extends BaseService {
   }
 
   /**
-   * check if permission is forbidden, if there is same permission with allowed=false then return true;
+   * check if permission is forbidden if there is the same permission with allowed=false then return true;
    */
-  forbidden(
+  async forbidden(
     modelType: string,
     modelId: ModelIdType,
     permission: string,
     entityType: string | null,
     entityId: ModelIdType | null
-  ) {
-    return !this.hasAny(modelType, modelId, [permission], entityType, entityId)
+  ): Promise<boolean> {
+    const { slugs, ids } = this.formatList([permission])
+
+    const q = this.permissionQuery
+      .leftJoin(
+        this.modelPermissionTable + ' as mp',
+        'mp.permission_id',
+        '=',
+        this.permissionTable + '.id'
+      )
+      .where('mp.model_type', modelType)
+      .where('mp.model_id', modelId)
+      .where(this.permissionTable + '.allowed', false)
+      .where((sub) => {
+        if (slugs.length) sub.orWhereIn(this.permissionTable + '.slug', slugs)
+        if (ids.length) sub.orWhereIn(this.permissionTable + '.id', ids)
+      })
+
+    this.applyTargetRestriction(this.permissionTable, q, entityType, entityId)
+
+    const r = await q.select(this.permissionTable + '.id').limit(1)
+    return r.length > 0
   }
 
   /**
