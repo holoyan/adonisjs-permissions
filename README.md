@@ -20,11 +20,8 @@ Checkout other AdonisJS packages
 
 ## Release Notes
 
-Version: v2.0.0
-* Added support for AdonisJS v7
-
-Version: >= v1.3.2
-* Fixed `permissionQueryHelpers()` mixin leaking internal relations (`_roles`, `_permissions`, `_model_roles`) into the public `related()` API, which caused incorrect IDE type inference on user-defined relations
+Version: v2.0.2
+* Fixed `PermissionsService.forbidden()` returning `false` for explicitly denied permissions ([#36](https://github.com/holoyan/adonisjs-permissions/issues/36)). The method was missing `await` on an async call (`!Promise` is always `false`) and used the wrong semantic (negating `hasAny` conflated "never granted" with "explicitly denied"). It now queries the forbid rows directly and is correctly `async`.
 
 ## Table of Contents
 
